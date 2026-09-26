@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "name": "NO-CAP-SIH26188",
+  "name": "crypto-knights-sih26188",
   "description": "AI-Based Fake Identity & Document Screening System (SSB / MHA)",
   "instructions": [
     ".agents/rules/sih26188-architecture.md",
