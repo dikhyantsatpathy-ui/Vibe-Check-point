@@ -74,3 +74,10 @@ frontend/smoke/out.*
 .vercel
 .env*
 pics/
+
+# Ignore generated documentation and chat logs
+*.md
+!README.md
+CHAT_EXPORT.html
+chat_transcripts/
+clean up for hackathon/
