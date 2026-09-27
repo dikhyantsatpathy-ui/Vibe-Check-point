@@ -1021,121 +1021,45 @@ if not DATABASE_URL:
     print(f"[startup] DATABASE_URL not set; defaulting to local SQLite ({DATABASE_URL})")
 
 _IS_SQLITE = "sqlite" in DATABASE_URL
-_NEON_ENDPOINT = None
-_parsed_db = None
 
 if not _IS_SQLITE:
     import urllib.parse
-    try:
-        import psycopg2
-    except ImportError:
-        psycopg2 = None
-
-    _raw_pg_url = DATABASE_URL
-    if _raw_pg_url.startswith("postgresql+psycopg2://"):
-        _raw_pg_url = _raw_pg_url.replace("postgresql+psycopg2://", "postgresql://", 1)
-    elif _raw_pg_url.startswith("postgresql+psycopg://"):
-        _raw_pg_url = _raw_pg_url.replace("postgresql+psycopg://", "postgresql://", 1)
-
-    try:
-        _parsed_db = urllib.parse.urlparse(_raw_pg_url)
-        _host = _parsed_db.hostname or ""
-        if "neon.tech" in _host:
-            _NEON_ENDPOINT = _host.split(".")[0]
-    except Exception:
-        pass
+    import psycopg2
 
     def _pg_creator(**kw):
-        global _PRIMARY_LAST_ERROR
-        if psycopg2 is None:
-            raise RuntimeError("psycopg2 driver is not installed")
-        conn_kw = dict(kw)
-        conn_kw.setdefault("connect_timeout", 15)
-        if _NEON_ENDPOINT and "options" not in conn_kw:
-            if not (_parsed_db and _parsed_db.query and "options=" in _parsed_db.query):
-                conn_kw["options"] = f"endpoint={_NEON_ENDPOINT}"
         last = None
-        for attempt in range(2):
+        for attempt in range(3):
             try:
-                return psycopg2.connect(_raw_pg_url, **conn_kw)
+                return psycopg2.connect(DATABASE_URL, connect_timeout=10, **kw)
             except Exception as e:
                 last = e
-                _PRIMARY_LAST_ERROR = sanitize_secret_text(f"{type(e).__name__}: {e}")
-                err_str = str(e).lower()
-                if ("could not translate host name" in err_str or "getaddrinfo" in err_str) and _parsed_db and _parsed_db.hostname:
-                    # DNS resolution fallback via Google DoH
-                    try:
-                        import urllib.request
-                        _doh_url = f"https://dns.google/resolve?name={_parsed_db.hostname}&type=A"
-                        _req = urllib.request.Request(_doh_url, headers={"User-Agent": "nocap/2.0"})
-                        with urllib.request.urlopen(_req, timeout=2.5) as _resp:
-                            _data = json.loads(_resp.read().decode())
-                            for _ans in _data.get("Answer", []):
-                                if _ans.get("type") == 1:
-                                    conn_kw["hostaddr"] = _ans.get("data")
-                                    return psycopg2.connect(_raw_pg_url, **conn_kw)
-                    except Exception as doh_err:
-                        _PRIMARY_LAST_ERROR = sanitize_secret_text(f"DoH resolve failed: {doh_err} (orig: {e})")
-                if attempt < 1:
-                    time.sleep(0.3)
-        raise RuntimeError(sanitize_secret_text(str(last or "PostgreSQL connect failed")))
+                if attempt < 2:
+                    import time
+                    time.sleep(0.4 * (attempt + 1))
+        raise last or RuntimeError("PostgreSQL connect failed")
+
+    engine = create_engine(
+        DATABASE_URL,
+        creator=_pg_creator,
+        pool_pre_ping=True,
+        pool_size=3,
+        max_overflow=5,
+        pool_recycle=290,
+        pool_timeout=15,
+        connect_args={"application_name": "nocap"},
+    )
 
     try:
-        engine = create_engine(
-            DATABASE_URL,
-            creator=_pg_creator if psycopg2 else None,
-            pool_pre_ping=True,
-            pool_size=2,
-            max_overflow=4,
-            pool_recycle=290,
-            pool_timeout=15,
-            connect_args={"application_name": "nocap"},
-        )
-    except Exception as pg_init_err:
-        print(f"[startup] PostgreSQL engine initialization error ({pg_init_err}); falling back to local SQLite")
-        DATABASE_URL = "sqlite:////tmp/nocap.db" if os.name != "nt" else "sqlite:///nocap.db"
-        _IS_SQLITE = True
-        engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 15.0})
+        import socket
+        _parse = DATABASE_URL.split("//", 1)[1].split("/", 1)[0]
+        socket.getaddrinfo(_parse.rsplit(":", 1)[0], int(_parse.rsplit(":", 1)[1] if ":" in _parse else 5432))
+    except Exception:
+        pass
 else:
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 15.0})
-
-if _IS_SQLITE:
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragmas(dbapi_conn, connection_record):
-        try:
-            cursor = dbapi_conn.cursor()
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA synchronous=NORMAL")
-            cursor.execute("PRAGMA busy_timeout=15000")
-            cursor.execute("PRAGMA cache_size=-64000")
-            cursor.execute("PRAGMA temp_store=MEMORY")
-            cursor.close()
-        except Exception:
-            pass
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-
-# Local SQLite fallback engine ensures high availability on serverless cold starts or network outages.
-# Keep it OUT of app/static: that directory is the frontend build output and gets emptied on rebuild.
-if os.name != "nt":
-    _FALLBACK_DB_PATH = "/tmp/nocap_fallback.db"
-else:
-    _DATA_DIR = os.path.join(os.path.dirname(STATIC_DIR), "data")
-    os.makedirs(_DATA_DIR, exist_ok=True)
-    _FALLBACK_DB_PATH = os.path.join(_DATA_DIR, "nocap_fallback.db")
-fallback_engine = create_engine(f"sqlite:///{_FALLBACK_DB_PATH}", connect_args={"check_same_thread": False, "timeout": 15.0})
-@event.listens_for(fallback_engine, "connect")
-def _set_fallback_sqlite_pragmas(dbapi_conn, connection_record):
-    cursor = dbapi_conn.cursor()
-    cursor.execute("PRAGMA journal_mode=WAL")
-    cursor.execute("PRAGMA synchronous=NORMAL")
-    cursor.execute("PRAGMA busy_timeout=15000")
-    cursor.execute("PRAGMA cache_size=-32000")
-    cursor.execute("PRAGMA temp_store=MEMORY")
-    cursor.close()
-
-FallbackSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=fallback_engine)
 
 RAW_KEY = os.getenv("MASTER_VAULT_KEY", "").encode("utf-8")
 if not RAW_KEY:
@@ -1148,16 +1072,6 @@ if not GOOGLE_CLIENT_ID:
     GOOGLE_CLIENT_ID = "698365851650-qd2nsi8ahrbv4d67aov3lff4anbco2g1.apps.googleusercontent.com"
     print("[startup] GOOGLE_CLIENT_ID not set; defaulting to demo client id.")
 
-
-# --- Sign-in authorization (NOT hardcoded email lists) -----------------------
-# Who may log in is decided by Google Cloud itself:
-#   * ALLOWED_DOMAINS  - comma-separated Google-hosted domains (id_token `hd`),
-#                        e.g. "soa.ac.in,iter.ac.in". Anyone whose Google Cloud
-#                        account belongs to one of these domains is allowed and
-#                        is added automatically â€” no code edit needed.
-#   * ALLOWED_EMAILS   - optional comma-separated exact emails (e.g. personal
-#                        gmail accounts, which carry no `hd` claim).
-# Super admins ALWAYS bypass the gate so the owner can never be locked out.
 def get_allowed_domains() -> set:
     return {d.strip().lower() for d in os.getenv("ALLOWED_DOMAINS", "").split(",") if d.strip().lower()}
 
@@ -1165,18 +1079,13 @@ def get_allowed_emails() -> set:
     return {e.strip().lower() for e in os.getenv("ALLOWED_EMAILS", "").split(",") if e.strip().lower()}
 
 def get_super_admins() -> list:
-    """Dynamically loads authorized super-admin emails from the environment (SUPER_ADMINS).
-    Avoids hardcoding PII/personal emails in source code while providing a safe sandbox fallback.
-    """
     raw = os.getenv("SUPER_ADMINS", "")
     admins = [e.strip().lower() for e in raw.split(",") if e.strip().lower()]
     if not admins:
-        # If SUPER_ADMINS is not explicitly set, fallback to ALLOWED_EMAILS or generic sandbox admin
         allowed = list(get_allowed_emails())
         return allowed if allowed else ["admin@ssb.gov.in"]
     return admins
 
-# Module-level references for backwards compatibility
 ALLOWED_DOMAINS = get_allowed_domains()
 ALLOWED_EMAILS = get_allowed_emails()
 SUPER_ADMINS = get_super_admins()
@@ -1188,10 +1097,6 @@ def is_super_admin(email: str) -> bool:
     admins = {e.strip().lower() for e in get_super_admins()}
     return clean in admins or clean == "evaluator@ssb.gov.in"
 
-# ==============================================================================
-# [ COLUMN 2: DATABASE MODELS ]
-# ==============================================================================
-
 class SignerIdentity(Base):
     __tablename__ = "signer_identities"
     email = Column(String, primary_key=True, index=True)
@@ -1202,547 +1107,185 @@ class SignerIdentity(Base):
     is_revoked = Column(Integer, nullable=False, default=0)
     revoked_at = Column(String, nullable=True)
 
-
 class ScreeningReport(Base):
-    """One MHA identity-document screening pass (SIH26188). An immutable audit
-    record: stores NO raw bytes or extracted text â€” only the SHA-256 hash of
-    the file, MASKED identifier fields, and explainable signals (the same
-    zero-storage discipline as the whole audit trail)."""
     __tablename__ = "screening_reports"
     id = Column(String, primary_key=True)
     file_hash = Column(String, index=True, nullable=False)
     filename = Column(String, nullable=False)
     doc_type = Column(String, nullable=True)
     checkpoint = Column(String, nullable=True)
-    verdict = Column(String, nullable=False)         # CLEAR | REVIEW | FLAGGED
+    verdict = Column(String, nullable=False)
     risk_score = Column(Integer, nullable=False)
     confidence = Column(Float, nullable=False)
-    latency_ms = Column(Integer, nullable=True)      # end-to-end screening latency
-    extracted_fields = Column(Text, nullable=False)  # masked JSON
-    signals = Column(Text, nullable=False)           # reasons JSON
-    ai_detection = Column(Text, nullable=True)       # detector snapshot JSON
-    modules = Column(Text, nullable=True)            # Module 1-4 verdicts JSON
-    watchlist_hits = Column(Text, nullable=True)     # matched watchlist entries JSON (field + mask only)
-    previous_hash = Column(String, nullable=True)    # SHA-256 hash-chain block linkage
-    ledger_hash = Column(String, nullable=True)      # Current block hash
-    adjudication = Column(String, nullable=True)     # CLEARED | CONFIRMED_FRAUD | INCONCLUSIVE
+    latency_ms = Column(Integer, nullable=True)
+    extracted_fields = Column(Text, nullable=False)
+    signals = Column(Text, nullable=False)
+    ai_detection = Column(Text, nullable=True)
+    modules = Column(Text, nullable=True)
+    watchlist_hits = Column(Text, nullable=True)
+    previous_hash = Column(String, nullable=True)
+    ledger_hash = Column(String, nullable=True)
+    adjudication = Column(String, nullable=True)
     adjudicator = Column(String, nullable=True)
     adjudication_note = Column(String, nullable=True)
     adjudicated_at = Column(String, nullable=True)
-    screener = Column(String, nullable=True)         # signed-in officer who ran it
+    screener = Column(String, nullable=True)
     created_at = Column(String, nullable=False)
-    session_id = Column(String, index=True, nullable=True)   # owning border session (SIH26188)
-    field_hashes = Column(Text, nullable=True)               # per-field sha256 digests for cross-doc compare
-    ephemeral_raw_fields = Column(Text, nullable=True)       # TEMPORARY raw JSON, wiped when session closes
-    removed_at = Column(String, nullable=True)               # soft-remove from a session (audit trail kept)
-    removed_by = Column(String, nullable=True)               # officer who removed the document from the session
-    nationality = Column(String, nullable=True)              # traveller nationality at capture time (guide context)
-    purpose = Column(String, nullable=True)                  # declared purpose of travel at capture time
+    session_id = Column(String, index=True, nullable=True)
+    field_hashes = Column(Text, nullable=True)
+    ephemeral_raw_fields = Column(Text, nullable=True)
+    removed_at = Column(String, nullable=True)
+    removed_by = Column(String, nullable=True)
+    nationality = Column(String, nullable=True)
+    purpose = Column(String, nullable=True)
 
 class WatchlistEntry(Base):
-    """Privacy-preserving watchlist for the screening desk: stores ONLY the
-    SHA-256 hash of the NORMALIZED identifier plus a masked display label and
-    a search reason. Raw identifier values never touch the database."""
     __tablename__ = "watchlist_entries"
     id = Column(Integer, primary_key=True, autoincrement=True)
     identifier_hash = Column(String, index=True, unique=True, nullable=False)
-    category = Column(String, nullable=True)         # pan | passport | visa | driving_licence | voter_id | phone | ...
-    mask = Column(String, nullable=True)             # e.g. ****1234
+    category = Column(String, nullable=True)
+    mask = Column(String, nullable=True)
     reason = Column(String, nullable=True)
     added_by = Column(String, nullable=False)
     created_at = Column(String, nullable=False)
 
-
 class ScreeningSession(Base):
-    """One traveller at the desk = one border screening session (SIH26188).
-
-    Documents are screened into the session one at a time (each pass writes its
-    own masked ScreeningReport audit row tagged with this session_id); the
-    extracted values are cross-compared; when the session is approved (or a
-    supervisor settles a flagged one) the session's canonical data is reduced
-    to a chained SHA-256 digest stored in `ledger_hash`. Zero raw identifier
-    values are persisted — only digests, masks and comparison flags."""
     __tablename__ = "screening_sessions"
     id = Column(String, primary_key=True)
-    status = Column(String, nullable=False, default="open")   # open | approved | flagged | rejected
-    verdict = Column(String, nullable=True)                   # PENDING | CLEAR | REVIEW | FLAGGED
+    status = Column(String, nullable=False, default="open")
+    verdict = Column(String, nullable=True)
     risk_score = Column(Integer, nullable=True, default=0)
     checkpoint = Column(String, nullable=True)
-    screener = Column(String, index=True, nullable=True)      # officer who opened the session
-    comparison = Column(Text, nullable=True)                  # cross-doc comparison JSON (flags only)
+    screener = Column(String, index=True, nullable=True)
+    comparison = Column(Text, nullable=True)
     note = Column(Text, nullable=True)
-    previous_hash = Column(String, nullable=True)             # ledger chain linkage (over closed sessions)
-    ledger_hash = Column(String, nullable=True)               # signed block on approval / settlement
+    previous_hash = Column(String, nullable=True)
+    ledger_hash = Column(String, nullable=True)
     created_at = Column(String, nullable=False)
     updated_at = Column(String, nullable=False)
     closed_at = Column(String, nullable=True)
-    adjudicator = Column(String, nullable=True)               # supervisor who settled a flagged session
+    adjudicator = Column(String, nullable=True)
     adjudicated_at = Column(String, nullable=True)
-    nationality = Column(String, nullable=True)               # traveller nationality (international guide flow)
-    purpose = Column(String, nullable=True)                   # purpose of travel
-    mode = Column(String, nullable=True)                      # land | air | sea | rail (checkpoint cluster)
-    label = Column(String, nullable=True)                     # "Session N" per IST day (resets daily)
 
-
-class NoticeBroadcast(Base):
-    """A signed authority notice on the public bulletin. Zero-storage: the row
-    holds only the digest (file_hash), the notice text, and the issuing
-    officer's verified identity — no uploaded media, no raw payload bytes."""
-    __tablename__ = "notice_broadcasts"
-    id = Column(String, primary_key=True)
-    title = Column(String, nullable=False)
-    urgency = Column(String, nullable=False)         # CRITICAL | HIGH | ADVISORY
-    content = Column(Text, nullable=False)
-    signer = Column(String, nullable=False)          # issuing officer's name
-    signer_email = Column(String, index=True, nullable=False)
-    institution = Column(String, nullable=True)
-    designation = Column(String, nullable=True)
-    timestamp = Column(String, nullable=False)       # "YYYY-MM-DD HH:MM:SS UTC"
-    file_hash = Column(String, index=True, unique=True, nullable=False)
-    signature = Column(String, nullable=True)        # digest-based record marker
+class LedgerBlock(Base):
+    __tablename__ = "blocks"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    signer_email = Column(String, nullable=False)
+    signer_name = Column(String, nullable=False)
+    signer_institution = Column(String, nullable=True)
+    signer_designation = Column(String, nullable=True)
+    filename = Column(String, nullable=False)
+    file_hash = Column(String, unique=True, index=True, nullable=False)
+    sig_hex = Column(String, nullable=False)
+    timestamp = Column(String, nullable=False)
     ipfs_cid = Column(String, nullable=True)
-    media_type = Column(String, nullable=True)
-    media_name = Column(String, nullable=True)
-    has_media = Column(Integer, nullable=False, default=0)
-    is_revoked = Column(Integer, nullable=False, default=0)  # soft retraction
+    tx_hash = Column(String, nullable=True)
+    merkle_root = Column(String, nullable=True)
+    is_revoked = Column(Integer, nullable=False, default=0)
+    notice_content = Column(String, nullable=True)
+    notice_deleted = Column(Integer, nullable=False, default=0)
+    notice_media_type = Column(String, nullable=True)
+    notice_media_name = Column(String, nullable=True)
+    flag_count = Column(Integer, default=0)
+    notice_media_data = Column(LargeBinary, nullable=True)
 
-_db_initialized = False
-_db_init_lock = threading.Lock()
+class VerificationLog(Base):
+    __tablename__ = "verification_logs"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    file_hash = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    timestamp = Column(String, nullable=False)
+    detection_ms = Column(Integer, default=0)
+    detection_provider = Column(String, nullable=True)
+
+class PendingUpload(Base):
+    __tablename__ = "pending_uploads"
+    session_id = Column(String, primary_key=True, index=True)
+    chunk_index = Column(Integer, primary_key=True)
+    total_chunks = Column(Integer, nullable=False)
+    filename = Column(String, nullable=False)
+    content_type = Column(String, nullable=True)
+    data = Column(LargeBinary, nullable=False)
+    created_at = Column(String, nullable=False)
+
+class SightengineUsage(Base):
+    __tablename__ = "sightengine_usage"
+    row_key = Column(String, primary_key=True)
+    ops_today = Column(Integer, default=0)
+    ops_month = Column(Integer, default=0)
+    day_date = Column(String, nullable=True)
+    month = Column(String, nullable=True)
+    updated_at = Column(String, nullable=True)
 
 _MIGRATIONS = [
-    # Screening-desk officer role fields (post + institution granted by a
-    # super admin in the console). Added idempotently for pre-existing DBs.
     "ALTER TABLE signer_identities ADD COLUMN IF NOT EXISTS institution VARCHAR;",
     "ALTER TABLE signer_identities ADD COLUMN IF NOT EXISTS designation VARCHAR;",
-    # Screening-desk hot-path indexes (SIH26188).
-    "CREATE INDEX IF NOT EXISTS ix_screening_reports_created ON screening_reports(created_at);",
-    "CREATE INDEX IF NOT EXISTS ix_screening_reports_screener ON screening_reports(screener);",
-    "CREATE INDEX IF NOT EXISTS ix_screening_reports_verdict ON screening_reports(verdict);",
-    "CREATE INDEX IF NOT EXISTS ix_screening_reports_chk_created ON screening_reports(checkpoint, created_at);",
-    "CREATE INDEX IF NOT EXISTS ix_watchlist_created ON watchlist_entries(created_at);",
-    # Watchlist dedup guard: same identifier must not appear twice even under
-    # concurrent adds. Skipped automatically if legacy duplicate rows exist.
-    "CREATE UNIQUE INDEX IF NOT EXISTS uq_watchlist_identifier ON watchlist_entries(identifier_hash);",
-    # Module 1-4 verdicts (OCR/validation/tampering/face) as one JSON row.
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS modules TEXT;",
-    # Watchlist matches surfaced on the doc (field + mask only — never raw).
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS watchlist_hits TEXT;",
-    # Hash-chain blockchain audit columns
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS previous_hash VARCHAR;",
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS ledger_hash VARCHAR;",
-    # Notice-board timeline + per-report screening latency.
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS latency_ms INTEGER;",
-    "CREATE INDEX IF NOT EXISTS ix_notice_broadcasts_ts ON notice_broadcasts(timestamp);",
-    # Border SESSION ledger (SIH26188): per-doc session linkage + cross-doc
-    # field digests, and quick session-list filters.
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS session_id VARCHAR;",
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS field_hashes TEXT;",
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS ephemeral_raw_fields TEXT;",
-    "CREATE INDEX IF NOT EXISTS ix_screening_reports_session ON screening_reports(session_id);",
-    # Soft-remove of a document from an open session: audit row is KEPT (hash
-    # chain + ledger stay intact), only the session linkage is dropped.
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS removed_at VARCHAR;",
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS removed_by VARCHAR;",
-    # Traveller context for the international guided flow (nationality-driven
-    # document expectations at every checkpoint).
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS nationality VARCHAR;",
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS purpose VARCHAR;",
-    "ALTER TABLE screening_sessions ADD COLUMN IF NOT EXISTS nationality VARCHAR;",
-    "ALTER TABLE screening_sessions ADD COLUMN IF NOT EXISTS purpose VARCHAR;",
-    "ALTER TABLE screening_sessions ADD COLUMN IF NOT EXISTS mode VARCHAR;",
-    "ALTER TABLE screening_sessions ADD COLUMN IF NOT EXISTS previous_hash VARCHAR;",
-    "ALTER TABLE screening_sessions ADD COLUMN IF NOT EXISTS ledger_hash VARCHAR;",
-    "ALTER TABLE screening_sessions ADD COLUMN IF NOT EXISTS comparison TEXT;",
-    "ALTER TABLE screening_sessions ADD COLUMN IF NOT EXISTS note TEXT;",
-    "ALTER TABLE screening_sessions ADD COLUMN IF NOT EXISTS adjudicator VARCHAR;",
-    "ALTER TABLE screening_sessions ADD COLUMN IF NOT EXISTS adjudicated_at VARCHAR;",
-    # Human-friendly per-day session label ("Session 1..N" per IST date).
-    "ALTER TABLE screening_sessions ADD COLUMN IF NOT EXISTS label VARCHAR;",
-    "CREATE INDEX IF NOT EXISTS ix_sessions_created ON screening_sessions(created_at);",
-    "CREATE INDEX IF NOT EXISTS ix_sessions_status ON screening_sessions(status);",
-    "CREATE INDEX IF NOT EXISTS ix_sessions_screener ON screening_sessions(screener);",
-    "CREATE INDEX IF NOT EXISTS ix_sessions_checkpoint ON screening_sessions(checkpoint);",
-    "CREATE INDEX IF NOT EXISTS ix_reports_session_id ON screening_reports(session_id);",
-    "CREATE INDEX IF NOT EXISTS ix_reports_created ON screening_reports(created_at);",
-    "CREATE INDEX IF NOT EXISTS ix_reports_checkpoint ON screening_reports(checkpoint);",
-    # Stale pre-refactor columns: signer_identities no longer carries the
-    # crypto keypair era's pub_key/enc_priv_key/is_revoked/revoked_at/revoke_pin
-    # (the hash-chain ledger replaced pub_key trust). Existing Postgres DBs still
-    # declare pub_key + enc_priv_key NOT NULL, which breaks first-time signer
-    # inserts, so drop the whole stale set to match the current model.
-    "ALTER TABLE signer_identities DROP COLUMN IF EXISTS pub_key;",
-    "ALTER TABLE signer_identities DROP COLUMN IF EXISTS enc_priv_key;",
-    "ALTER TABLE signer_identities DROP COLUMN IF EXISTS revoke_pin;",
-    "ALTER TABLE signer_identities ADD COLUMN IF NOT EXISTS is_revoked INTEGER DEFAULT 0;",
-    "ALTER TABLE signer_identities ADD COLUMN IF NOT EXISTS revoked_at VARCHAR;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS signer_email VARCHAR;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS signer_name VARCHAR;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS signer_institution VARCHAR;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS signer_designation VARCHAR;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS tx_hash VARCHAR;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS merkle_root VARCHAR;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS notice_content TEXT;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS notice_deleted BOOLEAN DEFAULT FALSE;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS notice_media_type VARCHAR;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS notice_media_name VARCHAR;",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS notice_media_data " + ("BYTEA" if not _IS_SQLITE else "BLOB") + ";",
+    "ALTER TABLE blocks ADD COLUMN IF NOT EXISTS flag_count INTEGER DEFAULT 0;",
+    "ALTER TABLE verification_logs ADD COLUMN IF NOT EXISTS detection_ms INTEGER DEFAULT 0;",
+    "ALTER TABLE verification_logs ADD COLUMN IF NOT EXISTS detection_provider VARCHAR;",
+    "CREATE UNIQUE INDEX IF NOT EXISTS uq_blocks_file_hash ON blocks(file_hash);",
 ]
 
+_db_initialized = False
 def _ensure_db_initialized():
-    """Lazily run create_all and schema migrations on the first actual DB access.
-    Does NOT block root route or serverless cold starts."""
     global _db_initialized
-    if _db_initialized:
-        return
-    with _db_init_lock:
-        if _db_initialized:
-            return
-        _db_initialized = True
+    if _db_initialized: return
+    _db_initialized = True
+    try: Base.metadata.create_all(bind=engine)
+    except Exception as e: print(f"[startup] warning: create_all deferred ({e}).")
+    
+    print("[startup] running schema migration...")
+    for stmt in _MIGRATIONS:
         try:
-            Base.metadata.create_all(bind=engine)
-        except Exception as e:
-            print(f"[startup] warning: create_all on primary deferred ({e}).")
+            with engine.begin() as conn:
+                conn.execute(text(stmt))
+        except Exception: pass
+    
+    if not _IS_SQLITE:
         try:
-            Base.metadata.create_all(bind=fallback_engine)
-        except Exception as e:
-            print(f"[startup] warning: fallback SQLite create_all deferred ({e}).")
-        try:
-            with engine.connect() as conn:
-                for stmt in _MIGRATIONS:
-                    try:
-                        conn.execute(text(stmt))
-                        conn.commit()
-                    except Exception:
-                        conn.rollback()
-        except Exception as e:
-            print(f"[startup] migration pass skipped ({e})")
-        if _IS_SQLITE:
-            try:
-                with engine.connect() as conn:
-                    cols = [r[0] for r in conn.execute(text("PRAGMA table_info(screening_reports)")).fetchall()]
-                    for _sqlite_col, _sqlite_ddl in (
-                        ("latency_ms", "INTEGER"),
-                        ("session_id", "VARCHAR"),
-                        ("field_hashes", "TEXT"),
-                        ("ephemeral_raw_fields", "TEXT"),
-                        ("modules", "TEXT"),
-                        ("watchlist_hits", "TEXT"),
-                    ):
-                        if _sqlite_col not in cols:
-                            conn.execute(text(f"ALTER TABLE screening_reports ADD COLUMN {_sqlite_col} {_sqlite_ddl}"))
-                            conn.commit()
-                    scols = [r[0] for r in conn.execute(text("PRAGMA table_info(screening_sessions)")).fetchall()]
-                    for _scol, _sddl in (
-                        ("previous_hash", "VARCHAR"),
-                        ("ledger_hash", "VARCHAR"),
-                        ("comparison", "TEXT"),
-                        ("note", "TEXT"),
-                        ("adjudicator", "VARCHAR"),
-                        ("adjudicated_at", "VARCHAR"),
-                        ("label", "VARCHAR"),
-                    ):
-                        if _scol not in scols:
-                            conn.execute(text(f"ALTER TABLE screening_sessions ADD COLUMN {_scol} {_sddl}"))
-                            conn.commit()
-                    sicols = [r[0] for r in conn.execute(text("PRAGMA table_info(signer_identities)")).fetchall()]
-                    for _sicol, _sic_ddl in (
-                        ("is_revoked", "INTEGER DEFAULT 0"),
-                        ("revoked_at", "VARCHAR"),
-                    ):
-                        if _sicol not in sicols:
-                            conn.execute(text(f"ALTER TABLE signer_identities ADD COLUMN {_sicol} {_sic_ddl}"))
-                            conn.commit()
-            except Exception:
-                pass
-        try:
-            _backfill_session_labels(engine)
-        except Exception as e:
-            print(f"[startup] session label backfill skipped ({e})")
-
-
-def _session_day(utc_str: str | None) -> str:
-    """"YYYY-MM-DD" IST date for a stored UTC timestamp (label day boundary)."""
-    ist = to_ist(utc_str) or ""
-    return ist[:10] if ist else ""
-
-
-def _backfill_session_labels(db_engine) -> None:
-    """Give every pre-existing session its per-day label ("Session 1..N").
-
-    Runs once after migrations: sessions lacking a label get one based on
-    their IST creation date, oldest first — the same rule new sessions get at
-    creation. Purely presentational; never included in the chain hash, so the
-    existing hash-chain integrity is untouched."""
-    try:
-        with SessionLocal(bind=db_engine) as db:
-            rows = (db.query(ScreeningSession)
-                    .filter(ScreeningSession.label.is_(None))
-                    .order_by(ScreeningSession.created_at.asc(), ScreeningSession.id.asc())
-                    .all())
-            if not rows:
-                return
-            day_count: dict = {}
-            for s in rows:
-                day = _session_day(s.created_at) or "unknown"
-                day_count[day] = day_count.get(day, 0) + 1
-                s.label = f"Session {day_count[day]}"
-            db.commit()
-    except Exception as e:
-        print(f"[startup] session label backfill skipped ({e})")
-
-
-def _next_session_label(db, created_at_utc: str) -> str:
-    """Label for a brand-new session: next running number on today's IST date (Session 1, 2, 3...).
-    Assigns the lowest available Session number among open sessions on today's date."""
-    day = _session_day(created_at_utc)
-    if not day:
-        return "Session 1"
-    try:
-        y, m, d = (int(p) for p in day.split("-"))
-        ist_midnight = datetime(y, m, d, 0, 0, 0, tzinfo=IST)
-        cutoff = ist_midnight.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        open_rows = (
-            db.query(ScreeningSession.label, ScreeningSession.created_at)
-            .filter(ScreeningSession.created_at >= cutoff)
-            .filter(ScreeningSession.status == "open")
-            .all()
-        )
-        active_nums = set()
-        for lbl, c in open_rows:
-            if _session_day(c) == day and lbl and lbl.startswith("Session "):
-                try:
-                    num = int(lbl.split("Session ")[1].strip())
-                    active_nums.add(num)
-                except (ValueError, IndexError):
-                    pass
-        next_num = 1
-        while next_num in active_nums:
-            next_num += 1
-        return f"Session {next_num}"
-    except Exception as e:
-        print(f"[_next_session_label] fallback ({e})")
-        return "Session 1"
-
-
-
-# --- Neon (serverless Postgres) pauses after ~5 min of idle; the FIRST request
-#     then pays a 5-20s cold start. For demos this reads as "signing is slow",
-#     so a lightweight daemon keeps the compute awake. Set KEEPALIVE_INTERVAL=0
-#     to disable, or raise it (seconds) for battery-friendlier sleep. ---
-def _start_keepalive() -> None:
-    if os.getenv("VERCEL") == "1":
-        return  # serverless: instances are short-lived, a daemon thread would be pointless
-    interval = float(os.getenv("KEEPALIVE_INTERVAL", "45"))
-    if _IS_SQLITE or interval <= 0:
-        return
-
-    def _ping_loop():
-        while True:
-            time.sleep(interval)
-            try:
-                with engine.connect() as c:
-                    c.execute(text("SELECT 1"))
-            except Exception:
-                pass  # network hiccup or explicit shutdown - keep trying
-
-    threading.Thread(target=_ping_loop, daemon=True, name="neon-keepalive").start()
-
-_start_keepalive()
-
-_PRIMARY_LAST_FAILED = 0.0
-_PRIMARY_LAST_ERROR = None
+            with engine.begin() as conn:
+                conn.execute(text("DROP INDEX IF EXISTS ix_blocks_file_hash;"))
+        except Exception: pass
 
 @contextmanager
 def get_db():
     _ensure_db_initialized()
-    global _PRIMARY_LAST_FAILED, _PRIMARY_LAST_ERROR
-    use_fallback = (_IS_SQLITE is False) and (time.monotonic() - _PRIMARY_LAST_FAILED < 4.0)
-    db = None
-
-    if not use_fallback:
-        try:
-            db = SessionLocal()
-            if not _IS_SQLITE:
-                db.execute(text("SELECT 1"))
-        except Exception as e:
-            _PRIMARY_LAST_FAILED = time.monotonic()
-            _PRIMARY_LAST_ERROR = sanitize_secret_text(f"{type(e).__name__}: {e}")
-            print(f"[get_db] Primary DB check failed ({type(e).__name__}: {_PRIMARY_LAST_ERROR}); using fallback SQLite session.")
-            if db:
-                try:
-                    db.close()
-                except Exception:
-                    pass
-            db = None
-            use_fallback = True
-
-    if use_fallback:
-        db = FallbackSessionLocal()
-
-    try:
-        yield db
-    except Exception:
-        try:
-            db.rollback()
-        except Exception:
-            pass
-        raise
-    finally:
-        try:
-            db.close()
-        except Exception:
-            pass
-
-
-# ==============================================================================
-# Cross-DB session resolver: handles Neon/fallback split-brain consistency
-# ==============================================================================
-def _locate_session(session_id: str):
-    """
-    Find a ScreeningSession across both primary and fallback databases.
-    Returns (session, factory_name, db_instance) where factory_name is
-    "primary" or "fallback". Raises HTTPException(404) if not found in either.
-    """
-    from sqlalchemy.orm import Session as _SA
-    from fastapi import HTTPException
-    # Order: try the currently-preferred DB first, then the other.
-    # This avoids unnecessary cross-DB checks when primary is healthy.
-    factories = []
-    if not _IS_SQLITE:
-        # Primary is Neon, fallback is SQLite
-        factories = [
-            ("primary", SessionLocal),
-            ("fallback", FallbackSessionLocal),
-        ]
-    else:
-        # Running on SQLite only (tests/local) - single factory
-        factories = [("sqlite", SessionLocal)]
-
-    for name, factory in factories:
-        db = None
-        try:
-            db = factory()
-            if not _IS_SQLITE and name == "primary":
-                db.execute(text("SELECT 1"))
-            sess = db.query(ScreeningSession).filter_by(id=session_id).first()
-            if sess:
-                return sess, name, db
-        except Exception:
-            pass
-        finally:
-            if db:
-                try:
-                    db.close()
-                except Exception:
-                    pass
-
-    # Not found in either DB
-    raise HTTPException(status_code=404, detail="Screening session not found.")
-
+    db = SessionLocal()
+    try: yield db
+    finally: db.close()
 
 def _get_db_for_session(session_id: str | None):
-    """
-    Context manager that yields a DB session connected to the engine
-    that owns the given session_id (if provided), otherwise the default get_db().
-    Ensures read-after-write consistency for session-scoped operations.
-    """
-    from contextlib import contextmanager
-    
-    if session_id is None or _IS_SQLITE:
-        # No session scoping needed, or SQLite-only mode
-        return get_db()
-    
-    # Locate the session across DBs; if it exists in either engine, route to
-    # the owning factory so session-scoped reads/writes hit the right DB.
-    try:
-        sess, factory_name, _ = _locate_session(session_id)
-    except HTTPException as exc:
-        # A session that lives in NEITHER engine isn't an error here: this is
-        # exactly the "ghost / client-cached / auto-healed open session"
-        # provision path. HEAD's get_db() never 404s for a missing session —
-        # the endpoint's auto-heal block (auto-provision open session) needs
-        # the *default* engine to create it against. Re-raise nothing: yield
-        # the default DB and let the endpoint heal the ghost. Only propagate
-        # a 404 when the caller explicitly asked to *resolve* an existing
-        # session (that callers use _get_db_for_session X-endpoint contract).
-        if exc.status_code == 404:
-            return get_db()
-        raise
-    factory = SessionLocal if factory_name == "primary" else FallbackSessionLocal
-    
-    @contextmanager
-    def _session_db():
-        nonlocal factory, factory_name
-        db = None
-        try:
-            if not _IS_SQLITE and factory_name == "primary":
-                try:
-                    db = factory()
-                    db.execute(text("SELECT 1"))
-                except Exception as pg_err:
-                    global _PRIMARY_LAST_FAILED, _PRIMARY_LAST_ERROR
-                    _PRIMARY_LAST_FAILED = time.monotonic()
-                    _PRIMARY_LAST_ERROR = sanitize_secret_text(f"{type(pg_err).__name__}: {pg_err}")
-                    print(f"[_session_db] Primary DB connection check failed ({_PRIMARY_LAST_ERROR}); switching to fallback SQLite.")
-                    if db:
-                        try:
-                            db.close()
-                        except Exception:
-                            pass
-                    factory = FallbackSessionLocal
-                    factory_name = "fallback"
-                    db = factory()
-            else:
-                db = factory()
-            yield db
-        except Exception:
-            if db:
-                try:
-                    db.rollback()
-                except Exception:
-                    pass
-            raise
-        finally:
-            if db:
-                try:
-                    db.close()
-                except Exception:
-                    pass
-    
-    return _session_db()
-
+    return get_db()
 
 def now_utc(): 
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 
 def make_session_token(email: str) -> str:
-    """Mint a self-contained session token: email + expiry + HMAC.
-
-    No server-side session store is needed — the signature proves issuance and
-    the embedded expiry bounds the lifetime (1 day, matching the cookie
-    max_age). A leaked token stops working after expiry even if the cookie's
-    client-side max_age is tampered with."""
     email = email.strip().lower()
-    exp = int(datetime.now(timezone.utc).timestamp()) + 86400
-    sig = hmac.new(MASTER_VAULT_KEY, f"{email}::{exp}".encode(), hashlib.sha256).hexdigest()
-    return f"{email}::{exp}::{sig}"
+    sig = hmac.new(MASTER_VAULT_KEY, email.encode(), hashlib.sha256).hexdigest()
+    return f"{email}::{sig}"
 
 def get_current_admin(request: Request):
     token = request.cookies.get("nischay_session")
-    if not token or token.count("::") != 2:
+    if not token or "::" not in token:
         raise HTTPException(status_code=401, detail="ACCESS DENIED: Missing or invalid secure session cookie.")
-    email, exp_raw, sig = token.split("::")
-    expected = hmac.new(MASTER_VAULT_KEY, f"{email}::{exp_raw}".encode(), hashlib.sha256).hexdigest()
+    email, sig = token.rsplit("::", 1)
+    expected = hmac.new(MASTER_VAULT_KEY, email.encode(), hashlib.sha256).hexdigest()
     if not hmac.compare_digest(sig, expected):
         raise HTTPException(status_code=401, detail="ACCESS DENIED: Session signature invalid or tampered.")
-    try:
-        exp = int(exp_raw)
-    except ValueError:
-        raise HTTPException(status_code=401, detail="ACCESS DENIED: Session signature invalid or tampered.")
-    if exp < int(datetime.now(timezone.utc).timestamp()):
-        raise HTTPException(status_code=401, detail="ACCESS DENIED: Session expired — please sign in again.")
-    with get_db() as db:
-        identity = db.query(SignerIdentity).filter_by(email=email).first()
-        if identity and getattr(identity, "is_revoked", 0) == 1:
-            raise HTTPException(status_code=403, detail="OFFICER ACCESS REVOKED: Your credentials have been revoked by an administrator.")
     return email
-
-def get_current_admin_or_evaluator(request: Request) -> str:
-    """Allow open sandbox screening for SIH26188 testing while keeping officer identity when logged in."""
-    try:
-        return get_current_admin(request)
-    except HTTPException:
-        return "evaluator@ssb.gov.in"
 
 def get_or_create_signer_identity(db, email: str, google_name: str) -> SignerIdentity:
     identity = db.query(SignerIdentity).filter_by(email=email).first()
