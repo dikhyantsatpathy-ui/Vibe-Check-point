@@ -202,6 +202,10 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
     else:
         inpaint_void = False
         uniformity = 0.95
+        dead_blocks = 0
+        largest_component = 0
+
+    dead_block_ratio = (dead_blocks / non_margin_count) if non_margin_count > 0 else 0.0
 
     dx = np.abs(gray[:, 1:] - gray[:, :-1])
     dy = np.abs(gray[1:, :] - gray[:-1, :])
@@ -225,6 +229,8 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
         "tamper_score": tamper_score,
         "confidence": 0.92 if is_tampered else 0.88,
         "substrate_uniformity": round(float(uniformity), 3),
+        "dead_block_ratio": round(float(dead_block_ratio), 4),
+        "largest_component": int(largest_component),
         "detail": detail,
         "latency_ms": latency_ms,
     }

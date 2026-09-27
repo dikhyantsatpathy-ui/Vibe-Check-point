@@ -30,6 +30,7 @@ from sqlalchemy.pool import StaticPool
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "app"))
 
 import main
+sys.modules["app.main"] = main
 from main import Base, ScreeningReport, ScreeningSession, SignerIdentity, app, make_session_token, now_utc
 
 import session as session_mod

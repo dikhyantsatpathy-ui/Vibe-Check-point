@@ -11,6 +11,7 @@ google-auth
 python-dotenv
 numpy==2.4.6
 Pillow==12.3.0
+pillow-heif==0.18.0   # iPhone HEIC/HEIF decode support (camera-roll uploads, not just live webcam capture)
 openai
 pydantic
 

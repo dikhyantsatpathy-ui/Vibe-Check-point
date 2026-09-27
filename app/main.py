@@ -17,6 +17,19 @@ _APP_DIR = os.path.dirname(os.path.abspath(__file__))
 if _APP_DIR not in sys.path:
     sys.path.insert(0, _APP_DIR)
 
+# Register HEIC/HEIF decode support (iPhone's default camera-roll format)
+# before any module opens an image. Registration is process-global and
+# idempotent, so doing it once here — before request handling starts — is
+# sufficient regardless of which module later calls Image.open(). No-op if
+# pillow-heif isn't installed.
+try:
+    from app import heif_support  # noqa: F401
+except ImportError:
+    try:
+        import heif_support  # noqa: F401
+    except ImportError:
+        pass
+
 import hashlib
 import hmac
 import io
