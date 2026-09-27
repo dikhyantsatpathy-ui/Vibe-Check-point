@@ -29,5 +29,3 @@ app/models/doctype.onnx
 app/models/*.onnx
 *.zip
 old_version/
-
-

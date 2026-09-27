@@ -1,8 +1,8 @@
-# Vibe Check Point — AI-Based Fake Identity & Document Screening
+# SSB Border Screening — AI-Based Fake Identity & Document Screening
 
 **Team:** crypto_knights  ·  **SIH26188** — AI-Based Fake Identity & Document Screening
 
-> One-liner: *At a border inspection desk (a Vibe Check Point), an officer uploads an identity document
+> One-liner: *At a border inspection desk, an officer uploads an identity document
 > (passport / visa / driving licence / PAN / voter ID) plus an optional live face capture.
 > A four-module forensic pipeline — extract, validate, tamper-detect, face-match — returns a
 > risk score and a CLEAR / REVIEW / FLAGGED verdict with one explainable reason per risk
@@ -243,5 +243,5 @@ OAuth verify failure simply denies login. The demo never depends on external ava
 
 ---
 
-*Vibe Check Point — SIH26188: AI-Based Fake Identity & Document Screening.*
+*SSB Border Screening — SIH26188: AI-Based Fake Identity & Document Screening.*
 © 2026 · Team crypto_knights.

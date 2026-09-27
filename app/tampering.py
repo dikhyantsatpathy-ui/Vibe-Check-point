@@ -36,7 +36,6 @@ def _load_tamper_classifier():
 # independent noise — see FIX_ALL_ISSUES.md §1 Problem 1).
 # ---------------------------------------------------------------------------
 CHECK_WEIGHTS = {
-    "onnx-classifier": 1.2,           # most informed single signal once trained — considers all features jointly
     "dual-stream-forgery": 1.0,
     "ela": 1.0,
     "sensor-noise": 0.8,
@@ -338,19 +337,16 @@ def tamper_analysis(image_bytes: bytes | None, ai_detection: dict | None = None,
             inp = np.array([feat], dtype=np.float32)
             pred = clf.run(None, {clf.get_inputs()[0].name: inp})
             is_tampered = int(pred[0][0]) == 1
-            # Feed the classifier's result in as ONE MORE weighted check —
-            # it's the most informed single signal (considers all features
-            # jointly) but must not unilaterally override every other check,
-            # or we reintroduce the exact single-point-of-failure veto this
-            # whole weighted-verdict redesign was meant to remove.
+            verdict = "FAIL" if is_tampered else "PASS"
             checks.append({
                 "label": "onnx-classifier",
                 "ok": not is_tampered,
                 "detail": f"Joint machine-learning classifier evaluated features ({'tampered' if is_tampered else 'genuine'}).",
             })
         except Exception:
-            pass
-    verdict = _weighted_verdict(checks)
+            verdict = _weighted_verdict(checks)
+    else:
+        verdict = _weighted_verdict(checks)
 
     return {"checks": checks, "ela": ela, "qa": qa, "roi": roi, "liveness": liveness,
             "spectral": spectral, "noise_consistency": noise, "copy_move": copy_move,

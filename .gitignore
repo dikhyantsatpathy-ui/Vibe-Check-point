@@ -81,6 +81,3 @@ pics/
 CHAT_EXPORT.html
 chat_transcripts/
 clean up for hackathon/
-
-.vercel
-.env*

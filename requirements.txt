@@ -2,21 +2,16 @@ fastapi
 uvicorn
 sqlalchemy
 psycopg2-binary
-# psycopg3 not used — clean_postgres_dsn always produces postgresql+psycopg2:// URLs
 pypdf
 requests
 python-multipart
 slowapi
 google-auth
 python-dotenv
+numpy
 Pillow==12.3.0
-pillow-heif==0.18.0   # iPhone HEIC/HEIF decode support (camera-roll uploads, not just live webcam capture)
 openai
 pydantic
 cryptography
 zxing-cpp
-
-# Local-only (NOT installed on Vercel): on-device AI pretrained model runtime.
-# Only needed if you run AI_DETECTOR_PROVIDER=self-hosted on a laptop/worker.
-# onnxruntime
 httpx
