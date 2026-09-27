@@ -25,6 +25,9 @@ node_modules
 *.pt
 app/models/card.onnx
 app/models/aadhaar_fields.onnx
+app/models/doctype.onnx
+app/models/*.onnx
 *.zip
 old_version/
+
 
