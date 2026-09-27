@@ -1,9 +1,12 @@
-from http.server import BaseHTTPRequestHandler
+from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 
-class handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type','text/plain')
-        self.end_headers()
-        self.wfile.write('Hello, Vercel! from Python!'.encode('utf-8'))
-        return
+app = FastAPI()
+
+@app.get("/api/index")
+async def index_test():
+    return PlainTextResponse("FastAPI index working!")
+
+@app.get("/api/health")
+async def health_test():
+    return PlainTextResponse("FastAPI health working!")
