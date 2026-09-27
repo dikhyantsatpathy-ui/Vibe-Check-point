@@ -20,8 +20,6 @@ import struct
 import xml.etree.ElementTree as ET
 import zlib
 
-import cv2
-import numpy as np
 
 try:
     import zxingcpp
@@ -48,20 +46,18 @@ def decode_barcodes(image_bytes: bytes) -> list[dict]:
 
     results = []
     try:
-        # Load image into cv2 numpy array
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        if img is None:
-            return []
-
-        # Try multiple variations (raw, grayscale, enhanced contrast)
+        from PIL import Image, ImageOps
+        import io
+        img = Image.open(io.BytesIO(image_bytes))
+        
         candidates = [img]
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        candidates.append(gray)
-
-        # Autocontrast / CLAHE for difficult camera lighting
-        clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
-        enhanced = clahe.apply(gray)
+        if img.mode != "L":
+            gray = img.convert("L")
+            candidates.append(gray)
+        else:
+            gray = img
+            
+        enhanced = ImageOps.autocontrast(gray)
         candidates.append(enhanced)
 
         seen_texts = set()

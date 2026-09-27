@@ -593,7 +593,6 @@ Limitation note:
 import urllib.request
 import shutil
 
-import numpy as np
 
 # Codebase-aware chat context: indexes the project's own source files (only used
 # by the /api/chat assistant) so answers can cite real code paths and lines.
@@ -668,6 +667,7 @@ def _load_engine():
 
 def _preprocess(img_bytes: bytes):
     from PIL import Image
+    np = _get_numpy()
     img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
     img = img.resize((_IMG_SIZE, _IMG_SIZE))
     a = np.asarray(img, dtype=np.float32) / 255.0
@@ -679,6 +679,7 @@ def _preprocess(img_bytes: bytes):
 def onnx_score(output) -> int:
     """Take softmax over the 2 logits and report P(AI) as a 0..100 int."""
     try:
+        np = _get_numpy()
         out = np.asarray(output)
         logits = out.reshape(-1)
         if logits.size < 2:
@@ -787,7 +788,7 @@ def onnx_detect(image_bytes: bytes, filename: str = "") -> dict:
             "explanation": explanation,
             "latency_ms": ms,
             "raw": {
-                "logits": [float(x) for x in np.asarray(output).reshape(-1)[:2]],
+                "logits": [float(x) for x in _get_numpy().asarray(output).reshape(-1)[:2]],
                 "tool": tool,
                 "kind": kind,
             },
