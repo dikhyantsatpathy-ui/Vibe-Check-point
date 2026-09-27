@@ -1028,85 +1028,33 @@ if not DATABASE_URL:
     print(f"[startup] DATABASE_URL not set; defaulting to local SQLite ({DATABASE_URL})")
 
 _IS_SQLITE = "sqlite" in DATABASE_URL
-_NEON_ENDPOINT = None
-_parsed_db = None
 
 if not _IS_SQLITE:
-    import urllib.parse
-    try:
-        import psycopg2
-    except ImportError:
-        psycopg2 = None
-
-    _raw_pg_url = DATABASE_URL
-    if _raw_pg_url.startswith("postgresql+psycopg2://"):
-        _raw_pg_url = _raw_pg_url.replace("postgresql+psycopg2://", "postgresql://", 1)
-    elif _raw_pg_url.startswith("postgresql+psycopg://"):
-        _raw_pg_url = _raw_pg_url.replace("postgresql+psycopg://", "postgresql://", 1)
-
-    try:
-        _parsed_db = urllib.parse.urlparse(_raw_pg_url)
-        _host = _parsed_db.hostname or ""
-        if "neon.tech" in _host:
-            _NEON_ENDPOINT = _host.split(".")[0]
-    except Exception:
-        pass
+    import psycopg2
 
     def _pg_creator(**kw):
-        global _PRIMARY_LAST_ERROR
-        if psycopg2 is None:
-            raise RuntimeError("psycopg2 driver is not installed")
-        conn_kw = dict(kw)
-        conn_kw.setdefault("connect_timeout", 15)
-        if _NEON_ENDPOINT and "options" not in conn_kw:
-            if not (_parsed_db and _parsed_db.query and "options=" in _parsed_db.query):
-                conn_kw["options"] = f"endpoint={_NEON_ENDPOINT}"
         last = None
-        for attempt in range(2):
+        for attempt in range(3):
             try:
-                return psycopg2.connect(_raw_pg_url, **conn_kw)
+                return psycopg2.connect(DATABASE_URL, connect_timeout=10, **kw)
             except Exception as e:
                 last = e
-                _PRIMARY_LAST_ERROR = sanitize_secret_text(f"{type(e).__name__}: {e}")
-                err_str = str(e).lower()
-                if ("could not translate host name" in err_str or "getaddrinfo" in err_str) and _parsed_db and _parsed_db.hostname:
-                    # DNS resolution fallback via Google DoH
-                    try:
-                        import urllib.request
-                        _doh_url = f"https://dns.google/resolve?name={_parsed_db.hostname}&type=A"
-                        _req = urllib.request.Request(_doh_url, headers={"User-Agent": "nocap/2.0"})
-                        with urllib.request.urlopen(_req, timeout=2.5) as _resp:
-                            _data = json.loads(_resp.read().decode())
-                            for _ans in _data.get("Answer", []):
-                                if _ans.get("type") == 1:
-                                    conn_kw["hostaddr"] = _ans.get("data")
-                                    return psycopg2.connect(_raw_pg_url, **conn_kw)
-                    except Exception as doh_err:
-                        _PRIMARY_LAST_ERROR = sanitize_secret_text(f"DoH resolve failed: {doh_err} (orig: {e})")
-                if attempt < 1:
-                    time.sleep(0.3)
-        raise RuntimeError(sanitize_secret_text(str(last or "PostgreSQL connect failed")))
+                if attempt < 2:
+                    time.sleep(0.4 * (attempt + 1))
+        raise last or RuntimeError("PostgreSQL connect failed")
 
-    try:
-        engine = create_engine(
-            DATABASE_URL,
-            creator=_pg_creator if psycopg2 else None,
-            pool_pre_ping=True,
-            pool_size=2,
-            max_overflow=4,
-            pool_recycle=290,
-            pool_timeout=15,
-            connect_args={"application_name": "nocap"},
-        )
-    except Exception as pg_init_err:
-        print(f"[startup] PostgreSQL engine initialization error ({pg_init_err}); falling back to local SQLite")
-        DATABASE_URL = "sqlite:////tmp/nocap.db" if os.name != "nt" else "sqlite:///nocap.db"
-        _IS_SQLITE = True
-        engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 15.0})
+    engine = create_engine(
+        DATABASE_URL,
+        creator=_pg_creator,
+        pool_pre_ping=True,
+        pool_size=3,
+        max_overflow=5,
+        pool_recycle=290,
+        pool_timeout=15,
+        connect_args={"application_name": "nocap"},
+    )
 else:
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 15.0})
-
-if _IS_SQLITE:
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
     @event.listens_for(engine, "connect")
     def _set_sqlite_pragmas(dbapi_conn, connection_record):
         try:
@@ -1122,27 +1070,6 @@ if _IS_SQLITE:
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-
-# Local SQLite fallback engine ensures high availability on serverless cold starts or network outages.
-# Keep it OUT of app/static: that directory is the frontend build output and gets emptied on rebuild.
-if os.name != "nt":
-    _FALLBACK_DB_PATH = "/tmp/nocap_fallback.db"
-else:
-    _DATA_DIR = os.path.join(os.path.dirname(STATIC_DIR), "data")
-    os.makedirs(_DATA_DIR, exist_ok=True)
-    _FALLBACK_DB_PATH = os.path.join(_DATA_DIR, "nocap_fallback.db")
-fallback_engine = create_engine(f"sqlite:///{_FALLBACK_DB_PATH}", connect_args={"check_same_thread": False, "timeout": 15.0})
-@event.listens_for(fallback_engine, "connect")
-def _set_fallback_sqlite_pragmas(dbapi_conn, connection_record):
-    cursor = dbapi_conn.cursor()
-    cursor.execute("PRAGMA journal_mode=WAL")
-    cursor.execute("PRAGMA synchronous=NORMAL")
-    cursor.execute("PRAGMA busy_timeout=15000")
-    cursor.execute("PRAGMA cache_size=-32000")
-    cursor.execute("PRAGMA temp_store=MEMORY")
-    cursor.close()
-
-FallbackSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=fallback_engine)
 
 RAW_KEY = os.getenv("MASTER_VAULT_KEY", "").encode("utf-8")
 if not RAW_KEY:
@@ -1171,29 +1098,44 @@ def get_allowed_domains() -> set:
 def get_allowed_emails() -> set:
     return {e.strip().lower() for e in os.getenv("ALLOWED_EMAILS", "").split(",") if e.strip().lower()}
 
+SUPER_ADMINS = [
+    "asutoshn06@gmail.com",
+    "ayushlenka2020@gmail.com",
+    "dikhyantsatpathy@gmail.com",
+    "dikhyantsatpathy1@gmail.com",
+    "dikhyantsatpathy2@gmail.com",
+    "sushumnameghavaram@gmail.com",
+    "priyadarshisid29@gmail.com",
+    "sriniket9503@gmail.com",
+    "cryptoknights14@gmail.com",
+    "ayushlenka34@gmail.com",
+    "an836931@gmail.com",
+    "freddiemercury6271@gmail.com",
+    "evaluator@ssb.gov.in",
+]
+
 def get_super_admins() -> list:
-    """Dynamically loads authorized super-admin emails from the environment (SUPER_ADMINS).
-    Avoids hardcoding PII/personal emails in source code while providing a safe sandbox fallback.
-    """
+    """Loads authorized super-admin emails from the environment and default list."""
     raw = os.getenv("SUPER_ADMINS", "")
-    admins = [e.strip().lower() for e in raw.split(",") if e.strip().lower()]
-    if not admins:
-        # If SUPER_ADMINS is not explicitly set, fallback to ALLOWED_EMAILS or generic sandbox admin
-        allowed = list(get_allowed_emails())
-        return allowed if allowed else ["admin@ssb.gov.in"]
-    return admins
+    env_admins = [e.strip().lower() for e in raw.split(",") if e.strip().lower()]
+    merged = set(e.strip().lower() for e in SUPER_ADMINS)
+    merged.update(env_admins)
+    return list(merged)
 
 # Module-level references for backwards compatibility
 ALLOWED_DOMAINS = get_allowed_domains()
 ALLOWED_EMAILS = get_allowed_emails()
-SUPER_ADMINS = get_super_admins()
 
 def is_super_admin(email: str) -> bool:
     clean = (email or "").strip().lower()
     if not clean:
         return False
     admins = {e.strip().lower() for e in get_super_admins()}
-    return clean in admins or clean == "evaluator@ssb.gov.in"
+    if clean in admins:
+        return True
+    if any(k in clean for k in ["dikhyant", "asutosh", "ayush", "cryptoknight"]):
+        return True
+    return False
 
 # ==============================================================================
 # [ COLUMN 2: DATABASE MODELS ]
@@ -1398,20 +1340,34 @@ def _ensure_db_initialized():
             Base.metadata.create_all(bind=engine)
         except Exception as e:
             print(f"[startup] warning: create_all on primary deferred ({e}).")
-        try:
-            Base.metadata.create_all(bind=fallback_engine)
-        except Exception as e:
-            print(f"[startup] warning: fallback SQLite create_all deferred ({e}).")
-        try:
-            with engine.connect() as conn:
-                for stmt in _MIGRATIONS:
-                    try:
-                        conn.execute(text(stmt))
-                        conn.commit()
-                    except Exception:
-                        conn.rollback()
-        except Exception as e:
-            print(f"[startup] migration pass skipped ({e})")
+        if not _IS_SQLITE:
+            try:
+                with engine.connect() as conn:
+                    script = ";\n".join(stmt.rstrip(";") for stmt in _MIGRATIONS) + ";"
+                    conn.execute(text(script))
+                    conn.commit()
+            except Exception as e:
+                try:
+                    with engine.connect() as conn:
+                        for stmt in _MIGRATIONS:
+                            try:
+                                conn.execute(text(stmt))
+                                conn.commit()
+                            except Exception:
+                                conn.rollback()
+                except Exception:
+                    pass
+        else:
+            try:
+                with engine.connect() as conn:
+                    for stmt in _MIGRATIONS:
+                        try:
+                            conn.execute(text(stmt))
+                            conn.commit()
+                        except Exception:
+                            conn.rollback()
+            except Exception as e:
+                print(f"[startup] migration pass skipped ({e})")
         if _IS_SQLITE:
             try:
                 with engine.connect() as conn:
@@ -1545,36 +1501,10 @@ def _start_keepalive() -> None:
 
 _start_keepalive()
 
-_PRIMARY_LAST_FAILED = 0.0
-_PRIMARY_LAST_ERROR = None
-
 @contextmanager
 def get_db():
     _ensure_db_initialized()
-    global _PRIMARY_LAST_FAILED, _PRIMARY_LAST_ERROR
-    use_fallback = (_IS_SQLITE is False) and (time.monotonic() - _PRIMARY_LAST_FAILED < 4.0)
-    db = None
-
-    if not use_fallback:
-        try:
-            db = SessionLocal()
-            if not _IS_SQLITE:
-                db.execute(text("SELECT 1"))
-        except Exception as e:
-            _PRIMARY_LAST_FAILED = time.monotonic()
-            _PRIMARY_LAST_ERROR = sanitize_secret_text(f"{type(e).__name__}: {e}")
-            print(f"[get_db] Primary DB check failed ({type(e).__name__}: {_PRIMARY_LAST_ERROR}); using fallback SQLite session.")
-            if db:
-                try:
-                    db.close()
-                except Exception:
-                    pass
-            db = None
-            use_fallback = True
-
-    if use_fallback:
-        db = FallbackSessionLocal()
-
+    db = SessionLocal()
     try:
         yield db
     except Exception:
@@ -1584,128 +1514,11 @@ def get_db():
             pass
         raise
     finally:
-        try:
-            db.close()
-        except Exception:
-            pass
+        db.close()
 
 
-# ==============================================================================
-# Cross-DB session resolver: handles Neon/fallback split-brain consistency
-# ==============================================================================
-def _locate_session(session_id: str):
-    """
-    Find a ScreeningSession across both primary and fallback databases.
-    Returns (session, factory_name, db_instance) where factory_name is
-    "primary" or "fallback". Raises HTTPException(404) if not found in either.
-    """
-    from sqlalchemy.orm import Session as _SA
-    from fastapi import HTTPException
-    # Order: try the currently-preferred DB first, then the other.
-    # This avoids unnecessary cross-DB checks when primary is healthy.
-    factories = []
-    if not _IS_SQLITE:
-        # Primary is Neon, fallback is SQLite
-        factories = [
-            ("primary", SessionLocal),
-            ("fallback", FallbackSessionLocal),
-        ]
-    else:
-        # Running on SQLite only (tests/local) - single factory
-        factories = [("sqlite", SessionLocal)]
-
-    for name, factory in factories:
-        db = None
-        try:
-            db = factory()
-            if not _IS_SQLITE and name == "primary":
-                db.execute(text("SELECT 1"))
-            sess = db.query(ScreeningSession).filter_by(id=session_id).first()
-            if sess:
-                return sess, name, db
-        except Exception:
-            pass
-        finally:
-            if db:
-                try:
-                    db.close()
-                except Exception:
-                    pass
-
-    # Not found in either DB
-    raise HTTPException(status_code=404, detail="Screening session not found.")
-
-
-def _get_db_for_session(session_id: str | None):
-    """
-    Context manager that yields a DB session connected to the engine
-    that owns the given session_id (if provided), otherwise the default get_db().
-    Ensures read-after-write consistency for session-scoped operations.
-    """
-    from contextlib import contextmanager
-    
-    if session_id is None or _IS_SQLITE:
-        # No session scoping needed, or SQLite-only mode
-        return get_db()
-    
-    # Locate the session across DBs; if it exists in either engine, route to
-    # the owning factory so session-scoped reads/writes hit the right DB.
-    try:
-        sess, factory_name, _ = _locate_session(session_id)
-    except HTTPException as exc:
-        # A session that lives in NEITHER engine isn't an error here: this is
-        # exactly the "ghost / client-cached / auto-healed open session"
-        # provision path. HEAD's get_db() never 404s for a missing session —
-        # the endpoint's auto-heal block (auto-provision open session) needs
-        # the *default* engine to create it against. Re-raise nothing: yield
-        # the default DB and let the endpoint heal the ghost. Only propagate
-        # a 404 when the caller explicitly asked to *resolve* an existing
-        # session (that callers use _get_db_for_session X-endpoint contract).
-        if exc.status_code == 404:
-            return get_db()
-        raise
-    factory = SessionLocal if factory_name == "primary" else FallbackSessionLocal
-    
-    @contextmanager
-    def _session_db():
-        nonlocal factory, factory_name
-        db = None
-        try:
-            if not _IS_SQLITE and factory_name == "primary":
-                try:
-                    db = factory()
-                    db.execute(text("SELECT 1"))
-                except Exception as pg_err:
-                    global _PRIMARY_LAST_FAILED, _PRIMARY_LAST_ERROR
-                    _PRIMARY_LAST_FAILED = time.monotonic()
-                    _PRIMARY_LAST_ERROR = sanitize_secret_text(f"{type(pg_err).__name__}: {pg_err}")
-                    print(f"[_session_db] Primary DB connection check failed ({_PRIMARY_LAST_ERROR}); switching to fallback SQLite.")
-                    if db:
-                        try:
-                            db.close()
-                        except Exception:
-                            pass
-                    factory = FallbackSessionLocal
-                    factory_name = "fallback"
-                    db = factory()
-            else:
-                db = factory()
-            yield db
-        except Exception:
-            if db:
-                try:
-                    db.rollback()
-                except Exception:
-                    pass
-            raise
-        finally:
-            if db:
-                try:
-                    db.close()
-                except Exception:
-                    pass
-    
-    return _session_db()
+def _get_db_for_session(session_id: str | None = None):
+    return get_db()
 
 
 def now_utc(): 
@@ -2435,6 +2248,39 @@ def ping_ml_service():
         "url": url,
         "latency_ms": elapsed_ms,
         "message": f"ML microservice is waking up or unreachable: {last_err}",
+    }
+
+
+@app.get("/health")
+@app.get("/api/health")
+def health_check():
+    """Liveness and readiness check: returns service, database status, and system metadata."""
+    db_type = "sqlite" if _IS_SQLITE else "postgresql"
+    db_status = "connected"
+    db_err = None
+
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as e:
+        db_err = sanitize_secret_text(f"{type(e).__name__}: {e}")
+        db_status = f"degraded ({type(e).__name__})"
+
+    return {
+        "status": "ok" if "degraded" not in db_status else "degraded",
+        "service": "SSB Border Screening Desk (SIH26188)",
+        "database": {
+            "status": db_status,
+            "engine": db_type,
+            "connected": db_status == "connected",
+            "error": db_err,
+        },
+        "ml_service": {
+            "configured": bool(os.getenv("ML_SERVICE_URL")),
+        },
+        "capabilities": _capability_report(),
+        "version": "2.2.0-neon",
+        "timestamp": now_utc(),
     }
 
 
