@@ -510,7 +510,21 @@ def crop_region_to_bytes(image_bytes: bytes, box: Dict[str, Any],
             return None
         crop = img.crop((left, top, right, bottom))
         out = io.BytesIO()
-        crop.save(out, format=fmt)
+        if fmt.upper() in ("JPEG", "JPG"):
+            # PIL defaults to quality=75 when unspecified — a second, much
+            # lower-quality compression generation stacked on top of
+            # whatever quality the original photo was saved at. That extra
+            # lossy pass introduces fresh quantization artifacts in already-
+            # smooth regions, which is exactly the kind of low-variance
+            # "dead block" pattern the dual-stream forgery detector looks
+            # for — a genuine card, once cropped through this path, could
+            # come out looking artificially tampered purely from re-encoding
+            # loss, not anything in the original capture. High quality here
+            # also means cleaner text for the OCR/tesseract consumers of
+            # this same crop path.
+            crop.save(out, format=fmt, quality=95)
+        else:
+            crop.save(out, format=fmt)
         return out.getvalue()
     except Exception:
         return None

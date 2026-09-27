@@ -151,8 +151,73 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
     non_margin_count = int(np.sum(non_margin))
 
     if non_margin_count > 16:
-        dead_blocks = int(np.sum(non_margin & (block_vars < 0.05)))
-        inpaint_void = bool(dead_blocks > (non_margin_count * 0.15) and non_margin_count > 40)
+        # Tightened variance floor: 0.015 instead of 0.05 so phone denoising
+        # doesn't flood the dead-block count on genuinely smooth cards.
+        dead_mask = non_margin & (block_vars < 0.015)
+        dead_blocks = int(np.sum(dead_mask))
+        dead_block_ratio_preview = dead_blocks / non_margin_count
+
+        # Spatial contiguity: real erasure/inpainting produces a compact,
+        # connected blob of dead blocks; phone denoising scatters dead blocks
+        # broadly across the whole card.  Pure-NumPy flood-fill on the small
+        # boolean block grid (no scipy dependency needed).
+        def _largest_connected_component(mask: np.ndarray) -> int:
+            """Return the size of the largest 4-connected component in a 2-D bool array."""
+            if mask.size == 0 or not mask.any():
+                return 0
+            labeled = np.zeros(mask.shape, dtype=np.int32)
+            label_id = 0
+            sizes: list[int] = []
+            rows, cols = mask.shape
+            for r in range(rows):
+                for c in range(cols):
+                    if mask[r, c] and labeled[r, c] == 0:
+                        label_id += 1
+                        count = 0
+                        stack = [(r, c)]
+                        while stack:
+                            cr, cc = stack.pop()
+                            if cr < 0 or cr >= rows or cc < 0 or cc >= cols:
+                                continue
+                            if not mask[cr, cc] or labeled[cr, cc] != 0:
+                                continue
+                            labeled[cr, cc] = label_id
+                            count += 1
+                            stack.extend([(cr - 1, cc), (cr + 1, cc), (cr, cc - 1), (cr, cc + 1)])
+                        sizes.append(count)
+            return max(sizes) if sizes else 0
+
+        largest_component = _largest_connected_component(dead_mask)
+        # Two genuinely different tamper signatures, not one band:
+        #   (a) near-total flatness — dead_block_ratio very high (empirically
+        #       ~97% on a synthetic AI-flat/blank test image, vs. 0.0% on
+        #       every genuine synthetic phone/webcam capture tested) — a real
+        #       photographed document always has SOME texture even after
+        #       denoising (print grain, lighting falloff, lens softness);
+        #       near-total flatness on its own is a strong anomaly signal.
+        #   (b) a moderate localized connected blob — a real small edit
+        #       (blanked signature/stamp, swapped photo). Measured directly:
+        #       a synthetic ~3%-of-frame pasted patch produced a connected
+        #       component of only 8-15 blocks, not the ~44 a naive
+        #       pixel-area/block-size estimate would suggest — block-edge
+        #       dilution (blocks straddling the patch boundary keep some real
+        #       texture and don't count as "dead") shrinks the true count
+        #       well below that. The floor has to be low enough to catch that.
+        # No upper ceiling: a first attempt at this used a percent-of-image
+        # ceiling meant to exclude "the whole background is one big flat
+        # blob" — but that's exactly signature (a) above, and excluding it
+        # let a fully-flat tampered/AI test image sail through undetected.
+        # Known limitation, not fully solved here: a genuine ID card with a
+        # large solid-color background (common on PAN/Aadhaar) can
+        # legitimately form one sizeable connected flat region too — cleanly
+        # telling that apart from "half the card was erased" needs
+        # document-layout awareness (expected background regions per doc
+        # type) or a trained classifier (FIX_ALL_ISSUES.md §3.1), not just
+        # block-variance connectivity. Validate against real captures of
+        # your actual target documents before trusting this for the demo.
+        near_total_flatness = dead_block_ratio_preview > 0.85
+        localized_void = largest_component >= max(8, non_margin_count * 0.005)
+        inpaint_void = bool(near_total_flatness or localized_void)
         active_vars = block_vars[non_margin & (block_vars > 1.0)]
         if active_vars.size > 8:
             med_noise = float(np.median(active_vars))
@@ -164,6 +229,10 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
     else:
         inpaint_void = False
         uniformity = 0.95
+        dead_blocks = 0
+        largest_component = 0
+
+    dead_block_ratio = (dead_blocks / non_margin_count) if non_margin_count > 0 else 0.0
 
     dx = np.abs(gray[:, 1:] - gray[:, :-1])
     dy = np.abs(gray[1:, :] - gray[:-1, :])
@@ -187,6 +256,8 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
         "tamper_score": tamper_score,
         "confidence": 0.92 if is_tampered else 0.88,
         "substrate_uniformity": round(float(uniformity), 3),
+        "dead_block_ratio": round(float(dead_block_ratio), 4),
+        "largest_component": int(largest_component),
         "detail": detail,
         "latency_ms": latency_ms,
     }

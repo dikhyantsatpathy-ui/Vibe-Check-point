@@ -91,6 +91,34 @@ def _fire(rgb_norm: np.ndarray) -> np.ndarray:
     return np.stack([r, g, b], axis=-1).astype(np.uint8)
 
 
+def _estimate_jpeg_quality(rgb: np.ndarray) -> int:
+    """Estimate the original JPEG quality by finding the candidate quality
+    whose re-encode is closest to the original.  Runs on a downscaled copy
+    (~256px) to keep it cheap — only needs to run once before the real ELA pass."""
+    candidates = [70, 75, 80, 85, 90, 95]
+    # Work on a small copy for speed
+    h, w = rgb.shape[:2]
+    scale = min(1.0, 256 / max(h, w))
+    if scale < 1.0:
+        small = np.asarray(Image.fromarray(rgb).resize(
+            (max(16, int(w * scale)), max(16, int(h * scale))),
+            Image.Resampling.BILINEAR,
+        ))
+    else:
+        small = rgb
+    orig_gray = _to_gray(small)
+    best_q, best_diff = 92, float("inf")
+    for q in candidates:
+        buf = io.BytesIO()
+        Image.fromarray(small).save(buf, "JPEG", quality=q)
+        buf.seek(0)
+        re_enc = _to_gray(np.asarray(Image.open(buf).convert("RGB")))
+        d = float(np.abs(orig_gray - re_enc).mean())
+        if d < best_diff:
+            best_diff, best_q = d, q
+    return best_q
+
+
 def ela(data: bytes, quality: int = 92, preview: int = 128):
     """Error Level Analysis over one document photo.
 
@@ -109,6 +137,14 @@ def ela(data: bytes, quality: int = 92, preview: int = 128):
         return {"engine": "ela", "error": "image not readable"}
 
     started = time.monotonic()
+
+    # Estimate the image's actual JPEG quality so ELA re-compression quality
+    # matches the original — avoids globally elevated diff on images already
+    # compressed lower than the default 92 (WhatsApp ~75, phone camera ~80-90).
+    is_jpeg = data[:2] == b"\xff\xd8"
+    if is_jpeg:
+        quality = _estimate_jpeg_quality(rgb)
+
     # Pass 1: encode to JPEG at target quality.
     first = io.BytesIO()
     Image.fromarray(rgb).save(first, "JPEG", quality=quality)
@@ -881,9 +917,29 @@ def verify_webcam_liveness(
         "detail": "Screen-recapture moiré anomaly detected." if screen_replay else "Organic light dispersion verified (no screen grid).",
     })
 
-    all_ok = all(c["ok"] is True for c in checks)
-    confidence = 0.95 if all_ok else (0.50 if not is_virtual_cam and not is_static else 0.15)
-    verdict = "LIVE" if all_ok else ("SUSPECT" if not is_virtual_cam and not is_static else "SPOOF")
+    # Weighted liveness verdict: challenge_response/challenge_blink = 1.0 (proof-of-life),
+    # anti_screen_replay = 0.6, posture/motion = 0.3.  A single soft signal
+    # misfiring downgrades to SUSPECT, not SPOOF.
+    _LIVENESS_WEIGHTS = {
+        "challenge_response": 1.0, "challenge_blink": 1.0,
+        "challenge_turn_left": 1.0, "challenge_turn_right": 1.0,
+        "challenge_nod": 1.0,
+        "hardware_source": 1.0,
+        "dynamic_motion": 0.8,
+        "frame_jitter": 0.5,
+        "anti_screen_replay": 0.6,
+    }
+    fail_w = sum(_LIVENESS_WEIGHTS.get(c["label"], 0.3) for c in checks if c.get("ok") is False)
+    all_ok = fail_w == 0 and all(c["ok"] is True for c in checks)
+    if fail_w >= 1.0:
+        verdict = "SPOOF"
+        confidence = 0.15
+    elif fail_w > 0:
+        verdict = "SUSPECT"
+        confidence = 0.50
+    else:
+        verdict = "LIVE"
+        confidence = 0.95
 
     return {
         "verdict": verdict,

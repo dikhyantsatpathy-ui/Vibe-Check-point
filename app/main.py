@@ -17,6 +17,19 @@ _APP_DIR = os.path.dirname(os.path.abspath(__file__))
 if _APP_DIR not in sys.path:
     sys.path.insert(0, _APP_DIR)
 
+# Register HEIC/HEIF decode support (iPhone's default camera-roll format)
+# before any module opens an image. Registration is process-global and
+# idempotent, so doing it once here — before request handling starts — is
+# sufficient regardless of which module later calls Image.open(). No-op if
+# pillow-heif isn't installed.
+try:
+    from app import heif_support  # noqa: F401
+except ImportError:
+    try:
+        import heif_support  # noqa: F401
+    except ImportError:
+        pass
+
 import hashlib
 import hmac
 import io
@@ -282,8 +295,9 @@ def _pixel_scan(file_bytes: bytes, ext: str):
         fine_noise = noise_std
         ratio = fine_noise / (gross_std + 1e-6)
         content = gross_std > 25.0
-        # Synthetic AI renders without sensor noise have near-zero fine noise
-        suspicious_noise = content and (ratio < 0.04 and fine_noise < 1.5)
+        # Tightened: only fire on *unnaturally* smooth, not just smooth
+        # (phone computational denoising produces ratio ~0.02-0.04 on real photos)
+        suspicious_noise = content and (ratio < 0.018 and fine_noise < 0.8)
 
         uniform_reencode = False
         if ext in ("jpg", "jpeg") and file_bytes[:2] == b"\xff\xd8":
@@ -302,11 +316,24 @@ def _pixel_scan(file_bytes: bytes, ext: str):
             except Exception:
                 uniform_reencode = False
 
+        # EXIF-camera provenance gating: real phone photos carry Make/Model/
+        # DateTimeOriginal; AI output and screenshots almost never do.
+        # When camera EXIF IS present, downgrade to advisory only.
+        has_exif = False
+        try:
+            _exif_img = Image.open(io.BytesIO(file_bytes))
+            _exif = _exif_img.getexif()
+            if _exif and any(tag in _exif for tag in (0x010F, 0x0110, 0x9003)):
+                has_exif = True
+        except Exception:
+            pass
+
         suspicious = (content and suspicious_noise) or uniform_reencode
-        if suspicious:
+        if suspicious and not has_exif:
             return ("ai", ("Pixel-level scan found tonal content but an unnaturally smooth "
-                           "low-noise pattern (or uniform re-compression error) â€” a hallmark "
+                           "low-noise pattern (or uniform re-compression error) — a hallmark "
                            "of AI generation or heavy automated processing."), True)
+        # Camera EXIF present — downgrade to advisory, not a hard "ai" flag
         return None, None, True
     except Exception:
         return None, None, False
@@ -1075,9 +1102,9 @@ if not _IS_SQLITE:
         print(f"[startup] PostgreSQL engine initialization error ({pg_init_err}); falling back to local SQLite")
         DATABASE_URL = "sqlite:////tmp/nocap.db" if os.name != "nt" else "sqlite:///nocap.db"
         _IS_SQLITE = True
-        engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+        engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 15.0})
 else:
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 15.0})
 
 if _IS_SQLITE:
     @event.listens_for(engine, "connect")
@@ -1086,7 +1113,7 @@ if _IS_SQLITE:
             cursor = dbapi_conn.cursor()
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.execute("PRAGMA synchronous=NORMAL")
-            cursor.execute("PRAGMA busy_timeout=5000")
+            cursor.execute("PRAGMA busy_timeout=15000")
             cursor.execute("PRAGMA cache_size=-64000")
             cursor.execute("PRAGMA temp_store=MEMORY")
             cursor.close()
@@ -1104,13 +1131,13 @@ else:
     _DATA_DIR = os.path.join(os.path.dirname(STATIC_DIR), "data")
     os.makedirs(_DATA_DIR, exist_ok=True)
     _FALLBACK_DB_PATH = os.path.join(_DATA_DIR, "nocap_fallback.db")
-fallback_engine = create_engine(f"sqlite:///{_FALLBACK_DB_PATH}", connect_args={"check_same_thread": False})
+fallback_engine = create_engine(f"sqlite:///{_FALLBACK_DB_PATH}", connect_args={"check_same_thread": False, "timeout": 15.0})
 @event.listens_for(fallback_engine, "connect")
 def _set_fallback_sqlite_pragmas(dbapi_conn, connection_record):
     cursor = dbapi_conn.cursor()
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("PRAGMA synchronous=NORMAL")
-    cursor.execute("PRAGMA busy_timeout=5000")
+    cursor.execute("PRAGMA busy_timeout=15000")
     cursor.execute("PRAGMA cache_size=-32000")
     cursor.execute("PRAGMA temp_store=MEMORY")
     cursor.close()
@@ -2204,7 +2231,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="No Cap · Enterprise Provenance Engine", version="12.0",
               max_body_size=50 * 1024 * 1024, lifespan=lifespan)
-limiter = Limiter(key_func=get_remote_address)
+_redis_uri = os.getenv("REDIS_URL") or os.getenv("KV_URL")
+if _redis_uri:
+    limiter = Limiter(key_func=get_remote_address, storage_uri=_redis_uri)
+else:
+    limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -2290,14 +2321,57 @@ def health_check():
             "status": db_status,
             "engine": db_type,
             "connected": db_status == "connected",
-            "error": _PRIMARY_LAST_ERROR,
+            "error": _PRIMARY_LAST_ERROR if '_PRIMARY_LAST_ERROR' in globals() else None,
         },
         "ml_service": {
             "configured": bool(os.getenv("ML_SERVICE_URL")),
         },
+        "capabilities": _capability_report(),
         "version": "2.2.0-neon",
         "timestamp": now_utc(),
     }
+
+
+def _capability_report() -> dict:
+    """Reports which optional/environment-dependent capabilities are actually
+    live in THIS deployment right now — a quick single-call check for
+    "is everything actually working" before a demo, rather than discovering a
+    missing model file or package only when a real document hits it.
+    Deliberately only checks presence/importability (cheap), never runs a
+    real inference, so this stays fast enough to be part of the normal
+    health check."""
+    caps = {}
+
+    try:
+        import onnxruntime  # noqa: F401
+        caps["onnxruntime"] = True
+    except ImportError:
+        caps["onnxruntime"] = False
+
+    try:
+        from app.heif_support import HEIF_SUPPORTED as _heif_ok
+    except ImportError:
+        try:
+            from heif_support import HEIF_SUPPORTED as _heif_ok
+        except ImportError:
+            _heif_ok = False
+    caps["heic_decode"] = bool(_heif_ok)
+
+    _model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+    caps["models"] = {
+        "doctype_classifier": os.path.exists(os.path.join(_model_dir, "doctype.onnx")),
+        "card_localization": any(
+            os.path.exists(os.path.join(_model_dir, name)) for name in ("card.onnx", "yolov8n.onnx")
+        ),
+        "aadhaar_fields": os.path.exists(os.path.join(_model_dir, "aadhaar_fields.onnx")),
+        "tamper_classifier": os.path.exists(
+            os.getenv("TAMPER_CLF_ONNX_PATH", os.path.join(_model_dir, "tamper_classifier.onnx"))
+        ),
+    }
+    caps["note"] = ("Missing models/packages are expected on Vercel by design — the "
+                     "heuristic-only path is meant to run standalone there. This block "
+                     "just tells you which enhanced backends are actually live right now.")
+    return caps
 
 
 @app.get("/api/ml/status")
@@ -2595,6 +2669,49 @@ def _screen_row(r):
 
 _SYNC_SCREENED_EXTS = ("pdf", "jpg", "jpeg", "png", "webp", "bmp")
 
+# ---------------------------------------------------------------------------
+# Idempotency cache for /api/screen: border connectivity is flaky by design
+# (SIH26188's own offline-first premise), so a client-side timeout can fire a
+# silent retry on an upload the server actually already finished processing.
+# Without this, that produces two ScreeningReport rows — and double risk-
+# score contribution — for one physical document. Keyed on (session, file
+# hash) so a genuinely different document with the same session never
+# collides. Best-effort and process-local: on Vercel a retry that lands on a
+# different cold instance won't be caught (each instance's memory is
+# separate), so this narrows the duplicate window rather than closing it
+# completely — still strictly better than no guard, and adds no new failure
+# mode since a cache miss just runs screening exactly as before.
+# ---------------------------------------------------------------------------
+_SCREEN_IDEMPOTENCY_CACHE: dict = {}
+_SCREEN_IDEMPOTENCY_TTL_SEC = 60.0
+_SCREEN_IDEMPOTENCY_MAX_ENTRIES = 500
+
+
+def _idempotency_key(session_id: str | None, file_hash: str) -> str:
+    return f"{session_id or 'no-session'}:{file_hash}"
+
+
+def _idempotency_get(key: str):
+    entry = _SCREEN_IDEMPOTENCY_CACHE.get(key)
+    if not entry:
+        return None
+    ts, report = entry
+    if time.monotonic() - ts > _SCREEN_IDEMPOTENCY_TTL_SEC:
+        _SCREEN_IDEMPOTENCY_CACHE.pop(key, None)
+        return None
+    return report
+
+
+def _idempotency_put(key: str, report: dict) -> None:
+    if len(_SCREEN_IDEMPOTENCY_CACHE) >= _SCREEN_IDEMPOTENCY_MAX_ENTRIES:
+        # Cheap eviction: drop the oldest entry rather than growing unbounded
+        # in a long-lived local/worker process (Vercel instances are short-
+        # lived anyway and this never matters there).
+        oldest_key = min(_SCREEN_IDEMPOTENCY_CACHE, key=lambda k: _SCREEN_IDEMPOTENCY_CACHE[k][0])
+        _SCREEN_IDEMPOTENCY_CACHE.pop(oldest_key, None)
+    _SCREEN_IDEMPOTENCY_CACHE[key] = (time.monotonic(), report)
+
+
 @app.post("/api/screen")
 @limiter.limit("60/minute")
 async def screen_document(
@@ -2612,8 +2729,25 @@ async def screen_document(
 ):
     try:
         data = await file.read()
+        if not data:
+            raise HTTPException(status_code=400, detail="Empty file — please attach a document image or PDF.")
         if len(data) > MAX_UPLOAD_BYTES:
             raise HTTPException(status_code=413, detail="Document too large (8 MB cap).")
+
+        session_owner = session_id.strip() or None
+        if session_owner:
+            with _get_db_for_session(session_owner) as db_chk:
+                sess_chk = db_chk.query(ScreeningSession).filter_by(id=session_owner).first()
+                if sess_chk and sess_chk.status != "open":
+                    raise HTTPException(status_code=409, detail=f"Session is not open (status={sess_chk.status}).")
+
+        from screening import sha256_bytes
+        _idem_key = _idempotency_key(session_owner, sha256_bytes(data))
+        _cached_report = _idempotency_get(_idem_key)
+        if _cached_report is not None:
+            logger.info(f"[screen_document] Idempotent replay for {file.filename} — returning cached result, no re-screening.")
+            return _cached_report
+
         ext = (file.filename or "").lower().rsplit(".", 1)[-1] if "." in (file.filename or "") else ""
         if ext not in _SYNC_SCREENED_EXTS:
             if data.startswith(b"%PDF"):
@@ -2693,42 +2827,47 @@ async def screen_document(
             # (queue polling, health checks, other desks) stay responsive.
             effective_nat = nat or (sess.nationality if sess else None)
             effective_purpose = purpose_txt or (sess.purpose if sess else None)
-            try:
-                report = await run_in_threadpool(
-                    run_screening, db, data, file.filename or "upload",
-                    (doc_type or "other").strip(), (checkpoint or "").strip(),
-                    declared_map, screener=admin, live_frame=live_bytes,
-                    session_id=session_id.strip() or None,
-                    nationality=effective_nat, purpose=effective_purpose,
-                    data_back=data_back, filename_back=filename_back,
-                )
-            except Exception as exc:
-                logger.error(f"[screen_document] Screening failed gracefully for {file.filename}: {exc}", exc_info=True)
-                from screening import sha256_bytes
-                now = now_utc()
-                sha = sha256_bytes(data)
-                report = {
-                    "id": uuid.uuid4().hex[:16],
-                    "doc_hash": sha,
-                    "doc_type": (doc_type or "other").strip(),
-                    "verdict": "FLAGGED",
-                    "risk_score": 45,
-                    "checkpoint": (checkpoint or "Raxaul").strip(),
-                    "created_at": now,
-                    "error": f"Screening degraded: {str(exc)[:120]}",
-                    "module1_format": {"ran": True, "verdict": "FAIL", "reason": f"Format extraction notice: {str(exc)[:80]}"},
-                    "module2_ocr": {"ran": False, "verdict": "SKIP"},
-                    "module3_tamper": {"ran": False, "verdict": "SKIP"},
-                    "module4_face": {"ran": False, "verdict": "SKIP"},
-                    "masked_fields": {},
-                    "reasons": [f"Automated check degraded gracefully: {str(exc)[:80]}"],
-                }
-            report["created_at_ist"] = to_ist(report.get("created_at"))
-            guide = flow_for(checkpoint=(checkpoint or "").strip(),
-                             doc_type=(doc_type or "other").strip(),
-                             nationality=nat or "UNKNOWN")
-            report["guide"] = guide
-            return report
+            
+        try:
+            report = await run_in_threadpool(
+                run_screening, data, file.filename or "upload",
+                (doc_type or "other").strip(), (checkpoint or "").strip(),
+                declared_map, screener=admin, live_frame=live_bytes,
+                session_id=session_id.strip() or None,
+                nationality=effective_nat, purpose=effective_purpose,
+                data_back=data_back, filename_back=filename_back,
+            )
+        except Exception as exc:
+            logger.error(f"[screen_document] Screening failed gracefully for {file.filename}: {exc}", exc_info=True)
+            from screening import sha256_bytes
+            now = now_utc()
+            sha = sha256_bytes(data)
+            report = {
+                "id": uuid.uuid4().hex[:16],
+                "doc_hash": sha,
+                "doc_type": (doc_type or "other").strip(),
+                "verdict": "FLAGGED",
+                "risk_score": 45,
+                "checkpoint": (checkpoint or "Raxaul").strip(),
+                "created_at": now,
+                "error": f"Screening degraded: {str(exc)[:120]}",
+                "module1_format": {"ran": True, "verdict": "FAIL", "reason": f"Format extraction notice: {str(exc)[:80]}"},
+                "module2_ocr": {"ran": False, "verdict": "SKIP"},
+                "module3_tamper": {"ran": False, "verdict": "SKIP"},
+                "module4_face": {"ran": False, "verdict": "SKIP"},
+                "masked_fields": {},
+                "reasons": [f"Automated check degraded gracefully: {str(exc)[:80]}"],
+            }
+        report["created_at_ist"] = to_ist(report.get("created_at"))
+        guide = flow_for(checkpoint=(checkpoint or "").strip(),
+                         doc_type=(doc_type or "other").strip(),
+                         nationality=nat or "UNKNOWN")
+        report["guide"] = guide
+        if not report.get("error"):
+            # Only cache genuine successes — a degraded/errored attempt should
+            # be free to actually retry, not get stuck replaying a failure.
+            _idempotency_put(_idem_key, report)
+        return report
     finally:
         try:
             await file.close()

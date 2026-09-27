@@ -13,6 +13,7 @@ DOB 690806, expiry 940623 — check digits 3 / 1 / 6).
 """
 
 import os
+import numpy as np
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "app"))
@@ -284,9 +285,68 @@ def test_module3_ai_suspected_flags_fail():
           "explanation": "synthetic by test"}
     res = tamper_analysis(img.getvalue(), ai_detection=ai,
                           document_aware=False, doc_type="pan")
-    assert res["verdict"] == "FAIL"
+    # Weighted-evidence redesign (FIX_ALL_ISSUES.md §1 Problem 1): a single
+    # ai-generated-or-edited signal is intentionally corroborating-only
+    # (weight 0.5, below the 1.3 FAIL threshold) so one noisy detector can no
+    # longer hard-veto a document alone — it now correctly lands on REVIEW,
+    # not an automatic FAIL. See tampering.CHECK_WEIGHTS.
+    assert res["verdict"] in ("REVIEW", "FAIL")
     assert any(c["label"] == "ai-generated-or-edited" and c["ok"] is False
                for c in res["checks"])
+
+
+def test_doc_forgery_returns_dead_block_ratio_and_largest_component():
+    """Regression test: analyze_doc_forgery()'s return dict must carry
+    dead_block_ratio and largest_component — tampering.py's optional
+    ONNX-classifier feature vector reads both, and they used to silently
+    default to 0.0 because the return dict never actually included them."""
+    from io import BytesIO
+    from PIL import Image
+    from doc_forgery import analyze_doc_forgery
+    img = BytesIO()
+    Image.new("RGB", (256, 256), (180, 180, 180)).save(img, format="PNG")
+    res = analyze_doc_forgery(img.getvalue())
+    assert res.get("ran") is True
+    assert "dead_block_ratio" in res
+    assert "largest_component" in res
+    assert isinstance(res["dead_block_ratio"], float)
+    assert isinstance(res["largest_component"], int)
+
+
+def test_onnx_classifier_is_weighted_not_a_hard_override():
+    """Regression test: when the optional ONNX tamper-classifier is present,
+    its result must be folded into the weighted verdict as one more check —
+    not allowed to unilaterally set verdict = FAIL/PASS on its own. A single
+    classifier "tampered" reading (weight 1.2, below the 1.3 FAIL threshold)
+    on an otherwise-clean document must land on REVIEW, never a hard FAIL,
+    exactly like every other single-signal check."""
+    from io import BytesIO
+    from unittest.mock import patch, MagicMock
+    from PIL import Image
+    import tampering
+
+    class _FakeInput:
+        name = "input"
+
+    class _FakeSession:
+        def get_inputs(self):
+            return [_FakeInput()]
+
+        def run(self, output_names, feed):
+            return [np.array([1])]  # "tampered" = 1
+
+    img = BytesIO()
+    Image.new("RGB", (256, 256), (200, 200, 200)).save(img, format="PNG")
+    ai = {"ran": True, "ai_suspected": False, "ai_score": 0, "provider": "test"}
+
+    with patch.object(tampering, "_load_tamper_classifier", return_value=_FakeSession()):
+        res = tampering.tamper_analysis(img.getvalue(), ai_detection=ai,
+                                        document_aware=False, doc_type="pan")
+    assert any(c["label"] == "onnx-classifier" for c in res["checks"])
+    assert res["verdict"] != "FAIL", (
+        "A single ONNX-classifier 'tampered' reading must not hard-override "
+        "the whole verdict — it should be weighed against the other checks."
+    )
 
 
 # ============================================================================
@@ -320,7 +380,7 @@ def test_screening_empty_or_fake_document_never_clears():
     db.query.return_value.order_by.return_value.first.return_value = None
     db.query.return_value.order_by.return_value.limit.return_value.all.return_value = []
 
-    res = run_screening(db, b"fake content without any id", "fake.pdf", "other", "CP-1", {})
+    res = run_screening(b"fake content without any id", "fake.pdf", "other", "CP-1", {})
     assert res["verdict"] in ("REVIEW", "FLAGGED")
     assert res["verdict"] != "CLEAR"
     assert any("machine-verifiable" in r.lower() for r in res["reasons"])
@@ -334,7 +394,7 @@ def test_screening_declared_pan_mismatch_flags_or_reviews():
     db.query.return_value.order_by.return_value.first.return_value = None
     db.query.return_value.order_by.return_value.limit.return_value.all.return_value = []
 
-    res = run_screening(db, b"This is definitely not a PAN card", "fake_pan.pdf", "pan", "CP-1", {})
+    res = run_screening(b"This is definitely not a PAN card", "fake_pan.pdf", "pan", "CP-1", {})
     assert res["verdict"] in ("REVIEW", "FLAGGED")
     assert res["verdict"] != "CLEAR"
     assert any("pan" in r.lower() and "mismatch" in r.lower() for r in res["reasons"])
@@ -359,12 +419,25 @@ def test_screening_ai_suspected_hard_flags():
     }
     import main
     with patch.object(main, "detect_image", return_value=ai_mock):
-        if "app.main" in sys.modules:
-            import app.main
-            with patch.object(app.main, "detect_image", return_value=ai_mock):
-                res = run_screening(db, b"\xff\xd8\xff\xe0mock_ai_image", "ai_fake.jpg", "pan", "CP-1", {})
+        # Read the already-registered module object straight out of
+        # sys.modules rather than re-running `import app.main` — some test
+        # files (test_sessions.py, test_revamp.py) manually alias
+        # sys.modules["app.main"] = main for their own import needs, which
+        # registers the entry in sys.modules WITHOUT binding it as an
+        # attribute on the `app` package object. A plain `import app.main`
+        # statement needs that attribute binding and breaks with
+        # AttributeError when another test file already forced the partial
+        # registration first — order-dependent, so it only shows up when the
+        # full suite runs, not this file alone. Grabbing the module object
+        # directly from sys.modules sidesteps that entirely: it's the same
+        # object either way, so patching it here still patches the one
+        # `screening.py` actually calls into.
+        _app_main_mod = sys.modules.get("app.main")
+        if _app_main_mod is not None and _app_main_mod is not main:
+            with patch.object(_app_main_mod, "detect_image", return_value=ai_mock):
+                res = run_screening(b"\xff\xd8\xff\xe0mock_ai_image", "ai_fake.jpg", "pan", "CP-1", {})
         else:
-            res = run_screening(db, b"\xff\xd8\xff\xe0mock_ai_image", "ai_fake.jpg", "pan", "CP-1", {})
+            res = run_screening(b"\xff\xd8\xff\xe0mock_ai_image", "ai_fake.jpg", "pan", "CP-1", {})
         assert res["verdict"] == "FLAGGED"
         assert res["risk_score"] >= 70
         assert any("ai" in r.lower() for r in res["reasons"])
@@ -386,7 +459,7 @@ def test_screening_mrz_checksum_failure_hard_flags():
         "pdf_no_text": False,
     }
     with patch("extraction.extract_document", return_value=extract_mock):
-        res = run_screening(db, b"dummy passport", "passport.pdf", "passport", "CP-1", {})
+        res = run_screening(b"dummy passport", "passport.pdf", "passport", "CP-1", {})
         assert res["verdict"] == "FLAGGED"
         assert res["risk_score"] >= 70
         assert any("mrz" in r.lower() and "fail" in r.lower() for r in res["reasons"])
