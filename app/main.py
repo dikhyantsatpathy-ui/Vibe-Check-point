@@ -984,7 +984,9 @@ def clean_postgres_dsn(raw_url: str) -> str:
     if not url or "postgres" not in url:
         return url
     if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql://", 1)
+        url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif url.startswith("postgresql://") and not url.startswith("postgresql+"):
+        url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
     if url.count("?") > 1:
         first_q = url.find("?")
         base = url[:first_q]
@@ -1034,9 +1036,10 @@ if not _IS_SQLITE:
 
     def _pg_creator(**kw):
         last = None
+        raw_connect_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql://", 1)
         for attempt in range(3):
             try:
-                return psycopg2.connect(DATABASE_URL, connect_timeout=10, **kw)
+                return psycopg2.connect(raw_connect_url, connect_timeout=10, **kw)
             except Exception as e:
                 last = e
                 if attempt < 2:
