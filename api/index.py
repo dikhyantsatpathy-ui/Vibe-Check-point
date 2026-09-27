@@ -18,4 +18,14 @@ _ROOT = os.path.dirname(_HERE)
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from main import app as app  # noqa: E402,F401  (FastAPI instance assembled in main.py)
+try:
+    from main import app as app  # noqa: E402,F401
+except Exception as e:
+    import traceback
+    tb = traceback.format_exc()
+    from fastapi import FastAPI
+    from fastapi.responses import JSONResponse
+    app = FastAPI()
+    @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"])
+    def _catchall(path: str):
+        return JSONResponse(status_code=500, content={"error": "API_INDEX_IMPORT_FAILED", "detail": str(e), "traceback": tb})
