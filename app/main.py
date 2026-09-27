@@ -52,7 +52,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
-from sqlalchemy import create_engine, Column, String, Integer, Text, Float, text, event, func
+from sqlalchemy import create_engine, Column, String, Integer, Text, Float, LargeBinary, text, event, func
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.exc import IntegrityError
 # --- SECURITY DEPENDENCIES ---
@@ -1286,6 +1286,13 @@ def get_current_admin(request: Request):
     if not hmac.compare_digest(sig, expected):
         raise HTTPException(status_code=401, detail="ACCESS DENIED: Session signature invalid or tampered.")
     return email
+
+def get_current_admin_or_evaluator(request: Request) -> str:
+    """Allow open sandbox screening for SIH26188 testing while keeping officer identity when logged in."""
+    try:
+        return get_current_admin(request)
+    except HTTPException:
+        return "evaluator@ssb.gov.in"
 
 def get_or_create_signer_identity(db, email: str, google_name: str) -> SignerIdentity:
     identity = db.query(SignerIdentity).filter_by(email=email).first()
