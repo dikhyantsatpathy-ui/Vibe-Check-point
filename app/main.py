@@ -2105,36 +2105,26 @@ def index(request: Request):
 @app.get("/api/health")
 def health_check():
     """Liveness and readiness check: returns service, database status, and system metadata."""
-    global _PRIMARY_LAST_FAILED, _PRIMARY_LAST_ERROR
     db_type = "sqlite" if _IS_SQLITE else "postgresql"
     db_status = "connected"
+    db_err = None
 
-    if not _IS_SQLITE:
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
-            db_status = "connected"
-            _PRIMARY_LAST_FAILED = 0.0
-            _PRIMARY_LAST_ERROR = None
-        except Exception as e:
-            _PRIMARY_LAST_FAILED = time.monotonic()
-            _PRIMARY_LAST_ERROR = sanitize_secret_text(f"{type(e).__name__}: {e}")
-            db_status = "fallback_sqlite"
-    else:
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
-        except Exception as e:
-            db_status = f"degraded ({type(e).__name__})"
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as e:
+        db_err = sanitize_secret_text(f"{type(e).__name__}: {e}")
+        db_status = f"error ({type(e).__name__})"
 
     return {
-        "status": "ok" if "degraded" not in db_status else "degraded",
+        "status": "ok" if db_status == "connected" else "degraded",
         "service": "SSB Border Screening Desk (SIH26188)",
         "database": {
             "status": db_status,
             "engine": db_type,
             "connected": db_status == "connected",
-            "error": _PRIMARY_LAST_ERROR if '_PRIMARY_LAST_ERROR' in globals() else None,
+            "error": db_err,
         },
         "ml_service": {
             "configured": bool(os.getenv("ML_SERVICE_URL")),
