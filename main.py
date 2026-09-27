@@ -11,13 +11,28 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
-from app.main import (  # noqa: E402,F401
-    app as app,
-    ScreeningReport,
-    ScreeningSession,
-    now_utc,
-    Base,
-    engine,
-    SessionLocal,
-    get_db,
-)
+try:
+    from app.main import (  # noqa: E402,F401
+        app as app,
+        ScreeningReport,
+        ScreeningSession,
+        now_utc,
+        Base,
+        engine,
+        SessionLocal,
+        get_db,
+    )
+except Exception as e:
+    import traceback
+    err_msg = traceback.format_exc()
+    async def app(scope, receive, send):
+        if scope["type"] == "http":
+            await send({
+                "type": "http.response.start",
+                "status": 500,
+                "headers": [(b"content-type", b"text/plain")],
+            })
+            await send({
+                "type": "http.response.body",
+                "body": err_msg.encode("utf-8"),
+            })
