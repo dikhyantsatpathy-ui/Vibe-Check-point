@@ -1,11 +1,7 @@
-async def app(scope, receive, send):
-    if scope["type"] == "http":
-        await send({
-            "type": "http.response.start",
-            "status": 200,
-            "headers": [(b"content-type", b"text/plain")],
-        })
-        await send({
-            "type": "http.response.body",
-            "body": b"Minimal ASGI app working!",
-        })
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "message": "Minimal FastAPI working"}
