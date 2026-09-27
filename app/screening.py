@@ -710,7 +710,7 @@ def _grade(score: int, hard_flag: bool = False, can_clear: bool = True) -> str:
     return "CLEAR"
 
 
-def run_screening(data: bytes, filename: str, doc_type: str | None,
+def run_screening(db, data: bytes, filename: str, doc_type: str | None,
                   checkpoint: str | None, declared: dict | None,
                   screener: str | None = None,
                   live_frame: bytes | None = None,
@@ -795,17 +795,15 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         if val:
             needed[sha256(val)] = (key, val)
     watched = set()
-    if needed:
+    if needed and db is not None:
         try:
-            try:
-                from app.main import WatchlistEntry, _get_db_for_session
-            except ImportError:
-                from main import WatchlistEntry, _get_db_for_session
-            with _get_db_for_session(session_id) as temp_db:
-                watched = {h for (h,) in temp_db.query(WatchlistEntry.identifier_hash)
-                           .filter(WatchlistEntry.identifier_hash.in_(list(needed))).all()}
+            watched = {h for (h,) in db.query(WatchlistEntry.identifier_hash)
+                       .filter(WatchlistEntry.identifier_hash.in_(list(needed))).all()}
         except Exception:
-            pass
+            try:
+                db.rollback()
+            except Exception:
+                pass
     hits = [{"field": key, "mask": mask(val)} for key, val in
             (needed[h] for h in needed if h in watched)]
 
@@ -815,18 +813,14 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
     )
 
     # ---- Module 3: Tampering (visual forensics on images) ------------------
-    timeout_hit = False
-    if time.monotonic() - started > 40.0:
-        timeout_hit = True
-        tamper_res = {"ran": False, "verdict": "SKIP", "ela": {"status": "skipped", "quality": 0}, "checks": [{"label": "timeout", "ok": False, "detail": "Timeout exceeded before tampering check."}]}
-    elif is_image:
+    if is_image:
         tamper_res = tamper_analysis(data, {**ai_det, "document_aware": document_aware},
                                      document_aware, doc_type or "")
     else:
         tamper_res = tamper_analysis(None, ai_det, document_aware, doc_type or "")
 
     # Back side tamper check if back image is present
-    if not timeout_hit and data_back and len(data_back) > 0 and (data_back.startswith((b"\x89PNG", b"\xff\xd8", b"RIFF")) or "jpg" in (filename_back or "").lower() or "png" in (filename_back or "").lower()):
+    if data_back and len(data_back) > 0 and (data_back.startswith((b"\x89PNG", b"\xff\xd8", b"RIFF")) or "jpg" in (filename_back or "").lower() or "png" in (filename_back or "").lower()):
         try:
             tamper_back = tamper_analysis(data_back, ai_det, document_aware, doc_type or "")
             if tamper_back.get("verdict") == "FAIL":
@@ -843,31 +837,24 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
     # route); other document types keep the whole-document face ROI crop that
     # face_verification computes internally. dob/issue_date feed the age-aware
     # threshold logic ('Age Drift Compensation Active').
-    if time.monotonic() - started > 40.0 or timeout_hit:
-        timeout_hit = True
-        face_res = {"ran": False, "verdict": "SKIP", "match": None, "score": 0.0, "method": "timeout", "signals": ["Face verification skipped due to timeout."]}
-    else:
-        face_res = face_verification(
-            document_bytes=data if is_image else None,
-            live_frame=live_frame,
-            doc_type=doc_type or "",
-            document_photo_b64=extract_res.get("aadhaar_photo"),
-            dob=fields.get("dob"),
-            issue_date=(
-                (declared or {}).get("issue_date") or
-                (
-                    f"{_parse_date(fields.get('expiry') or (declared or {}).get('expiry_date'))[0] - (5 if 'visa' in (doc_type or '').lower() else 10):04d}-{_parse_date(fields.get('expiry') or (declared or {}).get('expiry_date'))[1]:02d}-{_parse_date(fields.get('expiry') or (declared or {}).get('expiry_date'))[2]:02d}"
-                    if _parse_date(fields.get('expiry') or (declared or {}).get('expiry_date')) and (doc_type or "").lower() in ("passport", "visa")
-                    else None
-                )
-            ),
-        )
+    face_res = face_verification(
+        document_bytes=data if is_image else None,
+        live_frame=live_frame,
+        doc_type=doc_type or "",
+        document_photo_b64=extract_res.get("aadhaar_photo"),
+        dob=fields.get("dob"),
+        issue_date=(
+            (declared or {}).get("issue_date") or
+            (
+                f"{_parse_date(fields.get('expiry') or (declared or {}).get('expiry_date'))[0] - (5 if 'visa' in (doc_type or '').lower() else 10):04d}-{_parse_date(fields.get('expiry') or (declared or {}).get('expiry_date'))[1]:02d}-{_parse_date(fields.get('expiry') or (declared or {}).get('expiry_date'))[2]:02d}"
+                if _parse_date(fields.get('expiry') or (declared or {}).get('expiry_date')) and (doc_type or "").lower() in ("passport", "visa")
+                else None
+            )
+        ),
+    )
 
     # ---- Analyze: signals, each one explainable ----------------------------
     reasons = []
-    if timeout_hit:
-        reasons.append("Report degraded due to processing timeout.")
-    
     # Face-verification signals (e.g. 'Age Drift Compensation Active') surface
     # any threshold adjustment here, so the desk and the saved report both see
     # why the ArcFace threshold moved for an aged document photo.
@@ -1186,19 +1173,16 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         risk += 8
         can_clear = False
 
-    # Module verdicts fold into the risk score — use each module's own
-    # weighted verdict rather than re-deriving a separate any(ok is False)
-    # check (which double-counted noisy signals and was inconsistent with
-    # the has_real_tamper logic immediately below it).
+    # Module verdicts fold into the risk score
     for mod_key, mod_res in (("validation", val_res), ("tampering", tamper_res),
                              ("face", face_res)):
-        mod_verdict = mod_res.get("verdict", "")
-        if mod_key == "validation" and mod_verdict == "FAIL":
+        mod_fail = any(c.get("ok") is False for c in mod_res.get("checks", []))
+        if mod_key == "validation" and (mod_fail or mod_res.get("verdict") == "FAIL"):
             reasons.append("CRITICAL VALIDATION FAILURE: Module 2 (validation) failed deterministic check — see modules.")
             risk = max(risk + 35, 70)
             hard_flag = True
             can_clear = False
-        elif mod_key == "tampering" and mod_verdict == "FAIL":
+        elif mod_key == "tampering" and (mod_fail or mod_res.get("verdict") == "FAIL"):
             # Only trigger CRITICAL FORENSIC ALERT when there is actual tampering detected
             ela_status = (tamper_res.get("ela") or {}).get("status")
             has_real_tamper = (
@@ -1215,9 +1199,6 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
             else:
                 reasons.append("Forensic check advisory: Soft image focus or physical capture note — see tampering module.")
                 risk = max(risk, 25)
-        elif mod_key == "tampering" and mod_verdict == "REVIEW":
-            reasons.append("Forensic check advisory: Module 3 (tampering) returned REVIEW — see tampering module.")
-            risk = max(risk, 25)
         elif mod_key == "face" and mod_res.get("match") is False:
             reasons.append("CRITICAL BIOMETRIC ALERT: Module 4 reports the document portrait does NOT match the "
                            "captured holder — a very strong fraud signal.")
@@ -1244,10 +1225,10 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         can_clear = False
         risk = max(risk, 35)
 
-    # Removed: blanket "any check with ok is False disables CLEAR" loop.
-    # This was the root cause of mass false-positives — it vetoed can_clear
-    # even when the weighted verdict said PASS/REVIEW. Each module's own
-    # weighted verdict (above) now governs whether can_clear is disabled.
+    # Any check with ok is False disables CLEAR
+    for m in (val_res, tamper_res, face_res):
+        if any(c.get("ok") is False for c in m.get("checks", [])):
+            can_clear = False
 
     # ---- Feature 5: Devanagari ↔ Latin name divergence check ---------------
     mrz_name = fields.get("mrz_name") or fields.get("holder_name") or ""
@@ -1268,17 +1249,12 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
 
     # ---- Syndicate & Recidivism Graph Analytics (SIH26188) ----------------
     syndicate_alerts = []
-    try:
-        from syndicate import analyze_syndicate_patterns
+    if db is not None:
         try:
-            from app.main import ScreeningReport, _get_db_for_session
-        except ImportError:
-            from main import ScreeningReport, _get_db_for_session
-            
-        recent_history = []
-        try:
-            with _get_db_for_session(session_id) as temp_db:
-                rows = temp_db.query(ScreeningReport).order_by(ScreeningReport.created_at.desc()).limit(50).all()
+            from syndicate import analyze_syndicate_patterns
+            recent_history = []
+            try:
+                rows = db.query(ScreeningReport).order_by(ScreeningReport.created_at.desc()).limit(50).all()
                 for r in rows:
                     ef = {}
                     try:
@@ -1293,33 +1269,33 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
                         "verdict": r.verdict,
                         "created_at": r.created_at,
                     })
+            except Exception:
+                pass
+
+            doc_no = fields.get("passport") or fields.get("pan") or fields.get("driving_licence") or fields.get("voter_id")
+            holder = fields.get("mrz_name") or fields.get("holder_name") or (declared or {}).get("name")
+            cur_meta = {
+                "file_hash": file_hash,
+                "checkpoint": checkpoint or "",
+                "doc_number": doc_no,
+                "name": holder,
+                "dob": fields.get("dob"),
+                "verdict": _grade(risk, hard_flag=hard_flag, can_clear=can_clear),
+                "risk_score": risk,
+            }
+            syn_res = analyze_syndicate_patterns(cur_meta, recent_history)
+            if syn_res.get("has_alerts"):
+                syndicate_alerts = syn_res["alerts"]
+                for alert in syndicate_alerts:
+                    reasons.append(f"SYNDICATE ALERT [{alert['type']}]: {alert['detail']}")
+                risk += syn_res.get("syndicate_risk_bump", 0)
+                # Only individual recidivism / identity clash alerts block CLEAR;
+                # an ambient sector burst alert alone (general checkpoint volume alert)
+                # does not block an otherwise genuine document from clearing.
+                if any(a.get("type") in ("IDENTITY_CLASH", "CROSS_CHECKPOINT_REPRESENTATION", "PREVIOUSLY_FLAGGED_IDENTIFIER") for a in syndicate_alerts):
+                    can_clear = False
         except Exception:
             pass
-
-        doc_no = fields.get("passport") or fields.get("pan") or fields.get("driving_licence") or fields.get("voter_id")
-        holder = fields.get("mrz_name") or fields.get("holder_name") or (declared or {}).get("name")
-        cur_meta = {
-            "file_hash": file_hash,
-            "checkpoint": checkpoint or "",
-            "doc_number": doc_no,
-            "name": holder,
-            "dob": fields.get("dob"),
-            "verdict": _grade(risk, hard_flag=hard_flag, can_clear=can_clear),
-            "risk_score": risk,
-        }
-        syn_res = analyze_syndicate_patterns(cur_meta, recent_history)
-        if syn_res.get("has_alerts"):
-            syndicate_alerts = syn_res["alerts"]
-            for alert in syndicate_alerts:
-                reasons.append(f"SYNDICATE ALERT [{alert['type']}]: {alert['detail']}")
-            risk += syn_res.get("syndicate_risk_bump", 0)
-            # Only individual recidivism / identity clash alerts block CLEAR;
-            # an ambient sector burst alert alone (general checkpoint volume alert)
-            # does not block an otherwise genuine document from clearing.
-            if any(a.get("type") in ("IDENTITY_CLASH", "CROSS_CHECKPOINT_REPRESENTATION", "PREVIOUSLY_FLAGGED_IDENTIFIER") for a in syndicate_alerts):
-                can_clear = False
-    except Exception:
-        pass
 
     risk = max(0, min(100, risk))
     verdict = _grade(risk, hard_flag=hard_flag, can_clear=can_clear)
@@ -1344,7 +1320,6 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         "syndicate_alerts": syndicate_alerts,
         "risk_score": risk,
         "confidence": confidence,
-        "degraded": timeout_hit,
         "masked_fields": {k: (mask(v) if isinstance(v, str) else v)
                           for k, v in fields.items()},
         "raw_fields": extract_res.get("fields", {}),
@@ -1395,7 +1370,17 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
 
     # Hash-chain linkage: compute block hash linking to the previous report
     prev_hash = "GENESIS"
-    
+    if db is not None:
+        try:
+            prev_row = db.query(ScreeningReport).order_by(ScreeningReport.created_at.desc(), ScreeningReport.id.desc()).first()
+            prev_hash = prev_row.ledger_hash if (prev_row and getattr(prev_row, "ledger_hash", None)) else "GENESIS"
+        except Exception:
+            prev_hash = "GENESIS"
+    block_payload = f"{prev_hash}:{file_hash}:{verdict}:{risk}:{report['created_at']}:{screener or 'unknown'}"
+    ledger_hash = hashlib.sha256(block_payload.encode("utf-8")).hexdigest()
+    report["block_hash"] = ledger_hash
+    report["prev_hash"] = prev_hash
+
     # Module snapshot persisted for the desk/review surfaces. Compact leaf shape
     # (no raw bytes, no heatmaps): M1 medium/MRZ/OCR, M2 verdict, M3 verdict +
     # ELA status, M4 verdict/match/score/method.
@@ -1425,27 +1410,9 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         modules_snapshot = None
     _wl_hits = report.get("watchlist_hits") or []
 
-    # We must compute hash block AFTER the payload values are ready, but we
-    # do it inside the DB context so we can pull the previous row's hash.
-    try:
-        from app.main import ScreeningReport, _get_db_for_session
-    except ImportError:
-        from main import ScreeningReport, _get_db_for_session
-
-    try:
-        with _get_db_for_session(session_id) as temp_db:
-            try:
-                prev_row = temp_db.query(ScreeningReport).order_by(ScreeningReport.created_at.desc(), ScreeningReport.id.desc()).first()
-                prev_hash = prev_row.ledger_hash if (prev_row and getattr(prev_row, "ledger_hash", None)) else "GENESIS"
-            except Exception:
-                prev_hash = "GENESIS"
-                
-            block_payload = f"{prev_hash}:{file_hash}:{verdict}:{risk}:{report['created_at']}:{screener or 'unknown'}"
-            ledger_hash = hashlib.sha256(block_payload.encode("utf-8")).hexdigest()
-            report["block_hash"] = ledger_hash
-            report["prev_hash"] = prev_hash
-            
-            temp_db.add(ScreeningReport(
+    if db is not None:
+        try:
+            db.add(ScreeningReport(
                 id=report["id"], file_hash=file_hash, filename=report["filename"],
                 doc_type=report["doc_type"], checkpoint=report["checkpoint"],
                 verdict=verdict, risk_score=risk, confidence=confidence,
@@ -1465,8 +1432,10 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
                 nationality=nationality,
                 purpose=purpose,
             ))
-            temp_db.commit()
-    except Exception:
-        pass
-
+            db.commit()
+        except Exception:
+            try:
+                db.rollback()
+            except Exception:
+                pass
     return report

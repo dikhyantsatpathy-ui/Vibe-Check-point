@@ -151,46 +151,8 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
     non_margin_count = int(np.sum(non_margin))
 
     if non_margin_count > 16:
-        # Tightened variance floor: 0.015 instead of 0.05 so phone denoising
-        # doesn't flood the dead-block count on genuinely smooth cards.
-        dead_mask = non_margin & (block_vars < 0.015)
-        dead_blocks = int(np.sum(dead_mask))
-
-        # Spatial contiguity: real erasure/inpainting produces a compact,
-        # connected blob of dead blocks; phone denoising scatters dead blocks
-        # broadly across the whole card.  Pure-NumPy flood-fill on the small
-        # boolean block grid (no scipy dependency needed).
-        def _largest_connected_component(mask: np.ndarray) -> int:
-            """Return the size of the largest 4-connected component in a 2-D bool array."""
-            if mask.size == 0 or not mask.any():
-                return 0
-            labeled = np.zeros(mask.shape, dtype=np.int32)
-            label_id = 0
-            sizes: list[int] = []
-            rows, cols = mask.shape
-            for r in range(rows):
-                for c in range(cols):
-                    if mask[r, c] and labeled[r, c] == 0:
-                        label_id += 1
-                        count = 0
-                        stack = [(r, c)]
-                        while stack:
-                            cr, cc = stack.pop()
-                            if cr < 0 or cr >= rows or cc < 0 or cc >= cols:
-                                continue
-                            if not mask[cr, cc] or labeled[cr, cc] != 0:
-                                continue
-                            labeled[cr, cc] = label_id
-                            count += 1
-                            stack.extend([(cr - 1, cc), (cr + 1, cc), (cr, cc - 1), (cr, cc + 1)])
-                        sizes.append(count)
-            return max(sizes) if sizes else 0
-
-        largest_component = _largest_connected_component(dead_mask)
-        inpaint_void = bool(
-            largest_component > (non_margin_count * 0.12)
-            and largest_component > 20
-        )
+        dead_blocks = int(np.sum(non_margin & (block_vars < 0.05)))
+        inpaint_void = bool(dead_blocks > (non_margin_count * 0.15) and non_margin_count > 40)
         active_vars = block_vars[non_margin & (block_vars > 1.0)]
         if active_vars.size > 8:
             med_noise = float(np.median(active_vars))
