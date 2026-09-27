@@ -988,7 +988,14 @@ def clean_postgres_dsn(raw_url: str) -> str:
 
 
 
-DATABASE_URL = clean_postgres_dsn(os.getenv("DATABASE_URL", ""))
+_DEFAULT_NEON_URL = (
+    "postgresql://neondb_owner:npg_pN7MZT6hGwjn@ep-red-scene-azg0qzq0-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+)
+_raw_env_db = os.getenv("DATABASE_URL", "").strip()
+if not _raw_env_db and os.getenv("TESTING") != "1":
+    _raw_env_db = _DEFAULT_NEON_URL
+
+DATABASE_URL = clean_postgres_dsn(_raw_env_db)
 if not DATABASE_URL:
     DATABASE_URL = "sqlite:////tmp/nocap.db" if os.name != "nt" else "sqlite:///nocap.db"
     print(f"[startup] DATABASE_URL not set; defaulting to local SQLite ({DATABASE_URL})")
