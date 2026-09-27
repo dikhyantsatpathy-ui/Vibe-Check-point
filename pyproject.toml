@@ -1,7 +1,7 @@
 [project]
 name = "vibe-check-point"
 version = "0.1.0"
-requires-python = ">=3.12"
+requires-python = ">=3.9"
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
@@ -14,7 +14,7 @@ dependencies = [
     "google-auth",
     "python-dotenv",
     "numpy",
-    "Pillow==12.3.0",
+    "Pillow",
     "openai",
     "pydantic",
     "cryptography",

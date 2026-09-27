@@ -2217,7 +2217,17 @@ if _redis_uri:
 else:
     limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc):
+    return JSONResponse(
+        status_code=404,
+        content={
+            "detail": "Not Found",
+            "received_path": request.url.path,
+            "scope_path": request.scope.get("path"),
+            "headers": dict(request.headers),
+        },
+    )
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -2226,6 +2236,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": sanitize_secret_text(str(exc)) or "An internal error occurred", "path": request.url.path},
     )
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -2264,6 +2275,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @app.get("/")
+@app.get("/api/index.py")
 @limiter.limit("120/minute")
 def index(request: Request):
     return FileResponse(os.path.join(STATIC_DIR, "index.html"), headers={"Cache-Control": "no-store"})

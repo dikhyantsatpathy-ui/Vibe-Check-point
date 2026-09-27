@@ -9,7 +9,7 @@ slowapi
 google-auth
 python-dotenv
 numpy
-Pillow==12.3.0
+Pillow
 openai
 pydantic
 cryptography
