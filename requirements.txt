@@ -18,3 +18,4 @@ pydantic
 # Only needed if you run AI_DETECTOR_PROVIDER=self-hosted on a laptop/worker.
 # onnxruntime
 httpx
+cryptography
