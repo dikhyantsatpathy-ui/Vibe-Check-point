@@ -2290,11 +2290,12 @@ def health_check():
             "status": db_status,
             "engine": db_type,
             "connected": db_status == "connected",
+            "error": _PRIMARY_LAST_ERROR,
         },
         "ml_service": {
             "configured": bool(os.getenv("ML_SERVICE_URL")),
         },
-        "version": "2.1.1",
+        "version": "2.2.0-neon",
         "timestamp": now_utc(),
     }
 
