@@ -985,6 +985,13 @@ def clean_postgres_dsn(raw_url: str) -> str:
         return url
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
+    # Normalize away any explicit driver suffix (e.g. Neon's dashboard can hand
+    # out "postgresql+psycopg://..." for the psycopg3 client). This app's pool
+    # always connects through psycopg2 directly via a custom `creator`, so the
+    # SQLAlchemy dialect must resolve to plain "postgresql" (-> psycopg2), or
+    # create_engine() tries to import a driver package we don't install.
+    if url.startswith("postgresql+"):
+        url = "postgresql://" + url.split("://", 1)[1]
     if url.count("?") > 1:
         first_q = url.find("?")
         base = url[:first_q]

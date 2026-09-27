@@ -14,6 +14,9 @@ Pillow==12.3.0
 pillow-heif==0.18.0   # iPhone HEIC/HEIF decode support (camera-roll uploads, not just live webcam capture)
 openai
 pydantic
+opencv-python-headless
+cryptography
+zxing-cpp
 
 # Local-only (NOT installed on Vercel): on-device AI pretrained model runtime.
 # Only needed if you run AI_DETECTOR_PROVIDER=self-hosted on a laptop/worker.
