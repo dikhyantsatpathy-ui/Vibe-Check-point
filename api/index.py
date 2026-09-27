@@ -20,16 +20,24 @@ if _ROOT not in sys.path:
 
 def _get_app():
     try:
-        from main import app as real_app
+        from app.main import app as real_app
         return real_app
     except Exception as e:
         import traceback
         err_msg = traceback.format_exc()
-        from fastapi import FastAPI
-        error_app = FastAPI()
-        @error_app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-        async def catch_all(path: str):
-            return {"error": str(e), "traceback": err_msg}
+        
+        async def error_app(scope, receive, send):
+            if scope["type"] == "http":
+                await send({
+                    "type": "http.response.start",
+                    "status": 500,
+                    "headers": [(b"content-type", b"text/plain")],
+                })
+                await send({
+                    "type": "http.response.body",
+                    "body": err_msg.encode("utf-8"),
+                })
+        
         return error_app
 
 app = _get_app()
