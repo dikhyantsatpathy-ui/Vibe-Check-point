@@ -18,15 +18,15 @@ _ROOT = os.path.dirname(_HERE)
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
+from fastapi import FastAPI
+app = FastAPI()
+
 try:
-    from main import app as app  # noqa: E402,F401
+    from main import app as real_app
+    app.mount("/", real_app)
 except Exception as e:
     import traceback
-    from fastapi import FastAPI
-    app = FastAPI()
-    
     err_msg = traceback.format_exc()
-    
     @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
     async def catch_all(path: str):
         return {"error": str(e), "traceback": err_msg}
