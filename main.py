@@ -1,23 +1,38 @@
-"""Root ASGI entrypoint for Vercel's native FastAPI detection.
-
-Vercel auto-detects a FastAPI app exported as `app` from a root-level
-`main.py` and forwards every request's ORIGINAL path into it (no rewrites
-needed), which is why /api/* and / keep working. Re-export from app/main.py.
-"""
-import os
 import sys
+import os
+import traceback
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-if _HERE not in sys.path:
-    sys.path.insert(0, _HERE)
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
-from app.main import (  # noqa: E402,F401
-    app as app,
-    ScreeningReport,
-    ScreeningSession,
-    now_utc,
-    Base,
-    engine,
-    SessionLocal,
-    get_db,
-)
+_APP = os.path.join(_ROOT, "app")
+if _APP not in sys.path:
+    sys.path.insert(0, _APP)
+
+try:
+    from app.main import (  # noqa: F401
+        app,
+        ScreeningReport,
+        ScreeningSession,
+        now_utc,
+        Base,
+        engine,
+        SessionLocal,
+        get_db,
+    )
+except Exception:
+    _tb = traceback.format_exc()
+
+    async def app(scope, receive, send):
+        if scope["type"] == "http":
+            body = f"STARTUP ERROR:\n{_tb}".encode()
+            await send({
+                "type": "http.response.start",
+                "status": 500,
+                "headers": [
+                    [b"content-type", b"text/plain; charset=utf-8"],
+                    [b"content-length", str(len(body)).encode()]
+                ]
+            })
+            await send({"type": "http.response.body", "body": body})
