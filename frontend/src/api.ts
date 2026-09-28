@@ -91,11 +91,9 @@ export function googleLogin(credential: string) {
   });
 }
 
-export function demoLogin() {
-  return request<{ status: string }>("/api/admin/demo_login", {
-    method: "POST",
-  });
-}
+// NOTE: `demoLogin()` and POST /api/admin/demo_login have been removed. That
+// endpoint minted a super-admin session for a fixed address with no
+// credentials at all. There is no replacement; sign in with Google.
 
 export function logout() {
   return request<{ status: string }>("/api/admin/logout", { method: "POST" });

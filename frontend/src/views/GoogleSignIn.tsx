@@ -8,8 +8,12 @@ import { useEffect, useRef, useState } from "react";
 import { googleLogin } from "../api";
 import { useAuth, useToast } from "../app/state";
 
-export const FALLBACK_CLIENT_ID =
-  "698365851650-qd2nsi8ahrbv4d67aov3lff4anbco2g1.apps.googleusercontent.com";
+// The Google OAuth client ID must be supplied at build time via
+// VITE_GOOGLE_CLIENT_ID. There used to be a hardcoded fallback here matching
+// one in app/main.py. A client ID is not a secret, but a silent fallback
+// means a misconfigured build signs in against an OAuth project nobody
+// intended to authorise -- and the backend's allow-list is then evaluated
+// against the wrong audience. Fail visibly instead.
 
 /** True once the GSI client script (loaded in index.html) is ready. */
 export function useGsiReady(): boolean {
@@ -42,8 +46,14 @@ export function GoogleSignInButton() {
   useEffect(() => {
     if (!ready || !containerRef.current || rendered.current) return;
     rendered.current = true;
-    const clientId =
-      (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) || FALLBACK_CLIENT_ID;
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+    if (!clientId) {
+      console.error(
+        "[SSB] VITE_GOOGLE_CLIENT_ID is not set. Google sign-in cannot initialise. " +
+          "Copy frontend/.env.example to frontend/.env and set it, then rebuild.",
+      );
+      return;
+    }
     window.google!.accounts!.id!.initialize({
       client_id: clientId,
       ux_mode: "popup",
@@ -70,27 +80,6 @@ export function GoogleSignInButton() {
 }
 
 export function SignInGate() {
-  const { refresh } = useAuth();
-  const { toast } = useToast();
-  const [evaluating, setEvaluating] = useState(false);
-
-  const handleDemoLogin = async () => {
-    setEvaluating(true);
-    try {
-      const res = await (await import("../api")).demoLogin();
-      if (res.ok) {
-        toast("Authenticated as Inspector R. Sharma (Border Screening Division)", "success");
-        await refresh();
-      } else {
-        toast(res.error, "error");
-      }
-    } catch (e) {
-      toast("Authentication error", "error");
-    } finally {
-      setEvaluating(false);
-    }
-  };
-
   return (
     <div className="gate">
       <div className="gate__panel">
@@ -103,18 +92,18 @@ export function SignInGate() {
         </p>
         <div className="gate__hr" />
 
+        {/* The previous "One-click access (SIH evaluator pass)" button called
+            POST /api/admin/demo_login, which returned a super-admin session
+            for a fixed address with no credentials. Removed. */}
         <div className="gate__options">
-          <button
-            className="btn btn--primary btn--block gate__demo-btn"
-            disabled={evaluating}
-            onClick={() => void handleDemoLogin()}
-          >
-            {evaluating ? "Authenticating officer console…" : "One-click access (SIH evaluator pass)"}
-          </button>
-          <div className="gate__or"><span>or sign in with an authorised Google account</span></div>
+          <div className="gate__or"><span>sign in with an authorised Google account</span></div>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <GoogleSignInButton />
           </div>
+          <p className="gate__or gate__or--note">
+            Access is granted by your administrator. Contact the duty super-admin
+            if your account is not yet approved for a post and institution.
+          </p>
         </div>
 
         <p className="gate__foot">

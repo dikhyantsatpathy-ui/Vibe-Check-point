@@ -30,8 +30,9 @@ popd
 
 echo  [4/4] Starting server on http://127.0.0.1:8000 ...
 start "" "http://127.0.0.1:8000"
-cd app
-"%PY%" -m uvicorn main:app --host 127.0.0.1 --port 8000
+rem Run from the repo root: the app package needs both the root and app/ on the
+rem path, and the built frontend lives at app/static/index.html.
+"%PY%" -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 goto :eof
 
 :err
