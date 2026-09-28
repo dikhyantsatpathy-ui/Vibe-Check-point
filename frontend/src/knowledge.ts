@@ -95,9 +95,9 @@ const ENTRIES: Entry[] = [
   },
   {
     id: "tech-stack",
-    tags: ["tech", "stack", "fastapi", "react", "vite", "neon", "postgres", "sqlite", "onnx", "rapidocr", "python", "typescript"],
+    tags: ["tech", "stack", "fastapi", "react", "vite", "neon", "postgres", "onnx", "rapidocr", "python", "typescript"],
     q: "What is the complete technology stack?",
-    a: "**Backend Architecture**:\n- **Language & Framework**: Python 3.12, FastAPI (async/await throughout), Starlette.\n- **Database**: PostgreSQL on Neon Serverless with automatic background keep-alive ping; local high-availability SQLite fallback with WAL mode.\n- **ML & Forensics**: RapidOCR (ONNX Runtime), OpenCV, NumPy, SciPy, PyPDF.\n- **Security & Rate Limiting**: SlowAPI, Google OAuth 2.0 OpenID Connect.\n\n**Frontend Architecture**:\n- **Core**: React 18, TypeScript, Vite.\n- **Styling**: Vanilla CSS Design System with curated Navy & Off-White tokens, glassmorphism, responsive data grids, and zero third-party bloated CSS frameworks.\n- **AI Assistant**: Direct Google Gemini Chat (`gemini-3.5-flash` / `gemini-3.5-flash-lite`) with full codebase database ingestion.",
+    a: "**Backend Architecture**:\n- **Language & Framework**: Python 3.12, FastAPI (async/await throughout), Starlette.\n- **Database**: PostgreSQL on Neon Serverless with automatic background keep-alive ping. PostgreSQL is the only supported target: a SQLite DSN is rejected at startup and a missing DATABASE_URL is a hard failure rather than a silent fallback, so an audit trail can never land somewhere nobody chose.\n- **ML & Forensics**: RapidOCR (ONNX Runtime), OpenCV, NumPy, SciPy, PyPDF.\n- **Security & Rate Limiting**: SlowAPI, Google OAuth 2.0 OpenID Connect.\n\n**Frontend Architecture**:\n- **Core**: React 18, TypeScript, Vite.\n- **Styling**: Vanilla CSS Design System with curated Navy & Off-White tokens, glassmorphism, responsive data grids, and zero third-party bloated CSS frameworks.\n- **AI Assistant**: Direct Google Gemini Chat (`gemini-3.5-flash` / `gemini-3.5-flash-lite`) with full codebase database ingestion.",
     s: "pyproject.toml · package.json · app/main.py · frontend/src/styles.css",
   },
   {

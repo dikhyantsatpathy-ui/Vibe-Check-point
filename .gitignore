@@ -30,7 +30,7 @@ tmp/
 _srv*.log
 chat_transcripts/
 
-# ---- Data & Training corpora (local GPU runs, datasets, fallback sqlite) ----
+# ---- Data & Training corpora (local GPU runs, datasets) ----
 data/
 runs/
 weights/
