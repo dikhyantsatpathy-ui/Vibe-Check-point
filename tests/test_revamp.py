@@ -28,7 +28,7 @@ from config import to_ist, DOCUMENT_CATALOG, CHECKPOINT_CLUSTERS, SUPPORTED_CHEC
 from guide import flow_for, expected_documents, checkpoint_catalog
 
 OFFICER = "officer@ssb.gov.in"
-SUPER = "dikhyantsatpathy@gmail.com"
+SUPER = os.environ.get("SUPER_ADMINS", "").split(",")[0].strip() or "test-superadmin@example.com"
 
 
 def _synth_image(w: int = 160, h: int = 120) -> bytes:

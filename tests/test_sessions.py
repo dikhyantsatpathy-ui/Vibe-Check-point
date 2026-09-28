@@ -36,7 +36,10 @@ from main import Base, ScreeningReport, ScreeningSession, SignerIdentity, app, m
 import session as session_mod
 
 OFFICER = "officer@ssb.gov.in"
-SUPER = "dikhyantsatpathy@gmail.com"
+# conftest.py sets SUPER_ADMINS to this address. The old value was a real team
+# member's personal Gmail, which the hardcoded substring admin check used to
+# match -- it no longer works and must not be relied on in tests.
+SUPER = os.environ.get("SUPER_ADMINS", "").split(",")[0].strip() or "test-superadmin@example.com"
 
 
 def _h(value: str) -> str:
@@ -59,26 +62,53 @@ def _synth_image(w: int = 140, h: int = 140) -> bytes:
 
 
 @pytest.fixture
-def client(monkeypatch):
+def db_env(monkeypatch):
+    """One in-memory database shared by every client fixture in a test.
+
+    A single engine is essential now: `get_current_admin()` requires a
+    surviving SignerIdentity row, and a per-fixture engine would leave the
+    second client authenticating against a database with no officers in it.
+    """
     test_engine = create_engine(
         "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
     Base.metadata.create_all(bind=test_engine)
     TestSession = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
     monkeypatch.setattr(main, "SessionLocal", TestSession)
+
     db = TestSession()
     try:
-        db.add(SignerIdentity(email=OFFICER, name="Officer One",
-                              institution="SSB", designation="Assistant Commandant",
-                              registered_at=now_utc()))
+        # Both identities exist up front, so authentication succeeds for either
+        # client regardless of which fixture the test requests.
+        for email, name, designation, institution in (
+            (OFFICER, "Officer One", "Assistant Commandant", "SSB"),
+            (SUPER, "Super Officer", "Sector Superintendent", "SSB HQ"),
+        ):
+            if not db.query(SignerIdentity).filter_by(email=email).first():
+                db.add(SignerIdentity(
+                    email=email, name=name, institution=institution,
+                    designation=designation, registered_at=now_utc(),
+                ))
         db.commit()
     finally:
         db.close()
+    return TestSession
+
+
+@pytest.fixture
+def client(db_env):
     return TestClient(app, cookies={"nischay_session": make_session_token(OFFICER)})
 
 
 @pytest.fixture
-def super_client():
+def super_client(db_env):
+    """A signed-in super admin.
+
+    SUPER_ADMINS is now the only source of admin rights (the hardcoded list and
+    the name-substring check are gone), so this also asserts the harness's own
+    admin configuration is coherent.
+    """
+    assert os.environ.get("SUPER_ADMINS"), "conftest must set SUPER_ADMINS for admin tests"
     return TestClient(app, cookies={"nischay_session": make_session_token(SUPER)})
 
 
