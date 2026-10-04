@@ -31,7 +31,6 @@ except ImportError:
         pass
 
 import hashlib
-import hmac
 import io
 import json
 import logging
@@ -1017,128 +1016,143 @@ def clean_postgres_dsn(raw_url: str) -> str:
 
 
 
-_DEFAULT_NEON_URL = (
-    "postgresql://neondb_owner:npg_pN7MZT6hGwjn@ep-red-scene-azg0qzq0-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
-)
+# --- Database selection (Neon Postgres ONLY, no fallback) -------
+# Neon PostgreSQL is the ONLY supported database.
+# Hard requirement: no SQLite, no local SQL files, no in-memory DB, no mock fallbacks.
+# If Neon is unreachable, the application fails loudly with a clear error.
 _raw_env_db = os.getenv("DATABASE_URL", "").strip()
-if not _raw_env_db and os.getenv("TESTING") != "1":
-    _raw_env_db = _DEFAULT_NEON_URL
+DATABASE_URL = clean_postgres_dsn(_raw_env_db) if _raw_env_db else ""
 
-DATABASE_URL = clean_postgres_dsn(_raw_env_db)
 if not DATABASE_URL:
-    DATABASE_URL = "sqlite:////tmp/nocap.db" if os.name != "nt" else "sqlite:///nocap.db"
-    print(f"[startup] DATABASE_URL not set; defaulting to local SQLite ({DATABASE_URL})")
-
-_IS_SQLITE = "sqlite" in DATABASE_URL
-
-if not _IS_SQLITE:
-    import psycopg2
-
-    def _pg_creator(**kw):
-        last = None
-        raw_connect_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql://", 1)
-        for attempt in range(3):
-            try:
-                return psycopg2.connect(raw_connect_url, connect_timeout=10, **kw)
-            except Exception as e:
-                last = e
-                if attempt < 2:
-                    time.sleep(0.4 * (attempt + 1))
-        raise last or RuntimeError("PostgreSQL connect failed")
-
-    engine = create_engine(
-        DATABASE_URL,
-        creator=_pg_creator,
-        pool_pre_ping=True,
-        pool_size=3,
-        max_overflow=5,
-        pool_recycle=290,
-        pool_timeout=15,
-        connect_args={"application_name": "nocap"},
+    raise RuntimeError(
+        "DATABASE_URL is not set. Neon Postgres is the ONLY supported database. "
+        "SQLite, local SQL files, and mock-data fallbacks are strictly prohibited. "
+        "Set DATABASE_URL in .env or the hosting environment to a valid Neon connection string."
     )
-else:
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragmas(dbapi_conn, connection_record):
+
+if not DATABASE_URL.startswith("postgresql"):
+    raise RuntimeError(
+        f"Unsupported database scheme: '{DATABASE_URL.split('://')[0]}'. "
+        "Neon Postgres is required. Set DATABASE_URL=postgresql://..."
+    )
+
+import psycopg2
+
+def _pg_creator(**kw):
+    last = None
+    raw_connect_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql://", 1)
+    for attempt in range(3):
         try:
-            cursor = dbapi_conn.cursor()
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA synchronous=NORMAL")
-            cursor.execute("PRAGMA busy_timeout=15000")
-            cursor.execute("PRAGMA cache_size=-64000")
-            cursor.execute("PRAGMA temp_store=MEMORY")
-            cursor.close()
-        except Exception:
-            pass
+            return psycopg2.connect(raw_connect_url, connect_timeout=10, **kw)
+        except Exception as e:
+            last = e
+            if attempt < 2:
+                time.sleep(0.4 * (attempt + 1))
+    raise last or RuntimeError("Neon PostgreSQL connection failed. Neon Postgres is required.")
+
+engine = create_engine(
+    DATABASE_URL,
+    creator=_pg_creator,
+    pool_pre_ping=True,
+    pool_size=3,
+    max_overflow=5,
+    pool_recycle=290,
+    pool_timeout=15,
+    connect_args={"application_name": "nocap"},
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-RAW_KEY = os.getenv("MASTER_VAULT_KEY", "").encode("utf-8")
-if not RAW_KEY:
-    RAW_KEY = b"VERISOURCE_HACKATHON_DEMO_KEY_32"
-    print("[startup] MASTER_VAULT_KEY not set; defaulting to fallback demo master key.")
-MASTER_VAULT_KEY = RAW_KEY.ljust(32, b"0")[:32]
+# --- Cryptographic key material -------------------------------------------
+# Every signature this app produces (session cookies, dossier seals, the BSA
+# certificate, shift-hand-over tokens, the ledger anchor) comes from a key
+# resolved here. There is no built-in default and no padding/truncation: a
+# missing or short MASTER_VAULT_KEY is a hard startup error.
+#
+# This previously fell back to a constant string committed to this file. Since
+# a session token is just `email::expiry::HMAC(key, ...)`, that constant meant
+# anyone who could read the source could mint a valid cookie for any address,
+# super admin included.
+#
+# See app/keys.py for key separation and the MASTER_VAULT_KEY_PREV rotation
+# window.
+try:
+    from app import keys as _vault_keys  # noqa: E402
+except ImportError:
+    import keys as _vault_keys  # type: ignore[no-redef]  # noqa: E402
+
+# Raw master key (kept under this name: part of the module's public surface).
+MASTER_VAULT_KEY = _vault_keys.MASTER_VAULT_KEY
+# Domain-separated sub-keys. Session tokens and evidence seals are signed with
+# different keys so one can never be replayed as the other.
+SESSION_SIGNING_KEY = _vault_keys.session_key()
+EVIDENCE_SEAL_KEY = _vault_keys.seal_key()
+print(f"[startup] vault keys: {_vault_keys.rotate_note()}")
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
-if not GOOGLE_CLIENT_ID:
-    GOOGLE_CLIENT_ID = "698365851650-qd2nsi8ahrbv4d67aov3lff4anbco2g1.apps.googleusercontent.com"
-    print("[startup] GOOGLE_CLIENT_ID not set; defaulting to demo client id.")
+if not GOOGLE_CLIENT_ID and os.getenv("TESTING") != "1":
+    # A client ID is not a secret, but silently defaulting to one hides a
+    # misconfigured deployment: sign-in appears to work against a project
+    # nobody intended to authorise, and the allow-list below is evaluated
+    # against the wrong OAuth audience. Fail loudly instead.
+    raise RuntimeError(
+        "GOOGLE_CLIENT_ID is not set. Set it to the OAuth 2.0 client ID of the "
+        "Google Cloud project that owns this deployment (used both by the GSI "
+        "button in the frontend and by backend id_token verification)."
+    )
 
 
-# --- Sign-in authorization (NOT hardcoded email lists) -----------------------
-# Who may log in is decided by Google Cloud itself:
-#   * ALLOWED_DOMAINS  - comma-separated Google-hosted domains (id_token `hd`),
-#                        e.g. "soa.ac.in,iter.ac.in". Anyone whose Google Cloud
-#                        account belongs to one of these domains is allowed and
-#                        is added automatically â€” no code edit needed.
-#   * ALLOWED_EMAILS   - optional comma-separated exact emails (e.g. personal
+# --- Sign-in authorization -------------------------------------------------
+# Who may sign in is decided entirely by configuration. Nothing about who has
+# administrative rights is hardcoded in this file.
+#
+#   * ALLOWED_DOMAINS  - comma-separated Google-hosted domains, matched against
+#                        BOTH the id_token `hd` claim and the email's own
+#                        "@domain" suffix. Manage membership in Google Cloud;
+#                        no code edit needed to add or remove someone.
+#   * ALLOWED_EMAILS   - comma-separated exact addresses (needed for personal
 #                        gmail accounts, which carry no `hd` claim).
-# Super admins ALWAYS bypass the gate so the owner can never be locked out.
+#   * SUPER_ADMINS     - comma-separated exact addresses holding root
+#                        clearance (assign officer roles, supervise the review
+#                        queue, manage the watchlist). They bypass the
+#                        allow-list gate.
+#
+# All three default to empty. With everything empty NOBODY can sign in. That
+# is the intended fail-closed posture: a misconfigured deployment is
+# inaccessible, not open.
 def get_allowed_domains() -> set:
     return {d.strip().lower() for d in os.getenv("ALLOWED_DOMAINS", "").split(",") if d.strip().lower()}
 
 def get_allowed_emails() -> set:
     return {e.strip().lower() for e in os.getenv("ALLOWED_EMAILS", "").split(",") if e.strip().lower()}
 
-SUPER_ADMINS = [
-    "asutoshn06@gmail.com",
-    "ayushlenka2020@gmail.com",
-    "dikhyantsatpathy@gmail.com",
-    "dikhyantsatpathy1@gmail.com",
-    "dikhyantsatpathy2@gmail.com",
-    "sushumnameghavaram@gmail.com",
-    "priyadarshisid29@gmail.com",
-    "sriniket9503@gmail.com",
-    "cryptoknights14@gmail.com",
-    "ayushlenka34@gmail.com",
-    "an836931@gmail.com",
-    "freddiemercury6271@gmail.com",
-    "evaluator@ssb.gov.in",
-]
-
 def get_super_admins() -> list:
-    """Loads authorized super-admin emails from the environment and default list."""
+    """Super-admin addresses, from SUPER_ADMINS only. Empty by default.
+
+    Exact-address match, no substring or pattern matching: a substring rule
+    turns `attacker-<name>.example.com` into an administrator, and that is not
+    a lockout risk worth paying for. If you lock yourself out, set the value in
+    the deployment environment (or your hosting provider's secret store) and
+    redeploy -- no code change required.
+    """
     raw = os.getenv("SUPER_ADMINS", "")
-    env_admins = [e.strip().lower() for e in raw.split(",") if e.strip().lower()]
-    merged = set(e.strip().lower() for e in SUPER_ADMINS)
-    merged.update(env_admins)
-    return list(merged)
+    return sorted({e.strip().lower() for e in raw.split(",") if e.strip().lower()})
+
+# Kept for import compatibility. Always empty; the real list is read from the
+# environment on every call so a config change takes effect without a redeploy.
+SUPER_ADMINS: list[str] = []
 
 # Module-level references for backwards compatibility
 ALLOWED_DOMAINS = get_allowed_domains()
 ALLOWED_EMAILS = get_allowed_emails()
 
 def is_super_admin(email: str) -> bool:
+    """Exact-address match against SUPER_ADMINS. No substring matching."""
     clean = (email or "").strip().lower()
     if not clean:
         return False
-    admins = {e.strip().lower() for e in get_super_admins()}
-    if clean in admins:
-        return True
-    if any(k in clean for k in ["dikhyant", "asutosh", "ayush", "cryptoknight"]):
-        return True
-    return False
+    return clean in set(get_super_admins())
 
 # ==============================================================================
 # [ COLUMN 2: DATABASE MODELS ]
@@ -1185,7 +1199,13 @@ class ScreeningReport(Base):
     created_at = Column(String, nullable=False)
     session_id = Column(String, index=True, nullable=True)   # owning border session (SIH26188)
     field_hashes = Column(Text, nullable=True)               # per-field sha256 digests for cross-doc compare
-    ephemeral_raw_fields = Column(Text, nullable=True)       # TEMPORARY raw JSON, wiped when session closes
+    # UNMASKED extraction result, held ONLY while the owning session is open so
+    # the desk can cross-compare documents (name / DOB / number agreement).
+    # Nulled by _wipe_session_raw_fields() on close, flag, adjudicate,
+    # close-unused and document-remove, plus a TTL sweep for abandoned
+    # sessions. Never read after that: the persisted comparison carries
+    # per-field digests and flags instead.
+    ephemeral_raw_fields = Column(Text, nullable=True)
     removed_at = Column(String, nullable=True)               # soft-remove from a session (audit trail kept)
     removed_by = Column(String, nullable=True)               # officer who removed the document from the session
     nationality = Column(String, nullable=True)              # traveller nationality at capture time (guide context)
@@ -1343,24 +1363,14 @@ def _ensure_db_initialized():
             Base.metadata.create_all(bind=engine)
         except Exception as e:
             print(f"[startup] warning: create_all on primary deferred ({e}).")
-        if not _IS_SQLITE:
-            try:
-                with engine.connect() as conn:
-                    script = ";\n".join(stmt.rstrip(";") for stmt in _MIGRATIONS) + ";"
-                    conn.execute(text(script))
-                    conn.commit()
-            except Exception as e:
-                try:
-                    with engine.connect() as conn:
-                        for stmt in _MIGRATIONS:
-                            try:
-                                conn.execute(text(stmt))
-                                conn.commit()
-                            except Exception:
-                                conn.rollback()
-                except Exception:
-                    pass
-        else:
+        try:
+            with engine.connect() as conn:
+                script = ";\n".join(stmt.rstrip(";") for stmt in _MIGRATIONS) + ";"
+                conn.execute(text(script))
+                conn.commit()
+        except Exception:
+            # Some serverless Postgres connections reject a multi-statement
+            # script; fall back to applying each migration on its own.
             try:
                 with engine.connect() as conn:
                     for stmt in _MIGRATIONS:
@@ -1370,45 +1380,7 @@ def _ensure_db_initialized():
                         except Exception:
                             conn.rollback()
             except Exception as e:
-                print(f"[startup] migration pass skipped ({e})")
-        if _IS_SQLITE:
-            try:
-                with engine.connect() as conn:
-                    cols = [r[0] for r in conn.execute(text("PRAGMA table_info(screening_reports)")).fetchall()]
-                    for _sqlite_col, _sqlite_ddl in (
-                        ("latency_ms", "INTEGER"),
-                        ("session_id", "VARCHAR"),
-                        ("field_hashes", "TEXT"),
-                        ("ephemeral_raw_fields", "TEXT"),
-                        ("modules", "TEXT"),
-                        ("watchlist_hits", "TEXT"),
-                    ):
-                        if _sqlite_col not in cols:
-                            conn.execute(text(f"ALTER TABLE screening_reports ADD COLUMN {_sqlite_col} {_sqlite_ddl}"))
-                            conn.commit()
-                    scols = [r[0] for r in conn.execute(text("PRAGMA table_info(screening_sessions)")).fetchall()]
-                    for _scol, _sddl in (
-                        ("previous_hash", "VARCHAR"),
-                        ("ledger_hash", "VARCHAR"),
-                        ("comparison", "TEXT"),
-                        ("note", "TEXT"),
-                        ("adjudicator", "VARCHAR"),
-                        ("adjudicated_at", "VARCHAR"),
-                        ("label", "VARCHAR"),
-                    ):
-                        if _scol not in scols:
-                            conn.execute(text(f"ALTER TABLE screening_sessions ADD COLUMN {_scol} {_sddl}"))
-                            conn.commit()
-                    sicols = [r[0] for r in conn.execute(text("PRAGMA table_info(signer_identities)")).fetchall()]
-                    for _sicol, _sic_ddl in (
-                        ("is_revoked", "INTEGER DEFAULT 0"),
-                        ("revoked_at", "VARCHAR"),
-                    ):
-                        if _sicol not in sicols:
-                            conn.execute(text(f"ALTER TABLE signer_identities ADD COLUMN {_sicol} {_sic_ddl}"))
-                            conn.commit()
-            except Exception:
-                pass
+                logger.warning("[startup] migration pass failed: %s", e)
         try:
             _backfill_session_labels(engine)
         except Exception as e:
@@ -1488,7 +1460,7 @@ def _start_keepalive() -> None:
     if os.getenv("VERCEL") == "1":
         return  # serverless: instances are short-lived, a daemon thread would be pointless
     interval = float(os.getenv("KEEPALIVE_INTERVAL", "45"))
-    if _IS_SQLITE or interval <= 0:
+    if interval <= 0:
         return
 
     def _ping_loop():
@@ -1534,19 +1506,47 @@ def make_session_token(email: str) -> str:
     No server-side session store is needed — the signature proves issuance and
     the embedded expiry bounds the lifetime (1 day, matching the cookie
     max_age). A leaked token stops working after expiry even if the cookie's
-    client-side max_age is tampered with."""
+    client-side max_age is tampered with.
+
+    Signed with the dedicated session sub-key, never the raw master, so a
+    session signature can never be replayed as an evidence seal or vice versa.
+    """
     email = email.strip().lower()
     exp = int(datetime.now(timezone.utc).timestamp()) + 86400
-    sig = hmac.new(MASTER_VAULT_KEY, f"{email}::{exp}".encode(), hashlib.sha256).hexdigest()
+    sig = _vault_keys.sign(SESSION_SIGNING_KEY, f"{email}::{exp}")
     return f"{email}::{exp}::{sig}"
 
+
+def get_current_admin_or_none(request: Request) -> str | None:
+    """Session identity, or None when the caller is anonymous.
+
+    For endpoints that must stay publicly reachable (the health probe) but
+    reveal more to a signed-in officer. This NEVER substitutes a privileged
+    identity and never downgrades an error: a present-but-invalid or revoked
+    session yields None, i.e. the anonymous view, not an admin view.
+    """
+    try:
+        return get_current_admin(request)
+    except HTTPException:
+        return None
+
+
 def get_current_admin(request: Request):
+    """Authenticate the caller. The single auth gate for every protected route.
+
+    Rejects, in order: a missing/malformed cookie, a signature that matches
+    neither the current nor the rotation-window key, an expired token, an
+    account with no identity row at all, and a revoked account.
+    """
     token = request.cookies.get("nischay_session")
     if not token or token.count("::") != 2:
         raise HTTPException(status_code=401, detail="ACCESS DENIED: Missing or invalid secure session cookie.")
     email, exp_raw, sig = token.split("::")
-    expected = hmac.new(MASTER_VAULT_KEY, f"{email}::{exp_raw}".encode(), hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(sig, expected):
+    message = f"{email}::{exp_raw}"
+    # Constant-time compare against the current key, then (during a rotation
+    # window only) the previous key, so tokens minted before the rotation keep
+    # working until they expire.
+    if not any(_vault_keys.verify(k, message, sig) for k in _vault_keys.session_keys_to_try()):
         raise HTTPException(status_code=401, detail="ACCESS DENIED: Session signature invalid or tampered.")
     try:
         exp = int(exp_raw)
@@ -1556,16 +1556,15 @@ def get_current_admin(request: Request):
         raise HTTPException(status_code=401, detail="ACCESS DENIED: Session expired — please sign in again.")
     with get_db() as db:
         identity = db.query(SignerIdentity).filter_by(email=email).first()
-        if identity and getattr(identity, "is_revoked", 0) == 1:
+        if identity is None:
+            # A valid signature alone is not authorisation. Requiring a
+            # surviving identity row means deleting the row (e.g. on officer
+            # removal) revokes access immediately, instead of leaving a
+            # still-valid token for an account that no longer exists.
+            raise HTTPException(status_code=401, detail="ACCESS DENIED: Officer account no longer exists.")
+        if getattr(identity, "is_revoked", 0) == 1:
             raise HTTPException(status_code=403, detail="OFFICER ACCESS REVOKED: Your credentials have been revoked by an administrator.")
     return email
-
-def get_current_admin_or_evaluator(request: Request) -> str:
-    """Allow open sandbox screening for SIH26188 testing while keeping officer identity when logged in."""
-    try:
-        return get_current_admin(request)
-    except HTTPException:
-        return "evaluator@ssb.gov.in"
 
 def get_or_create_signer_identity(db, email: str, google_name: str) -> SignerIdentity:
     identity = db.query(SignerIdentity).filter_by(email=email).first()
@@ -2031,7 +2030,7 @@ async def _neon_keepalive_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if os.getenv("VERCEL") != "1" and not _IS_SQLITE:
+    if os.getenv("VERCEL") != "1":
         asyncio.create_task(run_in_threadpool(_ensure_db_initialized))
         keepalive_task = asyncio.create_task(_neon_keepalive_loop())
         try:
@@ -2057,10 +2056,25 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"[unhandled_exception] {request.method} {request.url.path}: {exc}", exc_info=True)
+    """Log the detail server-side; return an opaque reference to the client.
+
+    This handler used to echo `str(exc)` into the response body. Even with
+    secret-scrubbing, that leaks SQL text, file paths, library internals and
+    variable names to whoever triggered the error -- and on a screening desk
+    the error paths are exactly where an attacker probes. The reference id
+    correlates the client report to the server log without disclosing cause.
+    """
+    ref = uuid.uuid4().hex[:12]
+    logger.error(
+        "[unhandled_exception] %s %s (ref=%s): %s",
+        request.method, request.url.path, ref, exc, exc_info=True,
+    )
     return JSONResponse(
         status_code=500,
-        content={"detail": sanitize_secret_text(str(exc)) or "An internal error occurred", "path": request.url.path},
+        content={
+            "detail": "An internal error occurred. Quote the reference when reporting it.",
+            "ref": ref,
+        },
     )
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -2079,22 +2093,35 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
+
+# --- CORS -------------------------------------------------------------------
+# The default deployment serves the built frontend from this same origin
+# (app/static/index.html), so it needs NO cross-origin access at all. CORS is
+# only required for local Vite development.
+#
+# Previously the regex `https://.*\.vercel\.app|https://.*\.pages\.dev` was
+# combined with allow_credentials=True. Every Vercel and Cloudflare Pages
+# deployment gets a unique subdomain under those domains, so ANY site anyone
+# deployed anywhere was trusted with credentialed requests to this API.
+#
+# Now: an explicit, exact-origin allow-list from CORS_ORIGINS, plus opt-in dev
+# origins via ALLOW_DEV_CORS. No wildcards.
+_cors_origins = [o.strip().rstrip("/") for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+if os.getenv("ALLOW_DEV_CORS", "").strip().lower() in ("1", "true", "yes", "on"):
+    _cors_origins += [
+        "http://localhost:8000", "http://127.0.0.1:8000",
+        "http://localhost:5173", "http://127.0.0.1:5173",
+        "http://localhost:3000", "http://127.0.0.1:3000",
+    ]
+    logger.info("[cors] dev origins enabled (ALLOW_DEV_CORS)")
+if not _cors_origins:
+    logger.info("[cors] no cross-origin origins configured; same-origin deployment, CORS disabled")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://no-cap-sih.vercel.app",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
-    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.pages\.dev|http://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept"],
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
@@ -2106,35 +2133,42 @@ def index(request: Request):
 
 @app.get("/health")
 @app.get("/api/health")
-def health_check():
-    """Liveness and readiness check: returns service, database status, and system metadata."""
-    db_type = "sqlite" if _IS_SQLITE else "postgresql"
-    db_status = "connected"
-    db_err = None
+def health_check(request: Request, admin: str = Depends(get_current_admin_or_none)):
+    """Liveness and readiness check.
 
+    Unauthenticated callers get only `{"status", "service", "timestamp"}`. The
+    database engine, per-capability model inventory, ML-service configuration
+    and any driver error text are operationally useful but also a free map of
+    the deployment, so a signed-in officer is required for them. This also
+    replaces a duplicate definition of this function that sat further down the
+    file and was never reachable.
+    """
+    db_type = "postgresql"
+    db_connected = False
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        db_status = "connected"
+        db_connected = True
     except Exception as e:
-        db_err = sanitize_secret_text(f"{type(e).__name__}: {e}")
-        db_status = f"error ({type(e).__name__})"
+        # Detail is logged, not returned.
+        logger.warning("[health] database probe failed: %s", type(e).__name__)
 
-    return {
-        "status": "ok" if db_status == "connected" else "degraded",
+    base = {
+        "status": "ok" if db_connected else "degraded",
         "service": "SSB Border Screening Desk (SIH26188)",
-        "database": {
-            "status": db_status,
-            "engine": db_type,
-            "connected": db_status == "connected",
-            "error": db_err,
-        },
-        "ml_service": {
-            "configured": bool(os.getenv("ML_SERVICE_URL")),
-        },
-        "capabilities": _capability_report(),
-        "version": "2.2.0-neon",
+        "version": "3.0",
         "timestamp": now_utc(),
+    }
+    if admin is None:
+        return base
+    return {
+        **base,
+        "database": {
+            "connected": db_connected,
+            "engine": db_type,
+        },
+        "ml_service": {"configured": bool(os.getenv("ML_SERVICE_URL"))},
+        "capabilities": _capability_report(),
     }
 
 
@@ -2182,11 +2216,15 @@ def _capability_report() -> dict:
 
 @app.get("/api/ml/status")
 @app.post("/api/ml/keepalive/ping")
-def ping_ml_service():
+def ping_ml_service(request: Request, admin: str = Depends(get_current_admin)):
     """
-    Lightweight health ping to keep external Hugging Face Space awake and warm.
+    Lightweight health ping to keep an external Hugging Face Space awake and warm.
     Only pings /gradio_api/health (or /health), which returns in <100ms and consumes
     no ONNX inference compute, preventing rate limits and zero-activity sleep shutdowns.
+
+    Auth-required: this makes the server issue outbound requests to a
+    caller-influenced URL, so leaving it open turned it into a request
+    amplifier / SSRF-adjacent primitive.
     """
     url = os.getenv("ML_SERVICE_URL")
     if not url:
@@ -2244,37 +2282,10 @@ def ping_ml_service():
     }
 
 
-@app.get("/health")
-@app.get("/api/health")
-def health_check():
-    """Liveness and readiness check: returns service, database status, and system metadata."""
-    db_type = "sqlite" if _IS_SQLITE else "postgresql"
-    db_status = "connected"
-    db_err = None
-
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-    except Exception as e:
-        db_err = sanitize_secret_text(f"{type(e).__name__}: {e}")
-        db_status = f"degraded ({type(e).__name__})"
-
-    return {
-        "status": "ok" if "degraded" not in db_status else "degraded",
-        "service": "SSB Border Screening Desk (SIH26188)",
-        "database": {
-            "status": db_status,
-            "engine": db_type,
-            "connected": db_status == "connected",
-            "error": db_err,
-        },
-        "ml_service": {
-            "configured": bool(os.getenv("ML_SERVICE_URL")),
-        },
-        "capabilities": _capability_report(),
-        "version": "2.2.0-neon",
-        "timestamp": now_utc(),
-    }
+# (A second, byte-different `health_check` used to be defined here. FastAPI
+# registers the first match and ignores the rest, so this copy was dead code
+# that still showed up as a "definition" to every reader and to pyflakes.
+# The single definition now lives above, next to the SPA route.)
 
 
 @app.post("/api/admin/login")
@@ -2295,7 +2306,9 @@ def admin_login(request: Request, credential: str = Form(...)):
         #     Cloud) and the email's own "@domain" suffix (for non-Workspace
         #     accounts). Anyone added to that domain is allowed automatically.
         #   * Exact emails are allow-listed via ALLOWED_EMAILS.
-        #   * Super admins always pass so the owner is never locked out.
+        #   * SUPER_ADMINS always pass (admins by configuration, not by code).
+        # With every list empty nobody can sign in: a misconfigured deployment
+        # is inaccessible rather than open.
         allowed = False
         if not is_super_admin(email):
             hd = str(idinfo.get("hd") or "").strip().lower()
@@ -2344,6 +2357,11 @@ def admin_demo_login(request: Request):
     res = JSONResponse(content={"status": "SUCCESS", "admin": demo_email})
     res.set_cookie(key="nischay_session", value=make_session_token(demo_email), httponly=True, secure=is_secure, samesite="lax", max_age=86400)
     return res
+# that minted a session cookie for `evaluator@ssb.gov.in` -- an account that
+# was also in the hardcoded super-admin list. It was, in effect, an
+# unauthenticated root login on any reachable deployment. It has been removed.
+# If you need a sandbox, run locally with TESTING=1 or point the frontend at a
+# dev instance; do not ship a shared bypass to a screening desk.
 
 @app.post("/api/admin/logout")
 @limiter.limit("20/minute")
@@ -2473,8 +2491,13 @@ def _module_normalize(raw):
         return {k: {"verdict": v} for k, v in raw.items() if isinstance(v, str)}
     return raw
 
-def _screen_row(r):
-    """DB ScreeningReport row -> safe public-shaped dict (fields stay masked)."""
+def _screen_row(r, include_raw_fields: bool = False):
+    """DB ScreeningReport row -> safe public-shaped dict (fields stay masked).
+
+    `include_raw_fields` is opt-in and must only be set for a caller the caller
+    has already authorised to see unmasked identity values. Off by default:
+    raw_fields is the unredacted extraction result, and it now lives only for
+    the lifetime of an OPEN session (see _wipe_session_raw_fields)."""
     signals = _safe_json(r.signals) or []
     return {
         "id": r.id,
@@ -2496,7 +2519,11 @@ def _screen_row(r):
         "masked_fields": _safe_json(r.extracted_fields),
         "session_id": getattr(r, "session_id", None),
         "field_hashes": _safe_json(getattr(r, "field_hashes", None)),
-        "raw_fields": _safe_json(getattr(r, "ephemeral_raw_fields", None)),
+        # Unmasked values: only ever included for an explicitly authorised
+        # caller on a still-open session. Omitted (not nulled) otherwise, so
+        # its absence is visible rather than looking like an empty document.
+        **({"raw_fields": _safe_json(getattr(r, "ephemeral_raw_fields", None))}
+           if include_raw_fields else {}),
         # Explainable signal + detector snapshots: always carried so the desk,
         # review queue and report detail never fall back to invented defaults.
         "signals": signals,
@@ -2564,7 +2591,7 @@ async def screen_document(
     session_id: str = Form(""),        # optional owning border session (SIH26188)
     nationality: str = Form(""),       # traveller nationality (international flow)
     purpose: str = Form(""),           # purpose of travel
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     try:
         data = await file.read()
@@ -2623,7 +2650,10 @@ async def screen_document(
         purpose_txt = (purpose or "").strip()[:120] or None
         session_owner = session_id.strip() or None
         with _get_db_for_session(session_owner) as db:
-            if admin != "evaluator@ssb.gov.in" and not is_super_admin(admin):
+            # Screening duty is granted, never self-claimed: a super admin must
+            # set an officer's post and institution before they can screen.
+            # (There is no evaluator/sandbox exemption here any more.)
+            if not is_super_admin(admin):
                 identity = db.query(SignerIdentity).filter_by(email=admin).first()
                 if not identity:
                     raise HTTPException(403, "ACCESS DENIED.")
@@ -2725,12 +2755,12 @@ async def screen_document(
 
 @app.get("/api/screen/queue")
 @limiter.limit("120/minute")
-def screening_queue(request: Request, admin: str = Depends(get_current_admin_or_evaluator)):
-    # Supervisory officers see the whole desk; line officers see their own runs.
-    # Evaluators see the live queue so they can inspect recent screening runs immediately.
+def screening_queue(request: Request, admin: str = Depends(get_current_admin)):
+    # Supervisory officers see the whole desk; line officers see only their own
+    # runs. There is no anonymous/evaluator view of the queue any more.
     with get_db() as db:
         _q = db.query(ScreeningReport).order_by(ScreeningReport.created_at.desc())
-        if admin != "evaluator@ssb.gov.in" and not is_super_admin(admin):
+        if not is_super_admin(admin):
             _q = _q.filter_by(screener=admin)
         rows = _q.limit(80).all()
         scoped = rows
@@ -2742,12 +2772,15 @@ def screening_queue(request: Request, admin: str = Depends(get_current_admin_or_
 
 @app.get("/api/screen/reports/{report_id}")
 @limiter.limit("120/minute")
-def screening_report_detail(report_id: str, request: Request, admin: str = Depends(get_current_admin_or_evaluator)):
+def screening_report_detail(report_id: str, request: Request, admin: str = Depends(get_current_admin)):
     with get_db() as db:
         r = db.query(ScreeningReport).filter_by(id=report_id).first()
         if not r:
             raise HTTPException(status_code=404, detail="Screening report not found.")
-        if admin != "evaluator@ssb.gov.in" and not is_super_admin(admin) and r.screener != admin:
+        # A line officer may only open their own screening record; supervisors
+        # may open any. Applied consistently across the report, dossier,
+        # BSA certificate and handover routes.
+        if not is_super_admin(admin) and r.screener != admin:
             raise HTTPException(status_code=403, detail="Not your screening record.")
         row = _screen_row(r)
         row["file_hash"] = r.file_hash
@@ -2822,12 +2855,37 @@ def _get_session_owned(db, session_id, admin, require_open=False):
     s = db.query(ScreeningSession).filter_by(id=session_id).first()
     if not s:
         raise HTTPException(status_code=404, detail="Screening session not found.")
-    # In sandbox or shift handover, open sessions are accessible by station screeners/evaluators
-    if not is_super_admin(admin) and s.screener != admin and s.status != "open":
+    # Ownership: a line officer may only touch sessions they opened.
+    # Supervisors may act on any. Settled sessions are read-only for their
+    # originating officer too -- a closed record cannot be quietly reopened by
+    # whoever happened to run the desk; only a supervisor can amend it.
+    if not is_super_admin(admin) and s.screener != admin:
         raise HTTPException(status_code=403, detail="Not your screening session.")
     if require_open and s.status != "open":
         raise HTTPException(status_code=409, detail=f"Session is not open (status={s.status}).")
     return s
+
+
+def _strip_raw_fields(docs: list[dict], admin: str) -> list[dict]:
+    """Remove unmasked `raw_fields` unless the caller is entitled to them.
+
+    `raw_fields` is the unredacted extraction result (holder name, full DOB,
+    complete document numbers, home address). Masked fields plus per-field
+    SHA-256 digests are what the desk, the review queue and the ledger need;
+    the raw values exist only to drive cross-document comparison inside an open
+    session, and are wiped when the session settles.
+
+    Raw values are NOT needed by any non-supervisory view, so they are withheld
+    from everyone except a super admin acting on an open session. A
+    supervisory queue is about verdicts and reasons, not identity records.
+    """
+    if is_super_admin(admin):
+        return docs
+    for d in docs:
+        if d.get("raw_fields"):
+            d["raw_fields"] = {}
+            d["raw_fields_withheld"] = True
+    return docs
 
 
 def _session_docs(db, session_id, include_removed=False):
@@ -2872,12 +2930,48 @@ def _next_second(ts: str) -> str:
         return ts
 
 
+def _wipe_session_raw_fields(db, session_id: str) -> int:
+    """Null out `ephemeral_raw_fields` for every document in a session.
+
+    That column holds the UNMASKED extraction result (holder name, DOB, full
+    document numbers, address) so the desk can cross-compare documents within
+    an open session. It is needed only while the session is live. The column
+    comment claimed it was "wiped when session closes" -- nothing ever did
+    that, so every completed screening left a plaintext identity record in the
+    database indefinitely. That contradicted the zero-storage claim in the
+    README and the declaration on the court certificate.
+
+    Once the cross-document comparison has been computed and recorded as
+    flags (ScreeningSession.comparison), the raw values are redundant: the
+    comparison carries per-field SHA-256 digests, which is all the ledger
+    block needs.
+
+    Returns the number of rows cleared.
+    """
+    try:
+        n = (
+            db.query(ScreeningReport)
+            .filter(ScreeningReport.session_id == session_id)
+            .filter(ScreeningReport.ephemeral_raw_fields.isnot(None))
+            .update({ScreeningReport.ephemeral_raw_fields: None}, synchronize_session=False)
+        )
+        return n or 0
+    except Exception as exc:
+        # Never fail a settlement on the privacy wipe -- but make the failure
+        # visible, because a silent no-op here is exactly the bug being fixed.
+        logger.error("[_wipe_session_raw_fields] failed for session %s: %s", session_id, exc)
+        return 0
+
+
 def _settle_session(db, s, rows, comparison, decision, adjudicator=None, note=""):
     """Close the session and append its signed block to the session ledger.
 
     The chain order is canonical: (closed_at ASC, id ASC). closed_at is bumped
     strictly past the last signed block so same-second commits cannot make the
-    replayed chain disagree with the recorded prev_hash linkage."""
+    replayed chain disagree with the recorded prev_hash linkage.
+
+    Also wipes the session's raw extracted fields, now that the cross-document
+    comparison has been computed and stored as digests + flags."""
     signed = (db.query(ScreeningSession)
               .filter(ScreeningSession.ledger_hash.isnot(None))
               .order_by(ScreeningSession.closed_at.asc(), ScreeningSession.id.asc())
@@ -2902,6 +2996,9 @@ def _settle_session(db, s, rows, comparison, decision, adjudicator=None, note=""
     s.adjudicated_at = closed if adjudicator else None
     if note.strip():
         s.note = ((s.note or "") + (" " if s.note else "") + note.strip()).strip()
+    # Raw identity values are no longer needed: `comparison` already holds the
+    # cross-document findings as per-field digests and flags.
+    _wipe_session_raw_fields(db, s.id)
     db.commit()
     return s
 
@@ -2911,7 +3008,7 @@ def _settle_session(db, s, rows, comparison, decision, adjudicator=None, note=""
 def create_session(request: Request, checkpoint: str = Form(""),
                    nationality: str = Form(""), purpose: str = Form(""),
                    mode: str = Form(""),
-                   admin: str = Depends(get_current_admin_or_evaluator)):
+                   admin: str = Depends(get_current_admin)):
     """Open a border session for the person now at the desk.
 
     Records the traveller's nationality + purpose (guide context only — never
@@ -2944,7 +3041,7 @@ def create_session(request: Request, checkpoint: str = Form(""),
 @app.get("/api/sessions")
 @limiter.limit("120/minute")
 def list_sessions(request: Request, status: str = "", checkpoint: str = "",
-                  admin: str = Depends(get_current_admin_or_evaluator)):
+                  admin: str = Depends(get_current_admin)):
     with get_db() as db:
         q = db.query(ScreeningSession).order_by(ScreeningSession.created_at.desc())
         if not is_super_admin(admin):
@@ -2967,14 +3064,14 @@ def list_sessions(request: Request, status: str = "", checkpoint: str = "",
 
 @app.get("/api/sessions/{session_id}")
 @limiter.limit("120/minute")
-def session_detail(session_id: str, request: Request, admin: str = Depends(get_current_admin_or_evaluator)):
+def session_detail(session_id: str, request: Request, admin: str = Depends(get_current_admin)):
     with _get_db_for_session(session_id) as db:
         try:
             s = _get_session_owned(db, session_id, admin)
             docs, _rows = _session_docs(db, session_id)
             comparison = _comparison_for_rows(docs)
             pub = _session_pub(s, len(docs))
-            pub["documents"] = docs
+            pub["documents"] = _strip_raw_fields(docs, admin)
             pub["comparison"] = comparison
             pub["guide"] = flow_for(
                 checkpoint=(s.checkpoint or "").strip(),
@@ -2992,7 +3089,7 @@ def session_detail(session_id: str, request: Request, admin: str = Depends(get_c
 @limiter.limit("60/minute")
 def close_session(session_id: str, request: Request,
                   verdict: str = Form(...), note: str = Form(""),
-                  admin: str = Depends(get_current_admin_or_evaluator)):
+                  admin: str = Depends(get_current_admin)):
     """Desk officer closes the session: 'approve' signs it into the ledger;
     'flag' routes it to the supervisory review queue; 'close' or 'cancel' closes
     an unused session with 0 documents."""
@@ -3011,6 +3108,7 @@ def close_session(session_id: str, request: Request,
             s.note = (note.strip() or s.note or "Unused session closed by officer").strip()
             s.closed_at = now_utc()
             s.updated_at = s.closed_at
+            _wipe_session_raw_fields(db, s.id)
             db.commit()
             pub = _session_pub(s, len(docs))
             pub["documents"] = docs
@@ -3027,13 +3125,17 @@ def close_session(session_id: str, request: Request,
         if act == "flag":
             s.status = "flagged"
             s.verdict = "REVIEW"
+            # The comparison is persisted (digests + flags) before the raw
+            # values are destroyed, so a supervisor adjudicating this session
+            # later still has everything the decision was based on.
             s.comparison = json.dumps(comparison)
             s.note = note.strip()
             s.closed_at = now_utc()
             s.updated_at = s.closed_at
+            _wipe_session_raw_fields(db, s.id)
             db.commit()
             pub = _session_pub(s, len(docs))
-            pub["documents"] = docs
+            pub["documents"] = _strip_raw_fields(docs, admin)
             pub["comparison"] = comparison
             return pub
         # Security Watchlist Check: Mandatory escalation to supervisor
@@ -3063,15 +3165,63 @@ def close_session(session_id: str, request: Request,
         s.verdict = "CLEAR"
         _settle_session(db, s, rows, comparison, "approve", note=note)
         pub = _session_pub(s, len(docs))
-        pub["documents"] = docs
+        # _settle_session has already wiped the raw fields from the DB; drop
+        # the in-memory copies too so the response cannot echo them.
+        pub["documents"] = _strip_raw_fields(docs, admin)
         pub["comparison"] = comparison
         return pub
+
+
+# Sessions left open (officer walked away mid-screening, shift ended, laptop
+# closed) would otherwise keep their unmasked identity records indefinitely,
+# because only an explicit close/flag/adjudicate wipes them. This sweeps any
+# session that has been idle past the TTL, so raw values have a hard upper
+# bound on lifetime rather than depending on human follow-through.
+RAW_FIELD_TTL_MINUTES = int(os.getenv("RAW_FIELD_TTL_MINUTES", "240") or 240)
+
+
+@app.post("/api/sessions/sweep-raw-fields")
+@limiter.limit("4/minute")
+def sweep_stale_raw_fields(request: Request, admin: str = Depends(get_current_admin)):
+    """Wipe unmasked fields from sessions idle longer than RAW_FIELD_TTL_MINUTES.
+
+    Intended to be called periodically (a cron hit or the keep-alive worker),
+    and available to a super admin to run on demand. Idempotent.
+    """
+    if not is_super_admin(admin):
+        raise HTTPException(status_code=403, detail="Sweep requires a supervisory officer.")
+    with get_db() as db:
+        cutoff = (
+            datetime.now(timezone.utc) - timedelta(minutes=RAW_FIELD_TTL_MINUTES)
+        ).strftime("%Y-%m-%d %H:%M:%S UTC")
+        stale_ids = [
+            sid for (sid,) in
+            db.query(ScreeningSession.id)
+            .filter(ScreeningSession.status == "open")
+            .filter(ScreeningSession.updated_at < cutoff)
+            .all()
+        ]
+        cleared = 0
+        for sid in stale_ids:
+            cleared += _wipe_session_raw_fields(db, sid)
+            sess = db.query(ScreeningSession).filter_by(id=sid).first()
+            if sess is not None:
+                sess.note = ((sess.note or "") + " [raw fields swept: session idle > "
+                             f"{RAW_FIELD_TTL_MINUTES}m]").strip()
+        if cleared or stale_ids:
+            db.commit()
+    return {
+        "ok": True,
+        "sessions_swept": len(stale_ids),
+        "rows_cleared": cleared,
+        "ttl_minutes": RAW_FIELD_TTL_MINUTES,
+    }
 
 
 @app.post("/api/sessions/close-unused")
 @limiter.limit("60/minute")
 def close_unused_sessions(request: Request,
-                          admin: str = Depends(get_current_admin_or_evaluator)):
+                          admin: str = Depends(get_current_admin)):
     """Closes all open sessions belonging to the desk that have 0 documents."""
     closed_count = 0
     with get_db() as db:
@@ -3108,7 +3258,7 @@ def close_unused_sessions(request: Request,
 @limiter.limit("60/minute")
 def adjudicate_session(session_id: str, request: Request,
                        decision: str = Form(...), note: str = Form(""),
-                       admin: str = Depends(get_current_admin_or_evaluator)):
+                       admin: str = Depends(get_current_admin)):
     """Supervisory officer settles a FLAGGED session: CLEARED approves and signs
     it; CONFIRMED_FRAUD / INCONCLUSIVE reject it (also signed, as evidence)."""
     if not is_super_admin(admin):
@@ -3137,7 +3287,7 @@ def adjudicate_session(session_id: str, request: Request,
                                   + (comparison.get("risk_bump") or 0)))
         _settle_session(db, s, rows, comparison, dec, adjudicator=admin, note=note)
         pub = _session_pub(s, len(docs))
-        pub["documents"] = docs
+        pub["documents"] = _strip_raw_fields(docs, admin)
         pub["comparison"] = comparison
         return pub
 
@@ -3145,7 +3295,7 @@ def adjudicate_session(session_id: str, request: Request,
 @app.post("/api/sessions/{session_id}/documents/{report_id}/remove")
 @limiter.limit("60/minute")
 def remove_session_document(session_id: str, report_id: str, request: Request,
-                            admin: str = Depends(get_current_admin_or_evaluator)):
+                            admin: str = Depends(get_current_admin)):
     """Soft-remove a document from an open session.
 
     The ScreeningReport audit row (and its hash-chain block) is NEVER deleted —
@@ -3166,6 +3316,10 @@ def remove_session_document(session_id: str, report_id: str, request: Request,
         r.removed_at = now_utc()
         r.removed_by = admin
         r.session_id = None            # drop session linkage (ledger chain per-row stays)
+        # The document is leaving the session, so it will no longer take part in
+        # cross-document comparison. Wipe its unmasked fields now rather than
+        # leaving them behind on a row nobody will ever close again.
+        r.ephemeral_raw_fields = None
         s.updated_at = now_utc()
         db.commit()
         return {"ok": True, "already_removed": False, "report_id": report_id,
@@ -3176,7 +3330,7 @@ def remove_session_document(session_id: str, report_id: str, request: Request,
 @app.post("/api/sessions/{session_id}/documents/{report_id}/restore")
 @limiter.limit("60/minute")
 def restore_session_document(session_id: str, report_id: str, request: Request,
-                             admin: str = Depends(get_current_admin_or_evaluator)):
+                             admin: str = Depends(get_current_admin)):
     """Undo a soft-remove while the session is still open (re-link + clear the
     removal stamps). Ledger integrity is unaffected: the removed doc was not
     part of any signed block yet."""
@@ -3195,7 +3349,7 @@ def restore_session_document(session_id: str, report_id: str, request: Request,
 
 @app.get("/api/checkpoints")
 @limiter.limit("120/minute")
-def catalog_endpoint(request: Request, admin: str = Depends(get_current_admin_or_evaluator)):
+def catalog_endpoint(request: Request, admin: str = Depends(get_current_admin)):
     """Checkpoint clusters (every Indian border post SSB screens at), the
     identity/travel document catalog, and supported nationalities — powers the
     guided-flow desk UI."""
@@ -3210,7 +3364,7 @@ def catalog_endpoint(request: Request, admin: str = Depends(get_current_admin_or
 @limiter.limit("120/minute")
 def guide_endpoint(request: Request, checkpoint: str = "", doc_type: str = "other",
                    nationality: str = "UNKNOWN",
-                   admin: str = Depends(get_current_admin_or_evaluator)):
+                   admin: str = Depends(get_current_admin)):
     """Guided officer + traveller protocol for one checkpoint/doc/nationality."""
     return flow_for(checkpoint=checkpoint.strip(),
                     doc_type=(doc_type or "other").strip(),
@@ -3219,7 +3373,7 @@ def guide_endpoint(request: Request, checkpoint: str = "", doc_type: str = "othe
 
 @app.get("/api/stats/overview")
 @limiter.limit("60/minute")
-def stats_overview(request: Request, admin: str = Depends(get_current_admin_or_evaluator)):
+def stats_overview(request: Request, admin: str = Depends(get_current_admin)):
     """Border-wide screening statistics (privacy-preserving: only masked rows)."""
     try:
         with get_db() as db:
@@ -3274,7 +3428,7 @@ async def extract_live_image(
     file: UploadFile = Form(...),
     doc_type: str = Form("other"),
     live_frame: UploadFile = Form(None),
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     """Extract structured fields from a LIVE image (webcam capture or upload)
     WITHOUT persisting anything (zero-storage: fields returned in-memory).
@@ -3339,7 +3493,7 @@ async def extract_live_image(
 
 @app.get("/api/sessions/ledger/blocks")
 @limiter.limit("120/minute")
-def session_ledger(request: Request, admin: str = Depends(get_current_admin_or_evaluator)):
+def session_ledger(request: Request, admin: str = Depends(get_current_admin)):
     """Signed session blocks (the border ledger), oldest first."""
     with get_db() as db:
         rows = (db.query(ScreeningSession)
@@ -3362,7 +3516,7 @@ def session_ledger(request: Request, admin: str = Depends(get_current_admin_or_e
 
 @app.get("/api/sessions/ledger/verify")
 @limiter.limit("60/minute")
-def session_ledger_verify(request: Request, admin: str = Depends(get_current_admin_or_evaluator)):
+def session_ledger_verify(request: Request, admin: str = Depends(get_current_admin)):
     """Recomputes every signed session block from its canonical payload and
     checks the chain linkage end to end (tamper detection)."""
     with get_db() as db:
@@ -3413,7 +3567,7 @@ def session_ledger_verify(request: Request, admin: str = Depends(get_current_adm
 
 @app.get("/api/screen/watchlist")
 @limiter.limit("120/minute")
-def screening_watchlist(request: Request, admin: str = Depends(get_current_admin_or_evaluator)):
+def screening_watchlist(request: Request, admin: str = Depends(get_current_admin)):
     if not is_super_admin(admin):
         raise HTTPException(status_code=403, detail="Watchlist access requires a supervisory officer.")
     with get_db() as db:
@@ -3434,7 +3588,7 @@ def screening_shift_export(
     from_date: str = "",
     to_date: str = "",
     checkpoint: str = "",
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     """Export the shift screening log as a signed CSV (chain-of-custody receipt)."""
     import csv
@@ -3490,7 +3644,7 @@ def screening_shift_export(
 def screening_syndicate_alerts(
     request: Request,
     checkpoint: str = "",
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     """Retrieve real-time cross-border syndicate, recidivism, and sector burst alerts."""
     from syndicate import analyze_syndicate_patterns
@@ -3539,7 +3693,7 @@ def screening_syndicate_alerts(
 def screening_evidentiary_dossier(
     request: Request,
     report_id: str,
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     """Generate a court-admissible, tamper-evident forensic dossier (printable HTML/PDF)."""
     import html
@@ -3547,6 +3701,12 @@ def screening_evidentiary_dossier(
         report = db.query(ScreeningReport).filter_by(id=report_id).first()
         if not report:
             raise HTTPException(status_code=404, detail="Screening report not found.")
+        # Same ownership rule as the report-detail route: an officer may only
+        # open their own screening record; supervisors may open any. Without
+        # this, any signed-in officer could walk /dossier/<id> and read another
+        # traveller's screening outcome.
+        if not is_super_admin(admin) and report.screener != admin:
+            raise HTTPException(status_code=403, detail="Not your screening record.")
 
     ef = {}
     try:
@@ -3579,7 +3739,7 @@ def screening_evidentiary_dossier(
         return {"verdict": v} if isinstance(v, str) else {}
 
     dossier_payload = f"{report.id}:{report.file_hash}:{report.verdict}:{report.risk_score}:{report.created_at}:{admin}"
-    dossier_seal = hmac.new(MASTER_VAULT_KEY, dossier_payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    dossier_seal = _vault_keys.sign(EVIDENCE_SEAL_KEY, dossier_payload)
 
     badge_color = "#10b981" if report.verdict == "CLEAR" else ("#f59e0b" if report.verdict == "REVIEW" else "#ef4444")
     fields_html = "".join(f"<div><strong>{html.escape(str(k)).upper()}:</strong> {html.escape(str(v))}</div>" for k, v in ef.items() if v)
@@ -3690,7 +3850,7 @@ def screening_evidentiary_dossier(
 def screening_bsa65b_certificate(
     request: Request,
     session_id: str,
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     """Generate a statutory, court-admissible Electronic Evidence Certificate
     pursuant to Section 63 and Section 65B of the Bharatiya Sakshya Adhiniyam, 2023 (BSA)."""
@@ -3708,7 +3868,7 @@ def screening_bsa65b_certificate(
     prev_hash = s.previous_hash or "GENESIS"
 
     cert_payload = f"{cert_id}:{session_id}:{block_hash}:{officer_id}:{ts}:{len(docs)}"
-    cert_seal = hmac.new(MASTER_VAULT_KEY, cert_payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    cert_seal = _vault_keys.sign(EVIDENCE_SEAL_KEY, cert_payload)
 
     doc_rows_html = ""
     for idx, d in enumerate(docs, 1):
@@ -3828,7 +3988,7 @@ def screening_bsa65b_certificate(
 def screening_shift_handover_token(
     request: Request,
     session_id: str,
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     """Generate an air-gapped cryptographic shift-handover packet for physical or 2D QR transfer."""
     with get_db() as db:
@@ -3838,7 +3998,7 @@ def screening_shift_handover_token(
     ts = now_utc()
     doc_hashes = [d.get("file_hash") for d in docs if d.get("file_hash")]
     handover_payload = f"{session_id}:{s.verdict}:{s.risk_score}:{s.ledger_hash or 'OPEN'}:{admin}:{ts}"
-    token_seal = hmac.new(MASTER_VAULT_KEY, handover_payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    token_seal = _vault_keys.sign(EVIDENCE_SEAL_KEY, handover_payload)
 
     qr_packet = {
         "v": "SSB-HANDOVER-v1",
@@ -3871,7 +4031,7 @@ def screening_shift_handover_token(
 @limiter.limit("60/minute")
 def border_threat_matrix(
     request: Request,
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     """Real-time multi-checkpoint border threat matrix and fraud density monitor."""
     return {
@@ -3941,7 +4101,7 @@ def screening_watchlist_add(
     category: str = Form(...),
     value: str = Form(...),
     reason: str = Form(""),
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     from screening import norm, mask, sha256
     if not is_super_admin(admin):
@@ -3979,7 +4139,7 @@ def screening_watchlist_add(
 def screening_watchlist_remove(
     request: Request,
     entry_id: int = Form(...),
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     if not is_super_admin(admin):
         raise HTTPException(status_code=403, detail="Watchlist access requires a supervisory officer.")
@@ -3998,7 +4158,7 @@ _LATEST_LEDGER_ANCHOR: dict | None = None
 def _compute_anchor_manifest(head_hash: str, total_blocks: int, screener: str, checkpoint: str = "Central Desk") -> dict:
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     sig_payload = f"{head_hash}:{total_blocks}:{ts}:{screener}:{checkpoint}"
-    signature = hmac.new(MASTER_VAULT_KEY, sig_payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    signature = _vault_keys.sign(EVIDENCE_SEAL_KEY, sig_payload)
     return {
         "protocol": "SIH26188-LEDGER-ANCHOR-v1",
         "service": "SSB Border Screening Desk (SIH26188)",
@@ -4010,7 +4170,10 @@ def _compute_anchor_manifest(head_hash: str, total_blocks: int, screener: str, c
         "anchored_by": screener,
         "anchored_at": ts,
         "signature": signature,
-        "verification": "HMAC-SHA256(head_hash:total_blocks:anchored_at:anchored_by:checkpoint, MASTER_VAULT_KEY)",
+        "verification": (
+            "HMAC-SHA256(sig_payload, EVIDENCE_SEAL_KEY) where EVIDENCE_SEAL_KEY = "
+            "HMAC-SHA256(MASTER_VAULT_KEY, 'SSB-SIH26188/evidence-seal/v1')"
+        ),
     }
 
 
@@ -4051,7 +4214,7 @@ def _publish_anchor_gist(manifest: dict) -> tuple[str, str]:
 
 @app.get("/api/screen/ledger/verify")
 @limiter.limit("60/minute")
-def verify_ledger_chain(request: Request, admin: str = Depends(get_current_admin_or_evaluator)):
+def verify_ledger_chain(request: Request, admin: str = Depends(get_current_admin)):
     """Audit endpoint: cryptographically verifies the unbroken append-only hash chain
     across all historical screening reports. Detects any database tampering, out-of-order
     insertions, or modified report attributes."""
@@ -4133,7 +4296,7 @@ def verify_ledger_chain(request: Request, admin: str = Depends(get_current_admin
 
 @app.post("/api/screen/ledger/anchor")
 @limiter.limit("20/minute")
-def anchor_ledger_chain(request: Request, admin: str = Depends(get_current_admin_or_evaluator)):
+def anchor_ledger_chain(request: Request, admin: str = Depends(get_current_admin)):
     """External Blockchain Notarization endpoint:
     Fetches latest ledger head hash and block height, generates a cryptographically
     sealed manifest, and notarizes it to an external public registry (GitHub Gist or
@@ -4172,9 +4335,13 @@ def anchor_ledger_chain(request: Request, admin: str = Depends(get_current_admin
 
 @app.get("/api/screen/ledger/anchor")
 @limiter.limit("60/minute")
-def get_ledger_anchor(request: Request):
+def get_ledger_anchor(request: Request, admin: str = Depends(get_current_admin)):
     """Returns the latest external notarization anchor and its synchronization status
-    with the current database head hash."""
+    with the current database head hash.
+
+    Auth-required: the anchor manifest names the anchoring officer and publishes
+    to a public Gist, so this is operational metadata about the desk, not a
+    public endpoint."""
     global _LATEST_LEDGER_ANCHOR
     with get_db() as db:
         latest = db.query(ScreeningReport).order_by(ScreeningReport.created_at.desc(), ScreeningReport.id.desc()).first()
@@ -4221,7 +4388,7 @@ def get_ledger_anchor(request: Request):
 async def screen_aadhaar_fields(
     request: Request,
     file: UploadFile = Form(...),
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     """Detect Aadhaar-card field bounding boxes using the trained 5-class YOLO model
     (classes: Aadhaar_No, DOB, Gender, Name, Photo)."""
@@ -4254,7 +4421,7 @@ async def verify_liveness(
     frames: list[UploadFile] = Form(...),
     challenge: str = Form("blink"),
     client_meta: str = Form("{}"),
-    admin: str = Depends(get_current_admin_or_evaluator),
+    admin: str = Depends(get_current_admin),
 ):
     """Interactive challenge-response webcam liveness verification. Evaluates anti-virtual-camera
     injection, timestamp jitter, inter-frame physiological motion, and challenge satisfaction."""
@@ -4351,6 +4518,7 @@ def verify_dl_endpoint(
     request: Request,
     dl_number: str = Form(...),
     dob: str = Form(None),
+    admin: str = Depends(get_current_admin),
 ):
     """Verify Driving Licence structure and Parivahan/Setu registry credentials."""
     from dl_verify import verify_driving_licence
@@ -4362,6 +4530,7 @@ def verify_dl_endpoint(
 async def verify_aadhaar_qr_endpoint(
     request: Request,
     file: UploadFile = Form(...),
+    admin: str = Depends(get_current_admin),
 ):
     """Decode and cryptographically verify Aadhaar QR code or barcode with UIDAI certificate checks."""
     from qr_decoder import extract_from_barcodes
@@ -4376,6 +4545,7 @@ async def verify_digest(
     file: UploadFile = Form(None),
     client_hash: str = Form(""),
     raw_text: str = Form(""),
+    admin: str = Depends(get_current_admin),
 ):
     """Screening lookup: derive the SHA-256 of an uploaded sample / pasted text /
     caller-supplied digest and return the latest matching screening record
@@ -4570,12 +4740,14 @@ def _analytics_payload() -> dict:
 
 
 @app.get("/api/analytics")
-def public_analytics(request: Request):
+@limiter.limit("60/minute")
+def public_analytics(request: Request, admin: str = Depends(get_current_admin)):
     return _analytics_payload()
 
 
 @app.get("/api/analytics/summary")
-def public_analytics_summary(request: Request):
+@limiter.limit("60/minute")
+def public_analytics_summary(request: Request, admin: str = Depends(get_current_admin)):
     return {"analytics": _analytics_payload(), "usage": None, "cached": False}
 
 
@@ -4669,7 +4841,6 @@ def _gemini_reply(message, history):
         import requests
         _gemini_http_session = requests.Session()
 
-    last_resp = None
     for model in candidate_models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         try:
@@ -4677,7 +4848,6 @@ def _gemini_reply(message, history):
         except Exception as e:
             print(f"[_gemini_reply] RequestException for model {model}: {sanitize_secret_text(e)}")
             continue
-        last_resp = resp
         if resp.status_code == 200:
             data = resp.json()
             parts = (data.get("candidates") or [{}])[0].get("content", {}).get("parts") or []
@@ -4757,8 +4927,17 @@ def _gemini_reply(message, history):
 
 
 @app.post("/api/chat")
-@limiter.limit("30/minute")
-async def ai_chat(request: Request):
+@limiter.limit("20/minute")
+async def ai_chat(request: Request, admin: str = Depends(get_current_admin)):
+    """Officer assistant.
+
+    NOTE: this is a CLOUD LLM (Google Gemini), not an offline knowledge base.
+    Each call sends the officer's question plus a retrieved slice of this
+    repository's own source to the Gemini API -- see app/codebase.py for the
+    prompt assembly. It requires a signed-in officer and is rate-limited
+    accordingly; with no GEMINI_API_KEY configured it degrades to a static
+    offline guide.
+    """
     try:
         payload = await request.json()
     except Exception:
