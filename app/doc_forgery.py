@@ -218,6 +218,11 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
         near_total_flatness = dead_block_ratio_preview > 0.85
         localized_void = largest_component >= max(8, non_margin_count * 0.005)
         inpaint_void = bool(near_total_flatness or localized_void)
+        void_kind = (
+            "near_total_flatness"
+            if near_total_flatness
+            else ("localized_void" if localized_void else None)
+        )
         active_vars = block_vars[non_margin & (block_vars > 1.0)]
         if active_vars.size > 8:
             med_noise = float(np.median(active_vars))
@@ -228,6 +233,7 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
             uniformity = 0.90
     else:
         inpaint_void = False
+        void_kind = None
         uniformity = 0.95
         dead_blocks = 0
         largest_component = 0
@@ -258,6 +264,8 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
         "substrate_uniformity": round(float(uniformity), 3),
         "dead_block_ratio": round(float(dead_block_ratio), 4),
         "largest_component": int(largest_component),
+        "void_kind": void_kind if inpaint_void else None,
+        "seam_anomaly": bool(seam_anomaly),
         "detail": detail,
         "latency_ms": latency_ms,
     }

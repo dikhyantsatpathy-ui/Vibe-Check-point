@@ -566,11 +566,12 @@ def serial_plausibility(doc_type: str, identifier: str, dob: str | None = None) 
                     if era[0] < min_issue_year - 5:  # 5-year tolerance for early passports
                         checks.append({
                             "label": "serial-anachronism",
-                            "ok": False,
+                            "ok": None,
                             "detail": (
                                 f"Passport series '{series_letter}' was issued ~{era[0]}–{era[1]}, "
-                                f"but holder DOB {dob} implies first eligibility ~{min_issue_year}. "
-                                "Series predates holder's eligibility — possible number fabrication."
+                                f"but holder DOB {dob} implies adult eligibility ~{min_issue_year}. "
+                                "Series predates the holder's expected adult eligibility — advisory only "
+                                "(table is approximate and minors can hold passports); verify by eye."
                             ),
                         })
                     else:

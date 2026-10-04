@@ -266,7 +266,7 @@ sibling modules and can be enabled with AI_DETECTOR_PROVIDER.
 # ---------------------------------------------------------------------------
 # Pixel-level scan (conservative, no false positives on real photos/flat GIFs).
 # ---------------------------------------------------------------------------
-def _pixel_scan(file_bytes: bytes, ext: str):
+def _pixel_scan(file_bytes: bytes, ext: str, trusted_capture: bool = False):
     np = _import_np()
     if np is None or _import_pil() is None:
         return None, None, False
@@ -328,11 +328,11 @@ def _pixel_scan(file_bytes: bytes, ext: str):
             pass
 
         suspicious = (content and suspicious_noise) or uniform_reencode
-        if suspicious and not has_exif:
+        if suspicious and not (has_exif or trusted_capture):
             return ("ai", ("Pixel-level scan found tonal content but an unnaturally smooth "
                            "low-noise pattern (or uniform re-compression error) — a hallmark "
                            "of AI generation or heavy automated processing."), True)
-        # Camera EXIF present — downgrade to advisory, not a hard "ai" flag
+        # Camera EXIF present or trusted webcam capture — downgrade to advisory, not a hard "ai" flag
         return None, None, True
     except Exception:
         return None, None, False
@@ -350,12 +350,13 @@ def heuristic_score(report) -> int:
     return 0
 
 
-def heuristic_detect(image_bytes: bytes, filename: str = "") -> dict:
+def heuristic_detect(image_bytes: bytes, filename: str = "", capture_source: str = "") -> dict:
     ext = (filename or "").lower().split(".")[-1] if "." in (filename or "") else ""
     reasons = []
     leaning = "unknown"
     tool = None
     is_ai, is_edited = False, False
+    pixel_only = False
 
     text = _image_metadata_text(image_bytes, ext)
     kind, tool, desc, conf = _match_tool(text)
@@ -375,9 +376,11 @@ def heuristic_detect(image_bytes: bytes, filename: str = "") -> dict:
         leaning = "pdf_utility"
         reasons.append(desc)
 
-    pixel_lean, pixel_reason, ran = _pixel_scan(image_bytes, ext)
+    trusted_capture = (capture_source == "webcam") or (filename or "").startswith("webcam_")
+    pixel_lean, pixel_reason, ran = _pixel_scan(image_bytes, ext, trusted_capture)
     if ran and pixel_lean == "ai" and not is_ai:
         is_ai = True
+        pixel_only = True  # fired from pixel statistics alone, no generator/editor tag
         leaning = "ai"
         reasons.append(pixel_reason)
 
@@ -410,7 +413,7 @@ def heuristic_detect(image_bytes: bytes, filename: str = "") -> dict:
         "provider": "heuristic",
         "explanation": explanation,
         "latency_ms": 0,
-        "raw": {"kind": leaning, "tool": tool, "reasons": reasons},
+        "raw": {"kind": leaning, "tool": tool, "reasons": reasons, "pixel_only": pixel_only},
     }
 
 # ----------------------------------------------------------------------------
@@ -874,7 +877,7 @@ def _empty(explanation, ran=False):
     }
 
 
-def detect_image(image_bytes: bytes, filename: str = "") -> dict:
+def detect_image(image_bytes: bytes, filename: str = "", capture_source: str = "") -> dict:
     """Public entry point. Runs the active backend and returns the normalized
     verdict. Never raises: any internal failure degrades to a clean, honest
     'unable to inspect' result so a verify request can never 500.
@@ -888,7 +891,8 @@ def detect_image(image_bytes: bytes, filename: str = "") -> dict:
     start = time.perf_counter()
     try:
         _load()
-        result = _detector_ai(image_bytes, filename)
+        result = (_detector_ai(image_bytes, filename, capture_source)
+                  if _detector_ai is heuristic_detect else _detector_ai(image_bytes, filename))
         # If AI is suspected or score is elevated, that signal takes priority over document layout
         if result.get("ai_suspected") or result.get("ai_score", 0) >= 65:
             result["latency_ms"] = int(round((time.perf_counter() - start) * 1000))
@@ -2591,6 +2595,7 @@ async def screen_document(
     session_id: str = Form(""),        # optional owning border session (SIH26188)
     nationality: str = Form(""),       # traveller nationality (international flow)
     purpose: str = Form(""),           # purpose of travel
+    capture_source: str = Form(""),    # optional "webcam" when app camera button produced file
     admin: str = Depends(get_current_admin),
 ):
     try:
@@ -2705,6 +2710,7 @@ async def screen_document(
                 session_id=session_id.strip() or None,
                 nationality=effective_nat, purpose=effective_purpose,
                 data_back=data_back, filename_back=filename_back,
+                capture_source=(capture_source or "").strip().lower()[:16],
             )
         except Exception as exc:
             logger.error(f"[screen_document] Screening failed gracefully for {file.filename}: {exc}", exc_info=True)

@@ -28,7 +28,7 @@ SKIP_DIRS = {
 }
 
 # Files / extensions that never belong in the code context.
-SKIP_FILE_PREFIXES = (".env", "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519")
+SKIP_FILE_PREFIXES = (".env", "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "FIX")
 SKIP_FILE_NAMES = {
     "bun.lock", "package-lock.json", "credentials.json", "service_account.json",
     "service-account.json", "client_secret.json", "nocap.db", "nocap_fallback.db",

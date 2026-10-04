@@ -38,6 +38,7 @@ def _load_tamper_classifier():
 CHECK_WEIGHTS = {
     "onnx-classifier": 1.2,           # most informed single signal once trained — considers all features jointly
     "dual-stream-forgery": 1.0,
+    "dual-stream-localized": 0.6,     # flat cards (PAN/Aadhaar/DL) need corroboration to fail
     "ela": 1.0,
     "sensor-noise": 0.8,
     "copy-move-cloning": 0.9,
@@ -47,6 +48,11 @@ CHECK_WEIGHTS = {
     "liveness": 0.2,
     "card-localization": 0.1,
     "medium": 0.1,
+}
+
+FLAT_BACKGROUND_DOC_TYPES = {
+    "pan", "pan_card", "aadhaar", "aadhaar_card", "aadhar",
+    "driving_licence", "driving_license", "dl", "voter_id", "voter", "epic",
 }
 
 MIN_PIXELS_FOR_TEXTURE_CHECKS = 400_000  # ~640x625, roughly a low-end webcam frame
@@ -169,10 +175,22 @@ def tamper_analysis(image_bytes: bytes | None, ai_detection: dict | None = None,
     elif analyze_doc_forgery:
         forgery_res = analyze_doc_forgery(active_bytes)
         if forgery_res.get("ran"):
+            ds_ok = not forgery_res.get("is_tampered")
+            ds_label = "dual-stream-forgery"
+            ds_detail = forgery_res.get("detail", "Dual-Stream substrate analysis completed.")
+            if (not ds_ok and doc_type in FLAT_BACKGROUND_DOC_TYPES
+                    and forgery_res.get("void_kind") == "localized_void"
+                    and not forgery_res.get("seam_anomaly")):
+                ds_label = "dual-stream-localized"
+                ds_detail = (
+                    "Localized flat region on a card type with a large solid-colour background "
+                    "(PAN/Aadhaar/DL) — counted at reduced weight; needs corroboration "
+                    "(ELA, sensor-noise, copy-move) to fail the card."
+                )
             checks.append({
-                "label": "dual-stream-forgery",
-                "ok": not forgery_res.get("is_tampered"),
-                "detail": forgery_res.get("detail", "Dual-Stream substrate analysis completed."),
+                "label": ds_label,
+                "ok": ds_ok,
+                "detail": ds_detail,
             })
 
     fr = forensics_report(active_bytes)
@@ -223,7 +241,17 @@ def tamper_analysis(image_bytes: bytes | None, ai_detection: dict | None = None,
                                  "webcam capture for a person check."})
 
     # ---- AI-generation / Editing / Screen-aware signal ------------------
-    if (ai_detection.get("raw") or {}).get("kind") in ("ai", "edited"):
+    _raw_ai = ai_detection.get("raw") or {}
+    if _raw_ai.get("kind") == "ai" and _raw_ai.get("pixel_only"):
+        checks.append({
+            "label": "ai-generated-or-edited",
+            "ok": None,
+            "detail": (
+                "Unusually smooth / low-noise pixels (heuristic only; no generator tag in metadata) — "
+                "common on denoised phone and laptop-webcam frames; inspect by eye."
+            ),
+        })
+    elif _raw_ai.get("kind") in ("ai", "edited"):
         checks.append({
             "label": "ai-generated-or-edited",
             "ok": False,

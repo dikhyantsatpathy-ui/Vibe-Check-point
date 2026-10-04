@@ -718,7 +718,8 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
                   nationality: str | None = None,
                   purpose: str | None = None,
                   data_back: bytes | None = None,
-                  filename_back: str | None = None) -> dict:
+                  filename_back: str | None = None,
+                  capture_source: str = "") -> dict:
     """Full Upload->Extract->Analyze->Verify->AssessRisk pass. Returns a
     report dict AND persists an immutable ScreeningReport row.
 
@@ -778,7 +779,7 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         except ImportError:
             from main import detect_image, looks_like_scanned_document  # type: ignore[no-redef]
         try:
-            ai_det = detect_image(data, filename)
+            ai_det = detect_image(data, filename, capture_source=capture_source)
         except Exception:
             ai_det = {**ai_det, "explanation": "AI detector unavailable."}
         try:
@@ -889,11 +890,25 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         pan or dl or aadhaar_no or voter or (passport and mrz_valid is not False)
     )
 
+    ocr_ran = bool((extract_res.get("ocr") or {}).get("ran")) or \
+              bool((extract_res.get("llm_extraction") or {}).get("ran"))
+
     if not identified:
         can_clear = False
-        reasons.append("CRITICAL: Unrecognized document format — No machine-verifiable identity number (Aadhaar, PAN, Passport, Driving Licence, or Voter ID) was validated on the document.")
-        risk = max(risk, 80)
-        hard_flag = True
+        if not ocr_ran:
+            reasons.append(
+                "MANUAL ENTRY REQUIRED: no machine-reading engine ran on this capture "
+                "(OCR unavailable on this deployment) and no machine-verifiable document number was typed in. "
+                "Enter the number from the card in the declared fields. This is NOT a forgery signal."
+            )
+            risk = max(risk, 40)
+        else:
+            reasons.append(
+                "CRITICAL: Unrecognized document format — No machine-verifiable identity number "
+                "(Aadhaar, PAN, Passport, Driving Licence, or Voter ID) was validated on the document."
+            )
+            risk = max(risk, 80)
+            hard_flag = True
 
     # Document type structure validation
     doc_type_clean = (doc_type or "").strip().lower()
@@ -918,11 +933,27 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
             from app.identity import validate_verhoeff
         except ImportError:
             from identity import validate_verhoeff
+
+        qr = extract_res.get("qr_data") or {}
+        qr_verified = bool(qr.get("qr_verified") or qr.get("signature_present"))
+        from extraction import extract_fields
+        typed_aadhaar = extract_fields(" ".join(str(v) for v in (declared or {}).values() if isinstance(v, str))).get("aadhaar")
+        aadhaar_from_ocr = bool(aadhaar_no) and not qr_verified and (aadhaar_no != typed_aadhaar)
+
         if not validate_verhoeff(aadhaar_no):
-            reasons.append(f"CRITICAL FORGERY SIGNAL: Aadhaar number {mask(aadhaar_no)} FAILS UIDAI Verhoeff Checksum — mathematical proof of a fabricated or counterfeit Aadhaar number.")
-            risk = max(risk + 65, 90)
-            hard_flag = True
-            can_clear = False
+            if aadhaar_from_ocr:
+                reasons.append(
+                    "Aadhaar number read by OCR does not pass the UIDAI checksum. With a camera capture "
+                    "this is usually one misread digit. Re-capture closer and flatter, or type the number "
+                    "from the card. Not treated as proof of forgery until re-read."
+                )
+                risk = max(risk, 45)
+                can_clear = False
+            else:
+                reasons.append(f"CRITICAL FORGERY SIGNAL: Aadhaar number {mask(aadhaar_no)} FAILS UIDAI Verhoeff Checksum — mathematical proof of a fabricated or counterfeit Aadhaar number.")
+                risk = max(risk + 65, 90)
+                hard_flag = True
+                can_clear = False
         else:
             reasons.append(f"Aadhaar verified as a 12-digit UIDAI-format number with valid Verhoeff checksum ({mask(aadhaar_no)}).")
             risk -= 3
@@ -965,11 +996,20 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
                            "machine-readable zone is internally consistent.")
             risk -= 6
         elif mrz_valid is False:
-            reasons.append(f"CRITICAL FORGERY SIGNAL: {lbl} {mask(passport)} has an MRZ whose check digits FAIL — "
-                           "mathematical proof of an altered or counterfeit document.")
-            risk = max(risk + 45, 75)
-            hard_flag = True
-            can_clear = False
+            qr = extract_res.get("qr_data") or {}
+            qr_verified = bool(qr.get("qr_verified") or qr.get("signature_present"))
+            if document_aware is False and not qr_verified:
+                reasons.append(f"{lbl} {mask(passport)}: MRZ check digit mismatch on camera capture — "
+                               "likely optical distortion or partial line crop. Re-capture with the entire "
+                               "bottom 2-line MRZ flat, sharp, and glare-free, or verify printed lines by eye.")
+                risk = max(risk, 50)
+                can_clear = False
+            else:
+                reasons.append(f"CRITICAL FORGERY SIGNAL: {lbl} {mask(passport)} has an MRZ whose check digits FAIL — "
+                               "mathematical proof of an altered or counterfeit document.")
+                risk = max(risk + 45, 75)
+                hard_flag = True
+                can_clear = False
         else:
             reasons.append(f"{lbl} number found ({mask(passport)}) but no valid MRZ was "
                            "read to cross-check it — inspect the zone by eye.")
@@ -1139,6 +1179,11 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
     if ai_raw_kind == "pdf_utility":
         tool_name = (ai_det.get("raw") or {}).get("match_tool") or "PDF utility"
         reasons.append(f"Document processed with PDF utility ({tool_name}) — standard document handling.")
+    elif (ai_raw_kind == "ai" and (ai_det.get("raw") or {}).get("pixel_only")
+          and (has_valid_id or document_aware is False) and ela_status != "HIGH"):
+        reasons.append(f"Physical photo capture advisory: unusually smooth/low-noise pixels ({_ai_score}% heuristic) "
+                       "— no generator tag found, ELA clean.")
+        risk += 5
     elif ai_raw_kind == "ai":
         score_val = max(_ai_score, 85)
         tool_name = (ai_det.get("raw") or {}).get("match_tool") or "AI generator"
@@ -1203,7 +1248,7 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
             ela_status = (tamper_res.get("ela") or {}).get("status")
             has_real_tamper = (
                 ela_status == "HIGH"
-                or ai_raw_kind in ("ai", "edited")
+                or (ai_raw_kind in ("ai", "edited") and not (ai_det.get("raw") or {}).get("pixel_only"))
                 or any(c.get("label") == "ai-generated-or-edited" and c.get("ok") is False for c in tamper_res.get("checks", []))
                 or any(c.get("label", "").startswith("liveness-") and c.get("ok") is False for c in tamper_res.get("checks", []))
             )

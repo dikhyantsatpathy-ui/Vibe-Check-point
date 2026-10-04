@@ -413,6 +413,7 @@ export function screenDocument(
 ) {
   const fd = form({ doc_type: docType, checkpoint });
   fd.append("file", file, file.name);
+  fd.append("capture_source", file.name.startsWith("webcam_") ? "webcam" : "upload");
   if (fileBack) fd.append("file_back", fileBack, fileBack.name);
   if (declared && Object.keys(declared).length > 0) {
     fd.append("declared", JSON.stringify(declared));

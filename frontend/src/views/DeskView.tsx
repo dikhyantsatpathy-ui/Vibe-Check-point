@@ -691,8 +691,11 @@ function WebcamCapture({
   // Video stream
   useEffect(() => {
     let isCurrent = true;
+    const base: MediaTrackConstraints = { width: { ideal: 1920 }, height: { ideal: 1080 } };
     const constraints: MediaStreamConstraints = {
-      video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : { facingMode: "environment" },
+      video: selectedDeviceId
+        ? { ...base, deviceId: { exact: selectedDeviceId } }
+        : { ...base, facingMode: "environment" },
     };
     navigator.mediaDevices?.getUserMedia(constraints).then((s) => {
       if (!isCurrent) {
@@ -704,6 +707,11 @@ function WebcamCapture({
       }
       streamRef.current = s;
       setStreamError(null);
+      const track = s.getVideoTracks()[0];
+      const st = track?.getSettings?.() ?? {};
+      if ((st.width ?? 0) * (st.height ?? 0) > 0 && (st.width ?? 0) * (st.height ?? 0) < 1_000_000) {
+        toast("This camera is providing a low-resolution capture. Move closer, add light, or upload a photo from your phone camera for optimal OCR.", "warn");
+      }
       if (videoRef.current) {
         videoRef.current.srcObject = s;
         videoRef.current.play().catch(() => {});
@@ -2065,6 +2073,7 @@ export function DeskView() {
                               key={fileKey}
                               type="file"
                               accept="image/*,.pdf"
+                              capture="environment"
                               onChange={(e) => void handleFrontFileSelect(e.target.files?.[0] || null)}
                             />
                             <div className="dropzone__icon">
@@ -2135,6 +2144,7 @@ export function DeskView() {
                               key={fileKeyBack}
                               type="file"
                               accept="image/*,.pdf"
+                              capture="environment"
                               onChange={(e) => void handleBackFileSelect(e.target.files?.[0] || null)}
                             />
                             <div className="dropzone__icon">
