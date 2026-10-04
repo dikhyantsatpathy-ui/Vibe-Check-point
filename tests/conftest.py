@@ -11,6 +11,13 @@ So the environment is pinned here, before a single application import happens.
 If you are reading this while debugging a test that "can't find its database",
 the throwaway SQLite file is created under the system temp directory and
 deleted on teardown.
+
+That throwaway database is TEST-ONLY. The application itself refuses to start
+on a SQLite URL -- see the `_IS_TEST_SQLITE` guard in app/main.py -- because
+SQLite serialises all writes behind one lock and cannot hold the append-only
+audit chain across concurrent officers or a cold start. Using it here just
+means the suite needs no Postgres server; nothing about it is reachable in a
+deployment.
 """
 
 import os

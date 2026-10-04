@@ -248,7 +248,9 @@ python -m uvicorn app.main:app --port 8000
 ```
 
 Running the test suite (`tests/conftest.py` pins a throwaway SQLite database and an
-ephemeral key, so a test run can never touch a real deployment):
+ephemeral key, so a test run can never touch a real deployment). That SQLite is
+**test-only** — it lets the suite run without a Postgres server, and the app
+refuses to start on it in any deployment:
 
 ```bash
 python -m pytest tests/ -q
@@ -275,7 +277,6 @@ single-file frontend, and starts the server on http://127.0.0.1:8000.
 | `REDIS_URL` / `KV_URL` | no | Shared rate-limit store. Without it the limiter is per-process (each serverless instance has its own). |
 | `RAW_FIELD_TTL_MINUTES` | no | Idle time before a supervisor sweep wipes raw fields from an abandoned session (default 240). |
 | `KEEPALIVE_INTERVAL` | no | Neon wake-up pinger interval in seconds (default 45; `0` disables). Auto-disabled on Vercel. |
-| `ALLOW_LOCAL_SQLITE` | no | Set to `1` to permit a local SQLite fallback when `DATABASE_URL` is unset (offline/edge only). |
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | no | Officer assistant. **This is a cloud LLM** — see §6. Unset → static offline guide. |
 | `GITHUB_TOKEN` / `LEDGER_GIST_ID` | no | Publishes the ledger anchor to a **public** Gist. The manifest includes the anchoring officer's email. |
 | `AI_DETECTOR_PROVIDER`, `AI_DETECTOR_KEY`, `AI_DETECTOR_ENDPOINT` | no | Optional cloud tamper-detector backends (blank → local heuristic) |
@@ -298,17 +299,18 @@ builds to the tracked `app/static/index.html`, served with `Cache-Control: no-st
 4. Cold starts: Neon + dependency import can take a few seconds on the first hit — the engine
    retries DNS/connect and treats table bootstrap as best-effort.
 
-### Offline / Border Deployments (SQLite)
+### Edge / Border Deployments (PostgreSQL only)
 
-For an edge desk with no reachable database, set `ALLOW_LOCAL_SQLITE=1` and the app uses a
-local SQLite file in WAL mode. This is **opt-in**: previously a missing `DATABASE_URL`
-silently fell through to SQLite (or worse, to a hardcoded production DSN), which is how a
-deployment ends up writing an audit trail somewhere nobody chose.
+An edge desk with no internet still needs a database, and it must be a real PostgreSQL
+server - a local one, or a managed instance reachable over the link. **SQLite is not a
+supported target.** It serialises every write behind a single writer lock (officers queue
+against each other during a shift burst), it has no concurrent-reader story for the review
+queue, and a local file is exactly the ephemeral-/tmp failure mode a serverless deploy
+hits on every cold start. The app refuses to start on a SQLite `DATABASE_URL` rather than
+pretend it can hold an append-only audit chain.
 
-While reads are concurrent in WAL mode, **SQLite serialises all writes**. During high-traffic
-shift bursts, simultaneous officer submissions queue behind each other on the SQLite writer
-lock. The app sets a 15-second `busy_timeout` so this resolves without raising exceptions, but
-officers may see 5–15s submission latency at peak.
+If `DATABASE_URL` is unset, startup fails loudly. There is no default DSN and no fallback -
+a missing variable must not silently send the audit trail somewhere nobody chose.
 
 ## 10. Judge Q&A
 

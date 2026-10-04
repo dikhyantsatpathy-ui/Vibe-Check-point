@@ -1016,52 +1016,57 @@ def clean_postgres_dsn(raw_url: str) -> str:
 
 
 
-# --- Database selection (no baked-in credentials, no silent fallback) -------
+# --- Database selection: PostgreSQL only, no baked-in credentials ----------
 # A Postgres DSN used to be hardcoded here and used whenever DATABASE_URL was
 # unset. That put a live credential -- and the live audit trail it guarded --
 # in version control, and meant a fresh clone silently connected to someone
 # else's database. There is now no default DSN of any kind.
 #
-# Resolution order:
-#   1. DATABASE_URL from the environment (the only supported production path).
-#   2. TESTING=1              -> throwaway SQLite, set by tests/conftest.py.
-#   3. ALLOW_LOCAL_SQLITE=1    -> local SQLite for offline/edge desks. This is
-#                                 opt-in on purpose: falling back silently is
-#                                 how the wrong database gets used in anger.
-#   4. Otherwise: fail at startup. A screening desk that cannot reach its
-#      audit ledger must not come up pretending it can.
+# SQLite was previously offered as an `ALLOW_LOCAL_SQLITE=1` "offline / edge
+# desk" mode. That is gone. SQLite was never a viable target for this system:
+# it serialises every write behind a single writer lock, so a screening shift
+# queues officer submissions against each other; it has no concurrent-reader
+# story for the review queue; its file is local to one machine, which is
+# exactly the ephemeral-`/tmp` failure mode a serverless deploy hits on every
+# cold start; and a local file cannot carry the append-only hash chain that is
+# the point of the audit ledger. Deployments that want Postgres get Postgres
+# (Neon/Supabase/RDS). Deployments with no database do not start.
+#
+# The one remaining exception is TESTING=1, which lets `tests/conftest.py` run
+# the suite against a throwaway in-memory database so no Postgres server is
+# required to run the tests. It is unreachable in a real deployment and is
+# asserted as such below.
 _raw_env_db = os.getenv("DATABASE_URL", "").strip()
-DATABASE_URL = clean_postgres_dsn(_raw_env_db) if _raw_env_db else ""
+if not _raw_env_db:
+    raise RuntimeError(
+        "DATABASE_URL is not set.\n"
+        "This application will not start without an explicit PostgreSQL target.\n"
+        "  * production / Vercel : set DATABASE_URL (Neon, Supabase, RDS, ...)\n"
+        "  * tests               : tests/conftest.py sets it automatically\n"
+        "There is deliberately no built-in default DSN and no SQLite fallback."
+    )
+DATABASE_URL = clean_postgres_dsn(_raw_env_db)
 
-if not DATABASE_URL:
-    _testing = os.getenv("TESTING") == "1"
-    _allow_local = os.getenv("ALLOW_LOCAL_SQLITE", "").strip().lower() in ("1", "true", "yes", "on")
-    if _testing:
-        _db_path = os.path.join(
-            os.environ.get("TMPDIR", os.environ.get("TEMP", "/tmp")),
-            "sih26188_test.db",
-        )
-        DATABASE_URL = f"sqlite:///{_db_path}"
-    elif _allow_local:
-        DATABASE_URL = "sqlite:////tmp/sih26188.db" if os.name != "nt" else "sqlite:///sih26188.db"
-        print(
-            "[startup] ALLOW_LOCAL_SQLITE=1 -- using local SQLite. This is an "
-            "OFFLINE/EDGE mode only: SQLite serialises all writes, so a busy "
-            "shift will queue on the writer lock. Do not use in production."
-        )
-    else:
-        raise RuntimeError(
-            "DATABASE_URL is not set.\n"
-            "This application will not start without an explicit database target:\n"
-            "  * production / Vercel : set DATABASE_URL in the environment\n"
-            "  * offline or edge desk : set ALLOW_LOCAL_SQLITE=1 (SQLite, WAL mode)\n"
-            "  * tests               : tests/conftest.py sets it automatically\n"
-            "There is deliberately no built-in default DSN."
-        )
+# Test the *scheme*, not a string prefix. clean_postgres_dsn() has already
+# rewritten "postgresql://" to "postgresql+psycopg2://" by this point, so a
+# prefix match against the rewritten form would classify every real
+# deployment as SQLite and refuse to start.
+_db_scheme = DATABASE_URL.split("://", 1)[0].lower()
+_IS_TEST_SQLITE = not _db_scheme.startswith("postgres")
+if _IS_TEST_SQLITE and os.getenv("TESTING") != "1":
+    # A SQLite URL outside a test run means someone is trying to deploy the
+    # unsupported configuration the comment above describes. Say so, loudly,
+    # rather than accepting it and failing later under load.
+    raise RuntimeError(
+        "DATABASE_URL must be a PostgreSQL connection string.\n"
+        f"Got: {DATABASE_URL.split('://', 1)[0]}://...\n"
+        "SQLite is not a supported deployment target for this system: it\n"
+        "serialises all writes behind one lock, holds the audit ledger in a\n"
+        "local file, and is lost on every serverless cold start.\n"
+        "Use Neon, Supabase or any managed PostgreSQL instance."
+    )
 
-_IS_SQLITE = "sqlite" in DATABASE_URL
-
-if not _IS_SQLITE:
+if not _IS_TEST_SQLITE:
     import psycopg2
 
     def _pg_creator(**kw):
@@ -1087,7 +1092,9 @@ if not _IS_SQLITE:
         connect_args={"application_name": "nocap"},
     )
 else:
+    # Test-only. See _IS_TEST_SQLITE above: unreachable outside TESTING=1.
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
     @event.listens_for(engine, "connect")
     def _set_sqlite_pragmas(dbapi_conn, connection_record):
         try:
@@ -1403,7 +1410,7 @@ def _ensure_db_initialized():
             Base.metadata.create_all(bind=engine)
         except Exception as e:
             print(f"[startup] warning: create_all on primary deferred ({e}).")
-        if not _IS_SQLITE:
+        if not _IS_TEST_SQLITE:
             try:
                 with engine.connect() as conn:
                     script = ";\n".join(stmt.rstrip(";") for stmt in _MIGRATIONS) + ";"
@@ -1423,6 +1430,11 @@ def _ensure_db_initialized():
                 except Exception:
                     pass
         else:
+            # Test-only path, kept so the suite can run without a Postgres
+            # server. SQLite has no `ADD COLUMN IF NOT EXISTS`, so each
+            # statement is attempted and its failure ignored -- `create_all`
+            # above already produced the current schema from the models, so
+            # these migrations are a no-op on a fresh test database.
             try:
                 with engine.connect() as conn:
                     for stmt in _MIGRATIONS:
@@ -1433,44 +1445,6 @@ def _ensure_db_initialized():
                             conn.rollback()
             except Exception as e:
                 print(f"[startup] migration pass skipped ({e})")
-        if _IS_SQLITE:
-            try:
-                with engine.connect() as conn:
-                    cols = [r[0] for r in conn.execute(text("PRAGMA table_info(screening_reports)")).fetchall()]
-                    for _sqlite_col, _sqlite_ddl in (
-                        ("latency_ms", "INTEGER"),
-                        ("session_id", "VARCHAR"),
-                        ("field_hashes", "TEXT"),
-                        ("ephemeral_raw_fields", "TEXT"),
-                        ("modules", "TEXT"),
-                        ("watchlist_hits", "TEXT"),
-                    ):
-                        if _sqlite_col not in cols:
-                            conn.execute(text(f"ALTER TABLE screening_reports ADD COLUMN {_sqlite_col} {_sqlite_ddl}"))
-                            conn.commit()
-                    scols = [r[0] for r in conn.execute(text("PRAGMA table_info(screening_sessions)")).fetchall()]
-                    for _scol, _sddl in (
-                        ("previous_hash", "VARCHAR"),
-                        ("ledger_hash", "VARCHAR"),
-                        ("comparison", "TEXT"),
-                        ("note", "TEXT"),
-                        ("adjudicator", "VARCHAR"),
-                        ("adjudicated_at", "VARCHAR"),
-                        ("label", "VARCHAR"),
-                    ):
-                        if _scol not in scols:
-                            conn.execute(text(f"ALTER TABLE screening_sessions ADD COLUMN {_scol} {_sddl}"))
-                            conn.commit()
-                    sicols = [r[0] for r in conn.execute(text("PRAGMA table_info(signer_identities)")).fetchall()]
-                    for _sicol, _sic_ddl in (
-                        ("is_revoked", "INTEGER DEFAULT 0"),
-                        ("revoked_at", "VARCHAR"),
-                    ):
-                        if _sicol not in sicols:
-                            conn.execute(text(f"ALTER TABLE signer_identities ADD COLUMN {_sicol} {_sic_ddl}"))
-                            conn.commit()
-            except Exception:
-                pass
         try:
             _backfill_session_labels(engine)
         except Exception as e:
@@ -1550,7 +1524,7 @@ def _start_keepalive() -> None:
     if os.getenv("VERCEL") == "1":
         return  # serverless: instances are short-lived, a daemon thread would be pointless
     interval = float(os.getenv("KEEPALIVE_INTERVAL", "45"))
-    if _IS_SQLITE or interval <= 0:
+    if interval <= 0:
         return
 
     def _ping_loop():
@@ -2107,12 +2081,11 @@ async def _neon_keepalive_loop():
     while True:
         try:
             await asyncio.sleep(210)
-            if not _IS_SQLITE:
-                def _ping():
-                    with engine.connect() as conn:
-                        conn.execute(text("SELECT 1"))
-                await run_in_threadpool(_ping)
-                logger.debug("[neon_keepalive] Neon DB ping OK.")
+            def _ping():
+                with engine.connect() as conn:
+                    conn.execute(text("SELECT 1"))
+            await run_in_threadpool(_ping)
+            logger.debug("[neon_keepalive] Neon DB ping OK.")
         except asyncio.CancelledError:
             break
         except Exception as exc:
@@ -2120,7 +2093,7 @@ async def _neon_keepalive_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if os.getenv("VERCEL") != "1" and not _IS_SQLITE:
+    if os.getenv("VERCEL") != "1":
         asyncio.create_task(run_in_threadpool(_ensure_db_initialized))
         keepalive_task = asyncio.create_task(_neon_keepalive_loop())
         try:
@@ -2233,7 +2206,7 @@ def health_check(request: Request, admin: str = Depends(get_current_admin_or_non
     replaces a duplicate definition of this function that sat further down the
     file and was never reachable.
     """
-    db_type = "sqlite" if _IS_SQLITE else "postgresql"
+    db_type = engine.dialect.name
     db_connected = False
     try:
         with engine.connect() as conn:
