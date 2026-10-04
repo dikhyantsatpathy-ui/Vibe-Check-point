@@ -164,7 +164,7 @@ def test_clean_postgres_dsn():
     # 6. Multi-variable pasted string (accidentally copied .env block)
     url5 = "postgresql://user:pass@ep-red.neon.tech/neondb?sslmode=require MASTER_VAULT_KEY=my_vault_key FOO_BAR_TEST=123"
     clean5 = clean_postgres_dsn(url5)
-    assert clean5 == "postgresql://user:pass@ep-red.neon.tech/neondb?sslmode=require"
+    assert clean5 == "postgresql+psycopg2://user:pass@ep-red.neon.tech/neondb?sslmode=require"
     assert os.getenv("FOO_BAR_TEST") == "123"
 
 
