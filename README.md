@@ -116,27 +116,61 @@ identifiers (e.g. `PAN: ABCT…23`, never the naked number).
 | `app/face.py`, `app/face_match.py` | Face comparison (embedding model or dHash fallback). |
 | `app/mrz.py`, `app/validation.py` | ICAO 9303 MRZ parsing/check digits + document-number rules. |
 | `app/identity.py`, `app/extraction.py` | PAN/DL/Voter-ID detection and text extraction (Pillow/pypdf). |
-| `app/codebase.py` | Rule-based assistant blueprint / architecture index. |
-| `frontend/src/views/AuthorityView.tsx` | The entire officer console UI. |
+| `app/session.py` | Session orchestration, cross-document comparison, ledger block chaining. |
+| `app/keys.py` | Key loading, sub-key derivation, rotation window. No defaults. |
+| `app/qr_decoder.py` | Barcode/QR decode and Aadhaar Secure-QR parsing. |
+| `app/yolo_roi.py`, `app/doctype_cls.py`, `app/doc_forgery.py` | ONNX ROI detection, doc-type classification, dual-stream forgery. |
+| `app/codebase.py` | Architecture index and source retrieval for the officer assistant. |
+| `app/config.py`, `app/guide.py`, `app/stats.py` | Checkpoint/document catalogs, guided protocol, aggregates. |
+| `frontend/src/views/DeskView.tsx` | Officer console: intake, capture, the 4-module scorecard, decision bar. |
+| `frontend/src/views/ReviewQueueView.tsx` · `LedgerView.tsx` | Supervisory adjudication; hash-chain block explorer. |
+| `frontend/src/views/StaffView.tsx` · `WatchlistView.tsx` | Officer directory / role grants; hash-only watchlist. |
+| `frontend/src/views/GoogleSignIn.tsx` · `ChatModal.tsx` | Google Identity sign-in gate; officer assistant. |
 | `frontend/src/api.ts` | Typed API client. |
 | `app/static/index.html` | Built frontend (Vite single-file), served by the backend. |
 
 ## 6. Security & Privacy Model
 
 - **Google SSO + hard gate.** Officers authenticate via Google Identity Services; the
-  `id_token` is verified server-side against `GOOGLE_CLIENT_ID`. Domain/email allow-lists
-  (`ALLOWED_DOMAINS` / `ALLOWED_EMAILS`, override `SUPER_ADMINS`) gate access; a configurable
-  hardcoded demo list keeps the owner unlocked when unset.
+  `id_token` is verified server-side against `GOOGLE_CLIENT_ID`. Access is decided by
+  configuration only: `ALLOWED_DOMAINS` / `ALLOWED_EMAILS` gate sign-in, and `SUPER_ADMINS`
+  holds the addresses with root clearance. **All three default to empty, which means nobody
+  can sign in** — a misconfigured deployment is inaccessible, not open. There is no
+  hardcoded fallback list, and no substring or pattern matching: only an exact address match
+  grants admin rights.
 - **Screening duty is granted, never self-claimed.** A first sign-in has no role and is
   blocked from screening until a super-admin assigns post & institution via
   `/api/admin/assign_role` (the officer directory in the UI).
-- **Stateless, constant-time sessions.** Login cookies are `email::HMAC(MASTER_VAULT_KEY,
-  email)` verified with `hmac.compare_digest`, `HttpOnly`, `SameSite=Lax` (`Secure` on Vercel).
-  Re-reading the identity row on every request makes privilege changes immediate.
+- **No baked-in secrets.** `DATABASE_URL` and `MASTER_VAULT_KEY` are required; the app
+  refuses to start without them, and refuses a key shorter than 32 bytes rather than
+  padding or truncating a weak one. Session tokens and evidence seals are signed with two
+  *separately derived* sub-keys, so a signature from one context cannot be replayed in the
+  other. Roll the key forward by setting `MASTER_VAULT_KEY_PREV` to the outgoing key, which
+  is then accepted for verification only.
+- **Stateless, constant-time sessions.** Login cookies are `email::expiry::HMAC(...)`,
+  verified with `hmac.compare_digest`, `HttpOnly`, `SameSite=Lax` (`Secure` in production).
+  The identity row is re-read on every request, so revocation, role changes and account
+  removal take effect immediately — a deleted account's cookie stops working at once.
+- **Every route is authenticated.** There is one auth gate (`get_current_admin`) and no
+  anonymous fallback. The liveness probe and the signed public notice feed are the only
+  unauthenticated surfaces, and the probe returns nothing operational without a session.
+  `tests/test_authz.py` asserts this for the whole registered route table, and fails if a
+  newly added route is not explicitly classified as public or protected.
 - **Zero PII at rest.** Screenings store masked fields only; the watchlist stores SHA-256
-  hashed identifiers; no document bytes or images are persisted.
+  hashed identifiers; no document bytes or images are persisted. Unmasked fields are held
+  *only while a session is open*, so the desk can cross-compare documents, and are wiped on
+  close, flag, adjudication and document-removal — plus a TTL sweep
+  (`RAW_FIELD_TTL_MINUTES`) for sessions abandoned mid-shift. They are withheld from API
+  responses unless a supervisor asks for them.
 - **Rate limiting** via slowapi on auth and screening routes; WAF-grade response headers
-  (`nosniff`, `DENY` framing, HSTS); CORS restricted to the app origin.
+  (`nosniff`, `DENY` framing, HSTS). CORS is an exact-origin allow-list (`CORS_ORIGINS`);
+  the default same-origin deployment needs none. Note that the limiter is per-process
+  unless you set `REDIS_URL`, since each serverless instance keeps its own counters.
+- **The officer assistant is a cloud LLM.** `/api/chat` sends the question plus a retrieved
+  slice of this repository's source to Google Gemini. It requires a signed-in officer, and
+  the security-critical files (`app/main.py`, `app/keys.py`, `app/session.py`,
+  `api/index.py`, `scripts/anchor_ledger.py`) and any `.env` are excluded from that
+  retrieval. Unset `GEMINI_API_KEY` and a static offline guide is used instead.
 
 ## 7. API Reference
 
@@ -156,34 +190,96 @@ identifiers (e.g. `PAN: ABCT…23`, never the naked number).
 | `POST /api/screen/watchlist/remove` | **super-admin** | Remove a watchlist entry |
 | `GET /api/screen/syndicate-alerts` | cookie | Cross-checkpoint pattern alerts (optional checkpoint filter) |
 | `GET /api/screen/shift-export` | **super-admin** | Signed CSV shift log |
-| `GET /api/screen/dossier/{id}` | cookie | Printable HMAC-sealed court dossier (HTML) |
-| `POST /api/chat` | cookie | Rule-based officer assistant (offline knowledge base) |
+| `GET /api/screen/dossier/{id}` | cookie (owner or super) | Printable HMAC-sealed court dossier (HTML) |
+| `POST /api/chat` | cookie | Officer assistant — **cloud LLM** (Gemini), with retrieved source context |
+
+### Border sessions (one traveller = one session)
+
+| Endpoint | Auth | Purpose |
+|---|---|---|
+| `POST /api/sessions` | cookie (approved role) | Open a traveller session |
+| `GET /api/sessions` | cookie | Session list (scoped; supervisors see all) |
+| `GET /api/sessions/{id}` | owner or **super-admin** | Session + documents + cross-document comparison |
+| `POST /api/sessions/{id}/close` | owner or **super-admin** | `approve` / `flag` / `close`; approve signs the ledger |
+| `POST /api/sessions/{id}/adjudicate` | **super-admin** | CLEARED / CONFIRMED_FRAUD / INCONCLUSIVE on a flagged session |
+| `POST /api/sessions/{id}/documents/{rid}/remove` \| `/restore` | owner or **super-admin** | Soft-remove / restore a document (audit row + chain preserved) |
+| `POST /api/sessions/close-unused` | cookie | Close open sessions with zero documents |
+| `POST /api/sessions/sweep-raw-fields` | **super-admin** | Wipe raw fields from sessions idle past `RAW_FIELD_TTL_MINUTES` |
+
+### Ledger, evidence & threat picture
+
+| Endpoint | Auth | Purpose |
+|---|---|---|
+| `GET /api/screen/ledger/verify` | cookie | Replay and verify the whole hash chain |
+| `POST /api/screen/ledger/anchor` | cookie | Publish an external notarisation anchor |
+| `GET /api/screen/ledger/anchor` | cookie | Latest anchor + drift vs the current head |
+| `GET /api/sessions/ledger/blocks` \| `/verify` | cookie | Session-level ledger blocks and chain check |
+| `GET /api/screen/bsa65b/{session_id}` | owner or **super-admin** | BSA 2023 §63/§65B electronic-evidence certificate (HTML) |
+| `GET /api/screen/handover/{session_id}` | owner or **super-admin** | Signed shift-handover token (2D-QR packet) |
+| `GET /api/border/threat_matrix` | cookie | Cross-checkpoint threat posture |
+
+### Extraction, verification & reference data
+
+| Endpoint | Auth | Purpose |
+|---|---|---|
+| `POST /api/extract` | cookie | Live-field extraction from a captured frame (no ledger write) |
+| `POST /api/screen/aadhaar-fields` | cookie | 5-class Aadhaar zone detection |
+| `POST /api/screen/liveness` | cookie | Challenge-response webcam liveness |
+| `POST /api/verify` | cookie | Digest lookup for a previously screened document |
+| `POST /api/verify/dl` | cookie | Driving-licence structure + registry credential check |
+| `POST /api/verify/aadhaar-qr` | cookie | Decode an Aadhaar QR/barcode |
+| `GET /api/checkpoints` \| `/api/guide` | cookie | Checkpoint clusters, document catalog, guided protocol |
+| `GET /api/stats/overview` \| `/api/analytics` \| `/api/analytics/summary` | cookie | Operational dashboards |
+| `GET /api/admin/revoke_officer` \| `/unrevoke_officer` \| `/remove_officer` | **super-admin** | Revoke, restore or delete an officer account |
+| `GET`/`POST` `/api/broadcasts*` | read: public · write: **super-admin** | Signed public notice board |
+| `GET /api/ml/status`, `POST /api/ml/keepalive/ping` | cookie | Remote ML microservice health / wake-up |
+| `GET /api/health` | public | Liveness only; full detail requires a session |
 
 ## 8. Setup & Run
 
 ```bash
-git clone <repo-url> && cd crypto
+git clone <repo-url> && cd Vibe-Check-point
 python -m venv .venv
 .venv\Scripts\activate                 # Windows (Linux: source .venv/bin/activate)
 pip install -r requirements.txt
-copy .env.example .env                # then fill real values
-uvicorn main:app --port 8000          # run from app/  (or double-click START.bat)
+copy .env.example .env                # then fill in DATABASE_URL, MASTER_VAULT_KEY,
+                                      # GOOGLE_CLIENT_ID and SUPER_ADMINS
+python -m uvicorn app.main:app --port 8000
+```
+
+Running the test suite (`tests/conftest.py` pins a throwaway SQLite database and an
+ephemeral key, so a test run can never touch a real deployment):
+
+```bash
+python -m pytest tests/ -q
 ```
 
 Or double-click **START.bat** (Windows), which installs Python + npm deps, rebuilds the
 single-file frontend, and starts the server on http://127.0.0.1:8000.
 
-**Environment variables** (`.env`, gitignored):
+**Environment variables** (`.env`, gitignored — see `.env.example` for the annotated set):
+
+> The app **refuses to start** without `DATABASE_URL`, `MASTER_VAULT_KEY` (minimum 32 bytes,
+> never padded or truncated) and `GOOGLE_CLIENT_ID`. With all three authorisation lists empty
+> nobody can sign in — set `SUPER_ADMINS` before first run or you will lock yourself out.
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `DATABASE_URL` | yes | SQLAlchemy URL (PostgreSQL / Neon recommended; SQLite works locally) |
-| `MASTER_VAULT_KEY` | yes | 32+ byte master key for the session-HMAC and dossier seals |
-| `GOOGLE_CLIENT_ID` | yes | Google OAuth 2.0 client (GSI + backend ID-token verification) |
-| `SUPER_ADMINS` | no | Comma-separated admins who bypass the login gate (override). Unset → code falls back to a hardcoded demo list. |
-| `ALLOWED_DOMAINS` / `ALLOWED_EMAILS` | no | Authorisation allow-list driven by Google Cloud |
+| `DATABASE_URL` | **yes** | SQLAlchemy URL (PostgreSQL / Neon recommended). No default DSN exists. |
+| `MASTER_VAULT_KEY` | **yes** | 32+ byte master key. Session tokens and evidence seals use separately derived sub-keys. |
+| `MASTER_VAULT_KEY_PREV` | no | Outgoing key during rotation — accepted for **verification only**. |
+| `GOOGLE_CLIENT_ID` | **yes** | Google OAuth 2.0 client (GSI + backend ID-token verification). No fallback. |
+| `SUPER_ADMINS` | no | Comma-separated exact addresses with root clearance. **Defaults to empty.** No substring matching. |
+| `ALLOWED_DOMAINS` / `ALLOWED_EMAILS` | no | Sign-in allow-list driven by Google Cloud. |
+| `CORS_ORIGINS` / `ALLOW_DEV_CORS` | no | Exact browser origins allowed to call the API. Same-origin deployments need neither. |
+| `REDIS_URL` / `KV_URL` | no | Shared rate-limit store. Without it the limiter is per-process (each serverless instance has its own). |
+| `RAW_FIELD_TTL_MINUTES` | no | Idle time before a supervisor sweep wipes raw fields from an abandoned session (default 240). |
 | `KEEPALIVE_INTERVAL` | no | Neon wake-up pinger interval in seconds (default 45; `0` disables). Auto-disabled on Vercel. |
+| `ALLOW_LOCAL_SQLITE` | no | Set to `1` to permit a local SQLite fallback when `DATABASE_URL` is unset (offline/edge only). |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | no | Officer assistant. **This is a cloud LLM** — see §6. Unset → static offline guide. |
+| `GITHUB_TOKEN` / `LEDGER_GIST_ID` | no | Publishes the ledger anchor to a **public** Gist. The manifest includes the anchoring officer's email. |
 | `AI_DETECTOR_PROVIDER`, `AI_DETECTOR_KEY`, `AI_DETECTOR_ENDPOINT` | no | Optional cloud tamper-detector backends (blank → local heuristic) |
+| `ML_SERVICE_URL` | no | Remote ML microservice. **Leave blank unless deployed** — a placeholder value is treated as configured. |
 | `FACE_EMBED_MODEL` | no | ArcFace/FaceNet-style `.onnx` for production face matching (e.g. `data/models/w600k_r50.onnx`) |
 | `YOLO_ROI_ONNX_PATH` | no | Local ID-card ROI detector (worker only; auto-loads `app/models/card.onnx`) |
 | `AADHAAR_FIELDS_ONNX_PATH` | no | 5-class Aadhaar field detector (`app/models/aadhaar_fields.onnx`) via `yolo_roi.extract_aadhaar_fields` |
@@ -204,8 +300,15 @@ builds to the tracked `app/static/index.html`, served with `Cache-Control: no-st
 
 ### Offline / Border Deployments (SQLite)
 
-In edge deployments with low or no connectivity, the application automatically falls back to a local SQLite database using WAL (Write-Ahead Logging) mode. 
-While reads are concurrent in WAL mode, **SQLite serializes all writes**. During high-traffic shift bursts, simultaneous officer submissions will queue behind each other on the SQLite writer lock. The application is configured with a 15-second `busy_timeout` to handle this queuing automatically without raising exceptions. Officers may experience up to a 5-15 second submission latency during peak bursts while the background queuing resolves write contention.
+For an edge desk with no reachable database, set `ALLOW_LOCAL_SQLITE=1` and the app uses a
+local SQLite file in WAL mode. This is **opt-in**: previously a missing `DATABASE_URL`
+silently fell through to SQLite (or worse, to a hardcoded production DSN), which is how a
+deployment ends up writing an audit trail somewhere nobody chose.
+
+While reads are concurrent in WAL mode, **SQLite serialises all writes**. During high-traffic
+shift bursts, simultaneous officer submissions queue behind each other on the SQLite writer
+lock. The app sets a 15-second `busy_timeout` so this resolves without raising exceptions, but
+officers may see 5–15s submission latency at peak.
 
 ## 10. Judge Q&A
 
@@ -223,9 +326,12 @@ every FLAGGED result goes through **human adjudication** — the AI suggests, th
 decides.
 
 **Q: What about privacy?**
-A: Zero-storage discipline — document bytes and live captures exist only in memory; the
-database keeps masked identifiers and hashes. The watchlist stores SHA-256 hashes, never raw
-numbers, so it can't leak identity data.
+A: Zero-storage discipline — document bytes and live captures exist only in memory, and the
+database keeps masked identifiers and hashes. The one place unmasked values exist is inside an
+*open* session, where they are needed to cross-check the traveller's documents against each
+other; they are wiped the moment the session closes, is flagged, is adjudicated or has a
+document removed, and a supervisor can sweep any session left idle past
+`RAW_FIELD_TTL_MINUTES`. The watchlist stores SHA-256 hashes, never raw numbers.
 
 **Q: How do you stop an impostor using a genuine document?**
 A: Module 4 compares the live face capture with the document portrait (embedding-model cosine
@@ -235,11 +341,15 @@ syndicate monitor, an impostor's identity also trips cross-checkpoint alerts.
 **Q: How is the role system real?**
 A: Screening requires an approved post & institution set only by `/api/admin/assign_role`.
 A sign-in without an approved role is blocked server-side; officers cannot claim their own
-title.
+title. Which addresses hold administrative rights comes solely from `SUPER_ADMINS` in the
+environment — there is no list in the code, and no pattern matching, so an address that
+merely *looks* like an admin's is not one.
 
 **Q: What if Google or the cloud AI provider is down?**
 A: Screening still runs: heuristic AI detection and the OCR/forensics pipeline are on-device,
 OAuth verify failure simply denies login. The demo never depends on external availability.
+The officer assistant is the one exception — it is a cloud LLM, and with no `GEMINI_API_KEY`
+it degrades to a static offline guide rather than failing.
 
 ---
 

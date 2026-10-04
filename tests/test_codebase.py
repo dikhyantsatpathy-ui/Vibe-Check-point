@@ -29,11 +29,11 @@ from codebase import (
 def test_index_scans_project_sources():
     rels = {f["rel"] for f in _load_index()}
     # Real project files must be discoverable from the repo root.
-    assert "app/main.py" in rels
+    # NOTE: app/main.py is deliberately absent -- see NEVER_INDEX / the
+    # secret-bearing-files test. It is the one core engine file excluded.
     assert "app/screening.py" in rels
-    assert any(r.endswith("frontend/src/views/DeskView.tsx") for r in rels) or any(
-        r == "frontend/src/views/DeskView.tsx" for r in rels
-    )
+    assert "app/mrz.py" in rels
+    assert "frontend/src/views/DeskView.tsx" in rels
     assert "README.md" in rels
 
 
@@ -69,9 +69,14 @@ def test_context_respects_budget():
 
 
 def test_snippets_never_empty_for_matching_file():
+    """Any file the indexer DOES keep must yield a snippet when it matches.
+
+    app/main.py is excluded (NEVER_INDEX), so this uses a file that is still
+    eligible for retrieval.
+    """
     index = _load_index()
-    main = next(f for f in index if f["rel"] == "app/main.py")
-    out = _snippets(main, "gemini")
+    target = next(f for f in index if f["rel"] == "app/screening.py")
+    out = _snippets(target, "gemini")
     assert out.strip(), "snippet for a matching file must produce content"
 
 
@@ -100,9 +105,34 @@ def test_context_includes_blueprint_and_manifest():
     ctx = codebase_context("explain the architecture")
     assert "### SYSTEM ARCHITECTURE BLUEPRINT & REPOSITORY MAP:" in ctx
     assert "### COMPLETE PROJECT FILES MANIFEST:" in ctx
-    assert "FILE: app/main.py" in ctx
+    # No SOURCE of app/main.py may be attached to the prompt. Its *name* still
+    # appears in the authored architecture blueprint, which is intended -- the
+    # point is that the file's contents never reach the model.
+    #
+    # Built by concatenation because this test file is itself indexed, so a
+    # literal would appear in its own retrieved snippet.
+    blocked_header = "FILE: " + "app/" + "main.py"
+    assert blocked_header not in ctx
     assert "FILE: app/screening.py" in ctx
     assert "FILE: frontend/src/views/DeskView.tsx" in ctx
+
+
+def test_secret_bearing_files_are_never_indexed():
+    """The chat assistant ships retrieved source to a third-party LLM.
+
+    These files hold the DSN, key resolution and raw-field comparison logic.
+    They are excluded wholesale rather than relying on regex redaction.
+    """
+    from codebase import NEVER_INDEX, _load_index
+    rels = {f["rel"] for f in _load_index()}
+    for blocked in NEVER_INDEX:
+        assert blocked not in rels, f"{blocked} must never be sent to the LLM"
+
+
+def test_no_dotenv_is_ever_indexed():
+    from codebase import _load_index
+    rels = {f["rel"] for f in _load_index()}
+    assert not any(".env" in r for r in rels), "dotfiles may contain live secrets"
 
 
 def test_reload_index():

@@ -96,12 +96,31 @@ _lock = threading.Lock()
 _index: list[dict] | None = None
 
 
+# Files that must never leave the deployment. `app/main.py` used to be the
+# single worst case: it carried a committed production database DSN and a
+# fallback vault key, so indexing it meant shipping both to a third-party LLM.
+# The credentials themselves are gone now, but the file remains the densest
+# concentration of security-relevant logic in the repo, so it is excluded
+# wholesale rather than relied upon for redaction.
+NEVER_INDEX = {
+    "app/main.py",      # auth, key resolution, DSN handling
+    "app/keys.py",      # key derivation
+    "app/session.py",   # holds raw-field comparison inputs
+    "api/index.py",
+    "main.py",
+    "scripts/anchor_ledger.py",
+}
+
+
 def _iter_source_files():
     """Yield (rel_path, abs_path) for every source and doc file that belongs to the index."""
     for dirpath, dirnames, filenames in os.walk(REPO_ROOT):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".")]
         for fn in filenames:
             if fn in SKIP_FILE_NAMES or fn.startswith(SKIP_FILE_PREFIXES):
+                continue
+            # Never index a dotfile-adjacent secret or the explicitly blocked set.
+            if fn.startswith(".env"):
                 continue
             ext = os.path.splitext(fn)[1].lower()
             if ext in SKIP_FILE_EXTS or ext not in INCLUDE_EXTS:
@@ -115,6 +134,10 @@ def _iter_source_files():
 
             # Don't index temporary or test artifacts from root
             if rel.startswith("_tmp_"):
+                continue
+
+            # Hard block on secret-bearing / security-critical files.
+            if rel in NEVER_INDEX:
                 continue
 
             yield rel, abs_path
