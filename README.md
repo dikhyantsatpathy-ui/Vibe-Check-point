@@ -177,10 +177,10 @@ single-file frontend, and starts the server on http://127.0.0.1:8000.
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `DATABASE_URL` | yes | SQLAlchemy URL (PostgreSQL / Neon recommended; SQLite works locally) |
-| `MASTER_VAULT_KEY` | yes | 32+ byte master key for the session-HMAC and dossier seals |
+| `DATABASE_URL` | yes | Neon PostgreSQL connection string (only supported database; no SQLite) |
+| `MASTER_VAULT_KEY` | yes | 32+ byte master key for session-HMAC and evidence seals (with key separation) |
 | `GOOGLE_CLIENT_ID` | yes | Google OAuth 2.0 client (GSI + backend ID-token verification) |
-| `SUPER_ADMINS` | no | Comma-separated admins who bypass the login gate (override). Unset → code falls back to a hardcoded demo list. |
+| `SUPER_ADMINS` | no | Comma-separated admin emails granted root clearance (exact match, no pattern wildcards) |
 | `ALLOWED_DOMAINS` / `ALLOWED_EMAILS` | no | Authorisation allow-list driven by Google Cloud |
 | `KEEPALIVE_INTERVAL` | no | Neon wake-up pinger interval in seconds (default 45; `0` disables). Auto-disabled on Vercel. |
 | `AI_DETECTOR_PROVIDER`, `AI_DETECTOR_KEY`, `AI_DETECTOR_ENDPOINT` | no | Optional cloud tamper-detector backends (blank → local heuristic) |
@@ -202,10 +202,13 @@ builds to the tracked `app/static/index.html`, served with `Cache-Control: no-st
 4. Cold starts: Neon + dependency import can take a few seconds on the first hit — the engine
    retries DNS/connect and treats table bootstrap as best-effort.
 
-### Offline / Border Deployments (SQLite)
+### Database Architecture (Neon Postgres Only)
 
-In edge deployments with low or no connectivity, the application automatically falls back to a local SQLite database using WAL (Write-Ahead Logging) mode. 
-While reads are concurrent in WAL mode, **SQLite serializes all writes**. During high-traffic shift bursts, simultaneous officer submissions will queue behind each other on the SQLite writer lock. The application is configured with a 15-second `busy_timeout` to handle this queuing automatically without raising exceptions. Officers may experience up to a 5-15 second submission latency during peak bursts while the background queuing resolves write contention.
+Per security and compliance requirements, **Neon PostgreSQL is the sole database**.
+All SQLite and local SQL fallbacks have been eliminated: if the database is unreachable,
+the application fails loudly with a clear diagnostic instead of silently degrading to an
+ephemeral or desynchronised local store. Connection pooling and retry-with-backoff handle
+serverless cold starts seamlessly.
 
 ## 10. Judge Q&A
 
