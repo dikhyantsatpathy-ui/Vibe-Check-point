@@ -20,6 +20,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.p
 import main
 from main import Base, ScreeningReport, app, make_session_token, now_utc
 
+# The officer these route tests act as. conftest.py sets SUPER_ADMINS to
+# test-superadmin@example.com; a plain officer is a different, non-privileged
+# identity so tests exercise the real ownership checks.
+OFFICER = "officer@ssb.gov.in"
+
 
 def _synth_image(w: int = 120, h: int = 120, color: str = "white") -> bytes:
     from PIL import Image, ImageDraw
@@ -42,8 +47,17 @@ def client(monkeypatch):
     TestSession = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
     monkeypatch.setattr(main, "SessionLocal", TestSession)
 
-    # Set up user session cookie
-    sess_token = make_session_token("officer@ssb.gov.in")
+    # Signed-in officer. get_current_admin() now requires a surviving
+    # SignerIdentity row (a bare valid signature is not authorisation), so the
+    # fixture must create one -- as every real sign-in does.
+    with TestSession() as db:
+        if not db.query(main.SignerIdentity).filter_by(email=OFFICER).first():
+            db.add(main.SignerIdentity(
+                email=OFFICER, name="Test Officer", designation="Border Screening Inspector",
+                institution="Sashastra Seema Bal", registered_at=main.now_utc(),
+            ))
+            db.commit()
+    sess_token = make_session_token(OFFICER)
     return TestClient(app, cookies={"nischay_session": sess_token})
 
 
@@ -161,10 +175,13 @@ def test_clean_postgres_dsn():
     assert clean_postgres_dsn("") == ""
     assert clean_postgres_dsn("sqlite:///:memory:") == "sqlite:///:memory:"
 
-    # 6. Multi-variable pasted string (accidentally copied .env block)
+    # 6. Multi-variable pasted string (accidentally copied .env block).
+    #    The scheme is rewritten to the psycopg2 driver, so compare against the
+    #    expected post-rewrite form rather than the input verbatim.
     url5 = "postgresql://user:pass@ep-red.neon.tech/neondb?sslmode=require MASTER_VAULT_KEY=my_vault_key FOO_BAR_TEST=123"
     clean5 = clean_postgres_dsn(url5)
     assert clean5 == "postgresql+psycopg2://user:pass@ep-red.neon.tech/neondb?sslmode=require"
+    assert "MASTER_VAULT_KEY" not in clean5
     assert os.getenv("FOO_BAR_TEST") == "123"
 
 
@@ -246,11 +263,19 @@ def test_manifest_signature():
     assert manifest["head_hash"] == "deadbeef1234"
     assert manifest["total_blocks"] == 42
 
-    # Recompute expected signature
+    # Recompute the expected signature. Seals are signed with the derived
+    # evidence-seal sub-key, not the raw master, so a master-key signature can
+    # never be replayed as a session token (or vice versa).
+    vault_keys = main._vault_keys
     ts = manifest["anchored_at"]
     payload = f"deadbeef1234:42:{ts}:commander@ssb.gov.in:Raxaul ICP"
-    expected = hmac.new(MASTER_VAULT_KEY, payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    expected = vault_keys.sign(vault_keys.seal_key(), payload)
     assert manifest["signature"] == expected
+
+    # A signature made with the raw master key must not verify as a seal.
+    import hmac as _hmac
+    wrong = _hmac.new(MASTER_VAULT_KEY, payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    assert wrong != expected
 
 
 
