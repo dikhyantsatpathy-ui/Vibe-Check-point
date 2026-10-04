@@ -111,6 +111,22 @@ NEVER_INDEX = {
 }
 
 
+# Files that must never leave the deployment. `app/main.py` used to be the
+# single worst case: it carried a committed production database DSN and a
+# fallback vault key, so indexing it meant shipping both to a third-party LLM.
+# The credentials themselves are gone now, but the file remains the densest
+# concentration of security-relevant logic in the repo, so it is excluded
+# wholesale rather than relied upon for redaction.
+NEVER_INDEX = {
+    "app/main.py",      # auth, key resolution, DSN handling
+    "app/keys.py",      # key derivation
+    "app/session.py",   # holds raw-field comparison inputs
+    "api/index.py",
+    "main.py",
+    "scripts/anchor_ledger.py",
+}
+
+
 def _iter_source_files():
     """Yield (rel_path, abs_path) for every source and doc file that belongs to the index."""
     for dirpath, dirnames, filenames in os.walk(REPO_ROOT):
