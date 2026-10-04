@@ -150,6 +150,15 @@ def test_syndicate_alerts_endpoint(monkeypatch):
     TestSession = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
     monkeypatch.setattr(main, "SessionLocal", TestSession)
 
+    # Auth is mandatory on this route, and get_current_admin() requires a
+    # surviving SignerIdentity row, so the fixture has to create one.
+    with TestSession() as db:
+        from main import SignerIdentity, now_utc as _now
+        if not db.query(SignerIdentity).filter_by(email="officer@example.com").first():
+            db.add(SignerIdentity(email="officer@example.com", name="Officer",
+                                  institution="SSB", designation="Inspector",
+                                  registered_at=_now()))
+            db.commit()
     client = TestClient(app, cookies={"nischay_session": make_session_token("officer@example.com")})
     resp = client.get("/api/screen/syndicate-alerts")
     assert resp.status_code == 200
@@ -165,7 +174,7 @@ def test_evidentiary_dossier_endpoint(monkeypatch):
     from sqlalchemy.pool import StaticPool
     from sqlalchemy.orm import sessionmaker
     import main
-    from main import app, make_session_token, Base, ScreeningReport, now_utc
+    from main import app, make_session_token, Base, ScreeningReport, SignerIdentity, now_utc
 
     test_engine = create_engine(
         "sqlite:///:memory:",
@@ -179,6 +188,11 @@ def test_evidentiary_dossier_endpoint(monkeypatch):
     # Populate a test report in the in-memory SQLite DB
     db = TestSession()
     try:
+        # The dossier route is now ownership-checked, so the requester must be
+        # a real, signed-in officer who is also the report's screener.
+        db.add(SignerIdentity(email="officer@example.com", name="Officer",
+                              institution="SSB", designation="Inspector",
+                              registered_at=now_utc()))
         rep = ScreeningReport(
             id="test_dossier_rep1",
             file_hash="a1b2c3d4e5f67890",
