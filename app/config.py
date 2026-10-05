@@ -175,6 +175,11 @@ DOCUMENT_CATALOG = {
         "field": "citizenship_number",
         "hint": "Inner pages with photograph and personal details.",
     },
+    "bhutan_citizenship": {
+        "label": "Bhutanese Citizenship Identity Card",
+        "field": "citizenship_number",
+        "hint": "Front side of card with 11-digit CID and photo.",
+    },
     "rc": {
         "label": "Passport (RC) or travel document",
         "field": "passport",
@@ -192,7 +197,7 @@ SCREEN_DOC_TYPES = list(DOCUMENT_CATALOG.keys())
 # Identity classes recognised by the trained doc-type classifier (ONNX).
 DOC_TYPE_CLASSES = [
     "passport", "aadhaar", "pan", "driving_licence",
-    "voter_id", "nepali_citizenship", "other",
+    "voter_id", "nepali_citizenship", "bhutan_citizenship", "other",
 ]
 
 # --------------------------------------------------------------------------- #

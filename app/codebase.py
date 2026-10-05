@@ -95,28 +95,9 @@ def _sanitize_secrets(text: str) -> str:
 _lock = threading.Lock()
 _index: list[dict] | None = None
 
-# Files that must never leave the deployment. `app/main.py` used to be the
-# single worst case: it carried a committed production database DSN and a
-# fallback vault key, so indexing it meant shipping both to a third-party LLM.
-# The credentials themselves are gone now, but the file remains the densest
-# concentration of security-relevant logic in the repo, so it is excluded
-# wholesale rather than relied upon for redaction.
-NEVER_INDEX = {
-    "app/main.py",      # auth, key resolution, DSN handling
-    "app/keys.py",      # key derivation
-    "app/session.py",   # holds raw-field comparison inputs
-    "api/index.py",
-    "main.py",
-    "scripts/anchor_ledger.py",
-}
-
-
-# Files that must never leave the deployment. `app/main.py` used to be the
-# single worst case: it carried a committed production database DSN and a
-# fallback vault key, so indexing it meant shipping both to a third-party LLM.
-# The credentials themselves are gone now, but the file remains the densest
-# concentration of security-relevant logic in the repo, so it is excluded
-# wholesale rather than relied upon for redaction.
+# Files that must never leave the deployment. `app/main.py` carries auth,
+# key-resolution, and DSN handling — excluded wholesale rather than relying
+# on redaction.
 NEVER_INDEX = {
     "app/main.py",      # auth, key resolution, DSN handling
     "app/keys.py",      # key derivation
@@ -316,7 +297,8 @@ def codebase_context(question: str) -> str:
             f"{blueprint}"
         )
 
-    core_landmark_rels = ("app/main.py", "app/screening.py", "frontend/src/views/DeskView.tsx", "app/validation.py")
+    # app/main.py is in NEVER_INDEX and will never appear in the index.
+    core_landmark_rels = ("app/screening.py", "frontend/src/views/DeskView.tsx", "app/validation.py")
     landmarks = [f for f in files if f["rel"] in core_landmark_rels]
     landmark_set = {f["rel"] for f in landmarks}
 

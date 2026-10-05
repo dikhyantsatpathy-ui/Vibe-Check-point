@@ -31,6 +31,8 @@ _TARGET_FIELD_FOR = {
     "driving_licence": "driving_licence",
     "voter_id": "voter_id",
     "rc": "driving_licence",
+    "nepali_citizenship": "citizenship_number",
+    "bhutan_citizenship": "citizenship_number",
 }
 _GENERIC_DECL_KEYS = {"document_number", "doc_number", "number", "id", "declared"}
 

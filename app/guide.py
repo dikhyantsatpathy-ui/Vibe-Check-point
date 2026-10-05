@@ -36,7 +36,7 @@ from config import (
 NATIONALITIES = {
     "IN": ("India", "passport", "aadhaar", "driving_licence", "voter_id", "pan"),
     "NP": ("Nepal", "passport", "nepali_citizenship"),
-    "BT": ("Bhutan", "passport"),
+    "BT": ("Bhutan", "passport", "bhutan_citizenship"),
     "BD": ("Bangladesh", "passport", "visa"),
     "MM": ("Myanmar", "passport", "visa"),
     "CN": ("China", "passport", "visa"),

@@ -321,6 +321,7 @@ export const SCREEN_DOC_TYPES = [
   "voter_id",
   "aadhaar",
   "nepali_citizenship",
+  "bhutan_citizenship",
   "other",
 ] as const;
 
@@ -338,6 +339,7 @@ export const SCREEN_DOC_LABELS: Record<ScreenDocType, string> = {
   voter_id: "VOTER ID",
   aadhaar: "AADHAAR",
   nepali_citizenship: "NEPALI NAGARIKTA",
+  bhutan_citizenship: "BHUTANESE CITIZENSHIP",
   other: "OTHER",
 };
 
@@ -349,6 +351,7 @@ export const SCREEN_DOC_NUMBER_PLACEHOLDERS: Record<ScreenDocType, string> = {
   voter_id: "e.g. ABC1234567",
   aadhaar: "12-digit UID (e.g. 5489 2104 9931)",
   nepali_citizenship: "Cert No (e.g. 12-01-75-03421)",
+  bhutan_citizenship: "CID No (e.g. 10101001234)",
   other: "Number printed on the document",
 };
 

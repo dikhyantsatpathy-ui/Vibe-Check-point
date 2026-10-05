@@ -39,9 +39,14 @@ def test_other_document_structures():
     assert identity.verify_dl("XX0100000000000")[0]["ok"] is True
     assert identity.verify_rc("KA01MJ1234")[0]["ok"] is True
     assert identity.verify_epic("ABC1234567")[0]["ok"] is True
+    assert identity.verify_nepali_citizenship("12-01-75-03421")[0]["ok"] is True
+    assert identity.verify_nepali_citizenship("1234/5678")[0]["ok"] is True
+    assert identity.verify_bhutan_citizenship("10101001234")[0]["ok"] is True
     assert identity.verify_dl("not-a-licence")[0]["ok"] is False
     assert identity.verify_rc("KAMJ")[0]["ok"] is False
     assert identity.verify_epic("AB12345678")[0]["ok"] is False
+    assert identity.verify_nepali_citizenship("bad")[0]["ok"] is False
+    assert identity.verify_bhutan_citizenship("1010100123")[0]["ok"] is False
 
 
 def test_passport_mrz_check_digits():

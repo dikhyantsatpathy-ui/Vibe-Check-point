@@ -78,6 +78,9 @@ pics/
 # Ignore generated documentation and chat logs
 *.md
 !README.md
+# ...except agent skills, which are markdown but must be versioned
+!/.agents/skills/
+!/.agents/skills/**
 CHAT_EXPORT.html
 chat_transcripts/
 clean up for hackathon/

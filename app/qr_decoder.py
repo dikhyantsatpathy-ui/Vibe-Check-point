@@ -13,10 +13,8 @@ Supports:
 
 import base64
 import gzip
-import io
 import json
 import re
-import struct
 import xml.etree.ElementTree as ET
 import zlib
 
@@ -27,11 +25,6 @@ try:
     import zxingcpp
 except ImportError:
     zxingcpp = None
-
-from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate
 
 
 # UIDAI 2048-bit RSA Public Signing Key (Certificates published by UIDAI for offline e-KYC/Secure QR verification)
@@ -99,7 +92,6 @@ def parse_aadhaar_qr(barcode_record: dict) -> dict:
       - 1D Barcode (Code128 / Code39)
     """
     text = (barcode_record.get("text") or "").strip()
-    raw_bytes = barcode_record.get("bytes") or b""
 
     out = {
         "valid": False,
@@ -283,6 +275,8 @@ def _parse_secure_qr_v2(decomp: bytes) -> dict:
             out["fields"]["dob"] = _normalize_qr_date(dob)
         if gender:
             out["fields"]["gender"] = gender[0].upper()
+        if care_of:
+            out["fields"]["care_of"] = care_of
 
         addr_parts = [house, street, landmark, location, vtc, post_office, sub_district, district, state]
         full_addr = ", ".join(p for p in addr_parts if p)

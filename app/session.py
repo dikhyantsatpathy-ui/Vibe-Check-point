@@ -22,7 +22,10 @@ prove, and never silently clears a real one.
 
 import hashlib
 
-from screening import norm  # type: ignore
+try:
+    from app.screening import norm  # type: ignore
+except ImportError:
+    from screening import norm  # type: ignore
 
 
 # Fields whose values must agree across the documents of one person.
@@ -148,7 +151,6 @@ def _entry(doc: dict, key: str):
             return {"h": hashlib.sha256(n.encode("utf-8")).hexdigest(), "s": "latin"}
     return None
 
-from llm import analyze_session_discrepancies
 
 
 def devanagari_to_ascii_digits(s: str) -> str:
@@ -529,7 +531,15 @@ def build_comparison(docs: list[dict]) -> dict:
     # AI Semantic Discrepancy Matching Override
     raw_docs_data = [d.get("raw_fields") for d in docs if d.get("raw_fields")]
     if len(raw_docs_data) > 1 and verdict == "DISCREPANCY":
-        ai_res = analyze_session_discrepancies(raw_docs_data)
+        try:
+            from app.llm import analyze_session_discrepancies
+        except ImportError:
+            try:
+                from llm import analyze_session_discrepancies
+            except ImportError:
+                analyze_session_discrepancies = None
+        if analyze_session_discrepancies is not None:
+            ai_res = analyze_session_discrepancies(raw_docs_data)
         if ai_res.get("ran") and ai_res.get("result"):
             ai_verdict = ai_res["result"].get("verdict")
             if ai_verdict == "CONSISTENT" or ai_res["result"].get("semantic_match"):

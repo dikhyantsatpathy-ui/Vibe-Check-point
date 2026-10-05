@@ -3,9 +3,9 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app")))
 
-from qr_decoder import parse_aadhaar_qr, parse_pan_qr, parse_dl_barcode
+from qr_decoder import parse_aadhaar_qr, parse_pan_qr
 from dl_verify import verify_driving_licence
-from screening import extract_fields, _PAN_RE, _DL_RE, _EXP_RE
+from screening import extract_fields
 
 
 def test_pan_regex_robustness():

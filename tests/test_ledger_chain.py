@@ -249,7 +249,6 @@ def test_ledger_anchor_endpoints(client):
 
 def test_manifest_signature():
     """_compute_anchor_manifest produces verified HMAC-SHA256 non-repudiation signature."""
-    import hmac
     import hashlib
     from main import _compute_anchor_manifest, MASTER_VAULT_KEY
 

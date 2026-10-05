@@ -344,6 +344,20 @@ def verify_epic(number: str) -> list:
              "detail": "3 letters + 7 digits (EPIC format)"}]
 
 
+def verify_nepali_citizenship(number: str) -> list:
+    n = norm(number)
+    is_valid = bool(re.match(r"^[\d/-]{5,20}$", n)) if n else False
+    return [{"label": "structure", "ok": is_valid if n else None,
+             "detail": "Nepali Citizenship Certificate format (e.g. 12-01-75-03421)" if is_valid else "Invalid Nepali citizenship number structure"}]
+
+
+def verify_bhutan_citizenship(number: str) -> list:
+    n = norm(number).replace(" ", "").replace("-", "")
+    is_valid = len(n) == 11 and n.isdigit()
+    return [{"label": "structure", "ok": is_valid if n else None,
+             "detail": "11-digit Bhutanese Citizenship Identity Card (CID)" if is_valid else "Invalid Bhutan CID structure (must be 11 digits)"}]
+
+
 def verify_passport(number: str, mrz_text: str = "") -> list:
     n = norm(number)
     results = [{"label": "structure", "ok": bool(_PASSPORT_RE.fullmatch(n)),

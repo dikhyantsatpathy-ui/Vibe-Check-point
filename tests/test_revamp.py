@@ -24,8 +24,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.p
 import main
 from main import Base, ScreeningReport, ScreeningSession, SignerIdentity, app, make_session_token, now_utc
 
-from config import to_ist, DOCUMENT_CATALOG, CHECKPOINT_CLUSTERS, SUPPORTED_CHECKPOINTS
-from guide import flow_for, expected_documents, checkpoint_catalog
+from config import to_ist, DOCUMENT_CATALOG
+from guide import flow_for, expected_documents
 
 OFFICER = "officer@ssb.gov.in"
 SUPER = os.environ.get("SUPER_ADMINS", "").split(",")[0].strip() or "test-superadmin@example.com"

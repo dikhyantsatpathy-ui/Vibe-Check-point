@@ -109,7 +109,7 @@ def extract_document_data(image_bytes: bytes, doc_type: str = "") -> dict:
                 data = json.loads(content)
                 return {"ran": True, "fields": data}
         except Exception as e:
-            pass
+            return {"ran": False, "reason": str(e)}
 
     global _GEMINI_CIRCUIT_BROKEN_UNTIL
     gemini_key = (os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_KEY") or "").strip()
@@ -141,12 +141,11 @@ def extract_document_data(image_bytes: bytes, doc_type: str = "") -> dict:
                         parsed = json.loads(txt)
                         return {"ran": True, "fields": parsed, "model": model}
                 elif resp.status_code in (400, 401, 403, 404):
-                    # Invalid key or unsupported model: trip circuit breaker for 300s to avoid stall
+                    # Invalid key or unsupported model: trip circuit breaker for 300s
                     _GEMINI_CIRCUIT_BROKEN_UNTIL = time.monotonic() + 300.0
                     break
         except Exception as exc:
             _GEMINI_CIRCUIT_BROKEN_UNTIL = time.monotonic() + 300.0
-            return {"ran": False, "reason": str(exc)}
 
     return {"ran": False, "reason": "No multimodal LLM backend configured"}
 

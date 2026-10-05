@@ -321,7 +321,7 @@ def test_onnx_classifier_is_weighted_not_a_hard_override():
     on an otherwise-clean document must land on REVIEW, never a hard FAIL,
     exactly like every other single-signal check."""
     from io import BytesIO
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import patch
     from PIL import Image
     import tampering
 

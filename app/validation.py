@@ -25,6 +25,8 @@ VALIDATORS = {
     "epic": ("verify_epic", "Voter ID (EPIC)"),
     "passport": ("verify_passport", "Passport"),
     "visa": ("verify_visa", "Visa"),
+    "nepali_citizenship": ("verify_nepali_citizenship", "Nepali Citizenship"),
+    "bhutan_citizenship": ("verify_bhutan_citizenship", "Bhutanese Citizenship"),
 }
 
 # doc_type -> screening field key that carries the number
@@ -43,6 +45,8 @@ _FIELD_FOR = {
     "epic": "voter_id",
     "passport": "passport",
     "visa": "passport",
+    "nepali_citizenship": "citizenship_number",
+    "bhutan_citizenship": "citizenship_number",
 }
 
 
@@ -65,10 +69,12 @@ def validate_document(
     """
     try:
         from app.identity import (verify_aadhaar, verify_pan, verify_dl, verify_rc, verify_epic,
-                                  verify_passport, verify_visa, serial_plausibility)
+                                  verify_passport, verify_visa, verify_nepali_citizenship,
+                                  verify_bhutan_citizenship, serial_plausibility)
     except ImportError:
         from identity import (verify_aadhaar, verify_pan, verify_dl, verify_rc, verify_epic,
-                              verify_passport, verify_visa, serial_plausibility)
+                              verify_passport, verify_visa, verify_nepali_citizenship,
+                              verify_bhutan_citizenship, serial_plausibility)
 
     declared = declared or {}
     doc_type = (doc_type or "").strip().lower()
@@ -100,7 +106,9 @@ def validate_document(
         fn = {"verify_aadhaar": verify_aadhaar, "verify_pan": verify_pan,
               "verify_dl": verify_dl, "verify_rc": verify_rc, "verify_epic": verify_epic,
               "verify_passport": verify_passport,
-              "verify_visa": verify_visa}[vfn[0]]
+              "verify_visa": verify_visa,
+              "verify_nepali_citizenship": verify_nepali_citizenship,
+              "verify_bhutan_citizenship": verify_bhutan_citizenship}[vfn[0]]
         if doc_type in ("passport", "visa"):
             checks = fn(number, mrz_text or "")
             # Raw MRZ lines are never retained (zero-storage); the desk's

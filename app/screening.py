@@ -413,7 +413,7 @@ def extract_fields(text: str, doc_type: str = "") -> dict:
     vowels = set("AEIOUYaeiouy")
 
     # Pre-identify lines explicitly adjacent to holder name markers (Name / नाम / Holder)
-    name_indices = [idx for idx, l in enumerate(lines) if re.search(r"(?i)\b(?:Name|नाम|Holder)\b", l) and not any(k in l.upper() for k in ("FATHER", "पिता", "PERMANENT", "ACCOUNT", "INCOME", "TAX", "CARD"))]
+    name_indices = [idx for idx, line_str in enumerate(lines) if re.search(r"(?i)\b(?:Name|नाम|Holder)\b", line_str) and not any(k in line_str.upper() for k in ("FATHER", "पिता", "PERMANENT", "ACCOUNT", "INCOME", "TAX", "CARD"))]
     holder_cands = set()
     for ni in name_indices:
         for off in (1, -1, 2):
@@ -612,6 +612,13 @@ def extract_fields(text: str, doc_type: str = "") -> dict:
             yymmdd = mrz["mrz_dob"]
             century = "19" if int(yymmdd[:2]) > int(time.strftime("%y")) else "20"
             found["dob"] = f"{century}{yymmdd[:2]}-{yymmdd[2:4]}-{yymmdd[4:6]}"
+    if (doc_norm in ("nepali_citizenship", "bhutan_citizenship") or not found.get("citizenship_number")):
+        m_nep = re.search(r"\b(\d{1,4}[-/]\d{1,4}[-/]\d{1,4}(?:[-/]\d{1,5})?)\b", text)
+        if m_nep and (doc_norm == "nepali_citizenship" or not found.get("citizenship_number")):
+            found["citizenship_number"] = m_nep.group(1)
+        m_btn = re.search(r"\b([12]\d{10})\b", text)
+        if m_btn and (doc_norm == "bhutan_citizenship" or not found.get("citizenship_number")):
+            found["citizenship_number"] = m_btn.group(1)
     return found
 
 
@@ -737,10 +744,22 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         from app.main import WatchlistEntry, ScreeningReport
     except ImportError:  # bare-module invocation (tests / direct run)
         from main import WatchlistEntry, ScreeningReport
-    from extraction import extract_document
-    from validation import validate_document
-    from tampering import tamper_analysis
-    from face import face_verification
+    try:
+        from app.extraction import extract_document
+    except ImportError:
+        from extraction import extract_document
+    try:
+        from app.validation import validate_document
+    except ImportError:
+        from validation import validate_document
+    try:
+        from app.tampering import tamper_analysis
+    except ImportError:
+        from tampering import tamper_analysis
+    try:
+        from app.face import face_verification
+    except ImportError:
+        from face import face_verification
 
     file_hash = hashlib.sha256(data).hexdigest()
     ext = (filename or "").lower().rsplit(".", 1)[-1] if "." in (filename or "") else ""
@@ -848,20 +867,19 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         timeout_hit = True
         face_res = {"ran": False, "verdict": "SKIP", "match": None, "score": 0.0, "method": "timeout", "signals": ["Face verification skipped due to timeout."]}
     else:
+        parsed_exp = _parse_date(fields.get("expiry") or (declared or {}).get("expiry_date"))
+        approx_issue = (declared or {}).get("issue_date")
+        if not approx_issue and parsed_exp and (doc_type or "").lower() in ("passport", "visa"):
+            sub_yr = 5 if "visa" in (doc_type or "").lower() else 10
+            approx_issue = f"{parsed_exp[0] - sub_yr:04d}-{parsed_exp[1]:02d}-{parsed_exp[2]:02d}"
+
         face_res = face_verification(
             document_bytes=data if is_image else None,
             live_frame=live_frame,
             doc_type=doc_type or "",
             document_photo_b64=extract_res.get("aadhaar_photo"),
             dob=fields.get("dob"),
-            issue_date=(
-                (declared or {}).get("issue_date") or
-                (
-                    f"{_parse_date(fields.get('expiry') or (declared or {}).get('expiry_date'))[0] - (5 if 'visa' in (doc_type or '').lower() else 10):04d}-{_parse_date(fields.get('expiry') or (declared or {}).get('expiry_date'))[1]:02d}-{_parse_date(fields.get('expiry') or (declared or {}).get('expiry_date'))[2]:02d}"
-                    if _parse_date(fields.get('expiry') or (declared or {}).get('expiry_date')) and (doc_type or "").lower() in ("passport", "visa")
-                    else None
-                )
-            ),
+            issue_date=approx_issue,
         )
 
     # ---- Analyze: signals, each one explainable ----------------------------
@@ -936,7 +954,10 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
 
         qr = extract_res.get("qr_data") or {}
         qr_verified = bool(qr.get("qr_verified") or qr.get("signature_present"))
-        from extraction import extract_fields
+        try:
+            from app.extraction import extract_fields
+        except ImportError:
+            from extraction import extract_fields
         typed_aadhaar = extract_fields(" ".join(str(v) for v in (declared or {}).values() if isinstance(v, str))).get("aadhaar")
         aadhaar_from_ocr = bool(aadhaar_no) and not qr_verified and (aadhaar_no != typed_aadhaar)
 
@@ -1109,7 +1130,7 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
                 can_clear = False
 
         # 2. Nepali Citizenship presented by Non-Nepali Nationals
-        elif doc_type_clean == "nepal_citizenship":
+        elif doc_type_clean == "nepali_citizenship":
             if iso3 not in ("NPL", "UNKNOWN", ""):
                 reasons.append(
                     f"CRITICAL CITIZENSHIP MISMATCH: Traveller declared {nat_label} nationality ({iso3}), "
@@ -1162,7 +1183,6 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
             can_clear = False
 
     # AI Detection Evaluation
-    # AI Detection Evaluation
     # Calibrated (SIH26188 real-desk fix): a *physical* desk/webcam photo of a
     # glossy laminated card can trip the spectral band detector at 50-64%
     # purely from glare + JPEG/webcam compression, WITHOUT the card being
@@ -1172,15 +1192,13 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
     has_valid_id = bool(pan or aadhaar_no or passport or fields.get("driving_licence") or fields.get("voter_id"))
     val_passed = (val_res.get("verdict") == "PASS")
     is_physical_camera = (document_aware is False) or (has_valid_id and val_passed)
-    tamper_passed = (tamper_res.get("verdict") == "PASS")
     ela_status = (tamper_res.get("ela") or {}).get("status")
-    is_cloud_or_model = ai_det.get("provider") in ("self-hosted", "sightengine", "hive", "vit", "clip", "test")
 
     if ai_raw_kind == "pdf_utility":
         tool_name = (ai_det.get("raw") or {}).get("match_tool") or "PDF utility"
         reasons.append(f"Document processed with PDF utility ({tool_name}) — standard document handling.")
     elif (ai_raw_kind == "ai" and (ai_det.get("raw") or {}).get("pixel_only")
-          and (has_valid_id or document_aware is False) and ela_status != "HIGH"):
+          and is_physical_camera and ela_status != "HIGH"):
         reasons.append(f"Physical photo capture advisory: unusually smooth/low-noise pixels ({_ai_score}% heuristic) "
                        "— no generator tag found, ELA clean.")
         risk += 5
@@ -1243,6 +1261,10 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
             risk = max(risk + 35, 70)
             hard_flag = True
             can_clear = False
+        elif mod_key == "validation" and mod_verdict == "UNVERIFIED":
+            reasons.append("Validation: no checks could run on this document — inspect by eye before clearing.")
+            risk = max(risk, 30)
+            can_clear = False
         elif mod_key == "tampering" and mod_verdict == "FAIL":
             # Only trigger CRITICAL FORENSIC ALERT when there is actual tampering detected
             ela_status = (tamper_res.get("ela") or {}).get("status")
@@ -1278,8 +1300,8 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         hard_flag = True
         can_clear = False
 
-    # Evidence coverage: how much of this decision is grounded vs by-eye?
-    evidence = sum(bool(v) for v in fields.values() if v) + bool(declared) + len(hits)
+    has_decl = any(str(v).strip() for v in (declared or {}).values()) if isinstance(declared, dict) else False
+    evidence = sum(bool(v) for v in fields.values() if v) + (1 if has_decl else 0) + len(hits)
     coverage = min(evidence, 8) / 8.0
     confidence = round(min(0.98, 0.45 + coverage * 0.5), 2)
     if not identified:
@@ -1299,7 +1321,10 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
     declared_name = (declared or {}).get("name") or (declared or {}).get("holder_name") or ""
     if mrz_name and declared_name:
         try:
-            from transliterate import names_match
+            try:
+                from app.transliterate import names_match
+            except ImportError:
+                from transliterate import names_match
             nm, ns, nd = names_match(mrz_name, declared_name)
             if nm is False:
                 reasons.append(f"NAME DIVERGENCE — {nd}")
@@ -1314,7 +1339,10 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
     # ---- Syndicate & Recidivism Graph Analytics (SIH26188) ----------------
     syndicate_alerts = []
     try:
-        from syndicate import analyze_syndicate_patterns
+        try:
+            from app.syndicate import analyze_syndicate_patterns
+        except ImportError:
+            from syndicate import analyze_syndicate_patterns
         try:
             from app.main import ScreeningReport, _get_db_for_session
         except ImportError:
@@ -1373,7 +1401,10 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
     # the normalized value, so a later session close can compare this document
     # against the others in the same session WITHOUT storing raw values.
     try:
-        from session import field_hashes as _field_hashes
+        try:
+            from app.session import field_hashes as _field_hashes
+        except ImportError:
+            from session import field_hashes as _field_hashes
         _fh = _field_hashes(fields)
     except Exception:
         _fh = {}

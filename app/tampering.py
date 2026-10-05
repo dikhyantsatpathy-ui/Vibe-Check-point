@@ -53,6 +53,7 @@ CHECK_WEIGHTS = {
 FLAT_BACKGROUND_DOC_TYPES = {
     "pan", "pan_card", "aadhaar", "aadhaar_card", "aadhar",
     "driving_licence", "driving_license", "dl", "voter_id", "voter", "epic",
+    "nepali_citizenship", "bhutan_citizenship",
 }
 
 MIN_PIXELS_FOR_TEXTURE_CHECKS = 400_000  # ~640x625, roughly a low-end webcam frame

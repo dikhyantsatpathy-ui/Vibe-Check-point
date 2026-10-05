@@ -36,11 +36,16 @@ except ImportError:
     try:
         from app.remote_ml import is_remote_available, mark_remote_failed, mark_remote_success, get_timeout, prepare_payload
     except ImportError:
-        is_remote_available = lambda: bool(os.getenv("ML_SERVICE_URL"))
-        mark_remote_failed = lambda: None
-        mark_remote_success = lambda: None
-        get_timeout = lambda: 2.0
-        prepare_payload = lambda b: b
+        def is_remote_available() -> bool:
+            return bool(os.getenv("ML_SERVICE_URL"))
+        def mark_remote_failed() -> None:
+            pass
+        def mark_remote_success() -> None:
+            pass
+        def get_timeout() -> float:
+            return 2.0
+        def prepare_payload(b: bytes) -> bytes:
+            return b
 
 _MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
 
@@ -310,18 +315,6 @@ def extract_roi_boxes(image_bytes: bytes) -> List[Dict[str, Any]]:
         return []
     
     # Remote microservice bypass
-    # Remote microservice bypass
-    try:
-        from remote_ml import is_remote_available, mark_remote_failed, mark_remote_success, get_timeout, prepare_payload
-    except ImportError:
-        try:
-            from app.remote_ml import is_remote_available, mark_remote_failed, mark_remote_success, get_timeout, prepare_payload
-        except ImportError:
-            is_remote_available = lambda: bool(os.getenv("ML_SERVICE_URL"))
-            mark_remote_failed = lambda: None
-            mark_remote_success = lambda: None
-            get_timeout = lambda: 2.0
-            prepare_payload = lambda b: b
 
     if is_remote_available():
         ml_url = os.getenv("ML_SERVICE_URL")
