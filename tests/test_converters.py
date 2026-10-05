@@ -144,10 +144,15 @@ def test_parse_midv2020_via_json():
 
 
 def test_midv_type_split_leakage_safety():
-    """Verify type splits allocate test, val, and train according to Section 5.3 rules."""
+    """Verify type splits allocate test, valid, and train according to Section 2 (3/2/5 split)."""
     assert get_split_for_midv_type("alb_id") == "test"
-    assert get_split_for_midv_type("grc_passport") == "test"
-    assert get_split_for_midv_type("fin_id") == "val"
-    assert get_split_for_midv_type("aze_passport") == "val"
+    assert get_split_for_midv_type("srb_passport") == "test"
+    assert get_split_for_midv_type("svk_id") == "test"
+    assert get_split_for_midv_type("fin_id") == "valid"
+    assert get_split_for_midv_type("aze_passport") == "valid"
     assert get_split_for_midv_type("esp_id") == "train"
+    assert get_split_for_midv_type("est_id") == "train"
+    assert get_split_for_midv_type("grc_passport") == "train"
+    assert get_split_for_midv_type("lva_passport") == "train"
+    assert get_split_for_midv_type("rus_internalpassport") == "train"
     assert get_split_for_midv_type("unknown_type") == "train"

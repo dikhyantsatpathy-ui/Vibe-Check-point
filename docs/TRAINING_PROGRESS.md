@@ -108,4 +108,104 @@ Exit code: 0
 3. `tests/test_codebase.py:94`: `local scripts/ study guides not present (gitignored)` (expected for developer notes).
 4. `tests/test_rfdetr_inference.py:89`: `RF-DETR card weights not present on disk (pending Phase 4 training)` (clean parity skip as required by Section 7.1).
 
+---
 
+## 7. Execution Logs (Prompt v3 Steps)
+
+### STEP 1: Verify MIDV-2020 Extraction & Record in Manifest
+- **STEP 1** | **COMMAND:** `Get-ChildItem data\raw\midv2020 -Recurse -Filter *.jpg | Group-Object { $_.Directory.Name } | Select Name, Count`
+- **OUTPUT:**
+  ```
+  Name                 Count
+  ----                 -----
+  alb_id                 100
+  aze_passport           100
+  esp_id                 100
+  est_id                 100
+  fin_id                 100
+  grc_passport           100
+  lva_passport           100
+  rus_internalpassport   100
+  srb_passport           100
+  svk_id                 100
+  ```
+  *Structure Check:* 10 annotation JSONs in `data/raw/midv2020/annotations/`. Inspected `alb_id.json`: format is VIA v2 (`_via_img_metadata` with 100 entries). Polygon region with `field_name: "doc_quad"` verified with 4 points `all_points_x` and `all_points_y`.
+- **RESULT:** PASS
+- **NEXT:** STEP 2
+
+### STEP 2: Evidence Debt Verification & Baseline Audit
+- **STEP 2** | **COMMAND:** `nvidia-smi; python -c "import torch; print('Torch:', torch.__version__, 'CUDA:', torch.cuda.is_available(), 'Device:', torch.cuda.get_device_name(0))"`
+- **OUTPUT:**
+  ```
+  NVIDIA-SMI 610.88   KMD Version: 610.88   CUDA UMD Version: 13.3
+  GPU: NVIDIA GeForce RTX 4060 Laptop GPU, 8188MiB VRAM, Compute Mode: Default
+  Torch: 2.11.0+cu128 CUDA: True Device: NVIDIA GeForce RTX 4060 Laptop GPU
+  ```
+  *Git Status:* On branch `ml/detector-v3`, clean working tree.
+  *Post-Processing Latency (Defect D7 Evidence):* Measured with 30 runs on `card.onnx` (saved to `eval/runs/benchmark_evidence/postprocess_latency.json`):
+  - Before fix (re-running full inference inside timer): p50 = 181.17 ms, mean = 187.69 ms
+  - After fix (isolated NMS and unscaling): p50 = 0.48 ms, mean = 0.48 ms
+  *PyTest Baseline:* 259 passed, 4 skipped, 3 warnings in 113.55s.
+  *87 Held-Out Images Audit:* Verified from `eval/evaluate.py:43-126`: 79 Aadhaar test images + 8 ID-card test images = 87 total images. Field detector is evaluated on 79 images (303 ground truth boxes); card detector was evaluated on only 8 images (12 ground truth boxes).
+- **RESULT:** PASS
+- **NEXT:** STEP 3
+
+### STEP 3: Convert MIDV-2020 to COCO (training/convert_midv_to_coco.py)
+- **STEP 3** | **COMMAND:** `python -m training.run_midv_conversion`
+- **OUTPUT:**
+  ```
+  [step3] Converting MIDV-2020 to COCO in data\coco_card...
+  [step3] Wrote counts to eval\runs\20261006_005725_midv_conversion\counts.json
+  [step3] Leakage check passed: True
+  [step3] Generated visual contact sheet at eval\runs\20261006_005725_midv_conversion\contact_sheet.jpg
+
+  SUMMARY:
+    Split train: 500 images, 500 boxes, types: ['esp_id', 'est_id', 'grc_passport', 'lva_passport', 'rus_internalpassport']
+    Split valid: 200 images, 200 boxes, types: ['aze_passport', 'fin_id']
+    Split test : 300 images, 300 boxes, types: ['alb_id', 'srb_passport', 'svk_id']
+    Total Images: 1000
+    Total Boxes:  1000
+  ```
+  *EXIF Orientation Correction:* Standard PIL `Image.open` vs VIA v2 annotations revealed a 90° orientation mismatch for smartphone captures with EXIF orientation 6. Added `ImageOps.exif_transpose` during loading to properly align coordinates with physical orientations.
+  *Visual Verification:* Inspected `eval/runs/20261006_005725_midv_conversion/contact_sheet.jpg` (24 images, 8 per split). All bounding boxes tightly hug card boundaries across lighting, background clutter, and perspective angles.
+  *Leakage Verification:* Confirmed zero document-type overlap between splits.
+- **RESULT:** PASS
+- **NEXT:** STEP 4
+
+### STEP 4: Measure Baseline YOLO Card Detector on 300 Real Photos
+- **STEP 4** | **COMMAND:** `$env:PYTHONUTF8=1; python -m eval.evaluate`
+- **OUTPUT:**
+  ```
+  [eval] Using held-out test datasets:
+    • Aadhaar: D:\mos\crypto\data\AADHAR\test
+    • Card (COCO Test): D:\mos\crypto\data\coco_card\test
+
+  ==============================================================================
+   [EVAL] NO-CAP (SIH26188) DETECTION PIPELINE EVALUATION REPORT
+  ==============================================================================
+  Dataset: 379 images | Total Ground Truths: 603
+  ------------------------------------------------------------------------------
+  Class            | mAP50    | mAP50-95  | Precision | Recall   | Opt Thresh
+  ------------------------------------------------------------------------------
+  Card             | 0.000    | 0.000     | 0.000     | 0.000    | 0.15      
+  Aadhaar_No       | 0.980    | 0.823     | 1.000     | 0.987    | 0.15      
+  DOB              | 1.000    | 0.815     | 1.000     | 1.000    | 0.15      
+  Gender           | 1.000    | 0.794     | 0.987     | 1.000    | 0.15      
+  Name             | 0.980    | 0.817     | 1.000     | 0.986    | 0.15      
+  Photo            | 1.000    | 0.942     | 1.000     | 1.000    | 0.15      
+  ------------------------------------------------------------------------------
+  [BENCHMARK] LATENCY (CPU, ONNX Runtime):
+    * Card Model:    p50 = 186.21 ms | p95 = 196.03 ms (mean = 186.13 ms) | AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD (16 threads)
+    * Aadhaar Model: p50 = 189.75 ms | p95 = 208.15 ms (mean = 189.69 ms) | AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD (16 threads)
+  ==============================================================================
+
+  [eval] Baseline run report saved to eval/runs/20261006_010650_baseline_yolo_card/report.json
+  ```
+  *Evaluation Breakdown:*
+  - Document Types (alb_id, srb_passport, svk_id, 100 GT each): 0 TP across all types. alb_id: 12 false detections; svk_id: 14 false detections; srb_passport: 2 false detections.
+  - Capture Conditions: 0 TP across all 8 conditions. Detections fired primarily on `keyboard` (16 false detections) and `low_light` (7 false detections).
+  - Aadhaar Field Detector Status: Completely preserved (0.992 mAP50 / 0.838 mAP50-95).
+  - CPU Latency (30 runs, 5 warmups): Preprocessing 12.21 ms, Inference 173.15 ms, Postprocessing 0.76 ms. Total p50 = 186.21 ms.
+  - Finding: Synthetic-trained `card.onnx` has zero transfer to real-world phone captures (0.000 mAP50 / 0.000 recall). Demonstrates the critical necessity of training Model A with real capture conditions and realistic composites.
+- **RESULT:** PASS
+- **NEXT:** STEP 5

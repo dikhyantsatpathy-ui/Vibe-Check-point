@@ -20,12 +20,52 @@ from benchmark import benchmark_model_latency
 from yolo_roi import _get_onnx_session, _get_aadhaar_session, _run_yolo_onnx
 
 
+def compute_breakdown_metrics(
+    detections: list,
+    ground_truths: list,
+    key: str,
+    conf_thresh: float = 0.35,
+    iou_thresh: float = 0.50,
+) -> dict:
+    from metrics import compute_iou
+    values = sorted(list(set(g.get(key) for g in ground_truths if g.get(key) is not None)))
+    breakdown = {}
+    for val in values:
+        sub_gts = [g for g in ground_truths if g.get(key) == val]
+        sub_dets = [d for d in detections if d.get(key) == val]
+
+        filtered_dets = [d for d in sub_dets if d.get("confidence", 0.0) >= conf_thresh]
+        tp_count = 0
+        gt_used = set()
+        for d in filtered_dets:
+            d_box = [d["x1"], d["y1"], d["x2"], d["y2"]]
+            for j, gt in enumerate(sub_gts):
+                if j in gt_used or d.get("img_id") != gt.get("img_id"):
+                    continue
+                if compute_iou(d_box, [gt["x1"], gt["y1"], gt["x2"], gt["y2"]]) >= iou_thresh:
+                    tp_count += 1
+                    gt_used.add(j)
+                    break
+        rec = tp_count / max(len(sub_gts), 1)
+        prec = tp_count / max(len(filtered_dets), 1)
+        breakdown[val] = {
+            "ground_truths": len(sub_gts),
+            "detections": len(filtered_dets),
+            "true_positives": tp_count,
+            "recall": round(float(rec), 4),
+            "precision": round(float(prec), 4),
+        }
+    return breakdown
+
+
 def run_full_evaluation(num_samples: int = 35) -> dict:
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     aadhar_test_dir = os.path.join(repo_root, "data", "AADHAR", "test")
+    coco_card_test_dir = os.path.join(repo_root, "data", "coco_card", "test")
     idcard_test_dir = os.path.join(repo_root, "data", "IDcard", "test")
 
-    use_real_datasets = os.path.exists(aadhar_test_dir) and os.path.exists(idcard_test_dir)
+    has_card_coco = os.path.exists(os.path.join(coco_card_test_dir, "_annotations.coco.json"))
+    use_real_datasets = os.path.exists(aadhar_test_dir) and (has_card_coco or os.path.exists(idcard_test_dir))
 
     card_session = _get_onnx_session()
     aadhaar_session = _get_aadhaar_session()
@@ -38,7 +78,6 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
     if use_real_datasets:
         print(f"\n[eval] Using held-out test datasets:")
         print(f"  • Aadhaar: {aadhar_test_dir}")
-        print(f"  • ID Card: {idcard_test_dir}")
 
         # 1. Aadhaar evaluation
         a_imgs = os.path.join(aadhar_test_dir, "images")
@@ -83,45 +122,101 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
                     })
 
         # 2. Card evaluation
-        c_imgs = os.path.join(idcard_test_dir, "images")
-        c_lbls = os.path.join(idcard_test_dir, "labels")
-        c_files = sorted([f for f in os.listdir(c_imgs) if f.endswith((".jpg", ".png"))])
+        if has_card_coco:
+            coco_test_ann = os.path.join(coco_card_test_dir, "_annotations.coco.json")
+            print(f"  • Card (COCO Test): {coco_card_test_dir}")
+            with open(coco_test_ann, "r", encoding="utf-8") as f:
+                coco_data = json.load(f)
 
-        for fname in c_files:
-            img_id = os.path.splitext(fname)[0]
-            pil_img = Image.open(os.path.join(c_imgs, fname)).convert("RGB")
-            rgb = np.asarray(pil_img, dtype=np.uint8)
+            anns_by_img = {}
+            for ann in coco_data.get("annotations", []):
+                anns_by_img.setdefault(ann["image_id"], []).append(ann)
 
-            lpath = os.path.join(c_lbls, f"{img_id}.txt")
-            if os.path.exists(lpath):
-                with open(lpath, "r", encoding="utf-8") as lf:
-                    for line in lf:
-                        parts = line.strip().split()
-                        if len(parts) >= 5:
-                            cid = int(parts[0])
-                            cx, cy, bw, bh = float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4])
-                            card_gts.append({
-                                "img_id": img_id,
-                                "label": "Card",
-                                "class_id": 0,
-                                "x1": cx - bw / 2.0,
-                                "y1": cy - bh / 2.0,
-                                "x2": cx + bw / 2.0,
-                                "y2": cy + bh / 2.0,
-                            })
+            c_files = []
+            for img_info in coco_data.get("images", []):
+                img_id = img_info["file_name"].rsplit(".", 1)[0]
+                img_path = os.path.join(coco_card_test_dir, "images", img_info["file_name"])
+                if not os.path.exists(img_path):
+                    img_path = os.path.join(coco_card_test_dir, img_info["file_name"])
+                if not os.path.exists(img_path):
+                    continue
+                c_files.append(img_info["file_name"])
 
-            if card_session is not None:
-                boxes = _run_yolo_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES)
-                for b in boxes:
-                    card_dets.append({
+                w, h = img_info["width"], img_info["height"]
+                doc_type = img_info.get("doc_type", "unknown")
+                cond = img_info.get("condition", "unknown")
+
+                for ann in anns_by_img.get(img_info["id"], []):
+                    bx, by, bw, bh = ann["bbox"]
+                    card_gts.append({
                         "img_id": img_id,
-                        "label": b["label"],
-                        "confidence": b.get("confidence", 0.0),
-                        "x1": b["x"],
-                        "y1": b["y"],
-                        "x2": b["x"] + b["w"],
-                        "y2": b["y"] + b["h"],
+                        "label": "Card",
+                        "class_id": 0,
+                        "x1": bx / w,
+                        "y1": by / h,
+                        "x2": (bx + bw) / w,
+                        "y2": (by + bh) / h,
+                        "doc_type": doc_type,
+                        "condition": cond,
                     })
+
+                pil_img = Image.open(img_path).convert("RGB")
+                rgb = np.asarray(pil_img, dtype=np.uint8)
+                if card_session is not None:
+                    boxes = _run_yolo_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES)
+                    for b in boxes:
+                        card_dets.append({
+                            "img_id": img_id,
+                            "label": b["label"],
+                            "confidence": b.get("confidence", 0.0),
+                            "x1": b["x"],
+                            "y1": b["y"],
+                            "x2": b["x"] + b["w"],
+                            "y2": b["y"] + b["h"],
+                            "doc_type": doc_type,
+                            "condition": cond,
+                        })
+        else:
+            print(f"  • ID Card: {idcard_test_dir}")
+            c_imgs = os.path.join(idcard_test_dir, "images")
+            c_lbls = os.path.join(idcard_test_dir, "labels")
+            c_files = sorted([f for f in os.listdir(c_imgs) if f.endswith((".jpg", ".png"))])
+
+            for fname in c_files:
+                img_id = os.path.splitext(fname)[0]
+                pil_img = Image.open(os.path.join(c_imgs, fname)).convert("RGB")
+                rgb = np.asarray(pil_img, dtype=np.uint8)
+
+                lpath = os.path.join(c_lbls, f"{img_id}.txt")
+                if os.path.exists(lpath):
+                    with open(lpath, "r", encoding="utf-8") as lf:
+                        for line in lf:
+                            parts = line.strip().split()
+                            if len(parts) >= 5:
+                                cid = int(parts[0])
+                                cx, cy, bw, bh = float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4])
+                                card_gts.append({
+                                    "img_id": img_id,
+                                    "label": "Card",
+                                    "class_id": 0,
+                                    "x1": cx - bw / 2.0,
+                                    "y1": cy - bh / 2.0,
+                                    "x2": cx + bw / 2.0,
+                                    "y2": cy + bh / 2.0,
+                                })
+
+                if card_session is not None:
+                    boxes = _run_yolo_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES)
+                    for b in boxes:
+                        card_dets.append({
+                            "img_id": img_id,
+                            "label": b["label"],
+                            "confidence": b.get("confidence", 0.0),
+                            "x1": b["x"],
+                            "y1": b["y"],
+                            "x2": b["x"] + b["w"],
+                            "y2": b["y"] + b["h"],
+                        })
 
         num_images_total = len(a_files) + len(c_files)
 
@@ -200,10 +295,21 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
     opt_card_thresh = optimize_confidence_thresholds(card_dets, card_gts, CARD_CLASSES)
     opt_aadhaar_thresh = optimize_confidence_thresholds(aadhaar_dets, aadhaar_gts, AADHAAR_CLASSES)
 
-    # 4. Latency Benchmarking
+    # 4. Latency Benchmarking (>=30 timed runs after 5 warmups)
+    import datetime
+    import platform
     sample_rgb = np.zeros((800, 1200, 3), dtype=np.uint8)
-    card_latency = benchmark_model_latency(card_session, sample_rgb, num_runs=15) if card_session else {}
-    aadhaar_latency = benchmark_model_latency(aadhaar_session, sample_rgb, num_runs=15) if aadhaar_session else {}
+    card_latency = benchmark_model_latency(card_session, sample_rgb, num_warmup=5, num_runs=30) if card_session else {}
+    if card_latency:
+        card_latency["cpu_model"] = os.environ.get("PROCESSOR_IDENTIFIER", platform.processor() or platform.machine())
+        card_latency["thread_count"] = os.cpu_count()
+    aadhaar_latency = benchmark_model_latency(aadhaar_session, sample_rgb, num_warmup=5, num_runs=30) if aadhaar_session else {}
+    if aadhaar_latency:
+        aadhaar_latency["cpu_model"] = os.environ.get("PROCESSOR_IDENTIFIER", platform.processor() or platform.machine())
+        aadhaar_latency["thread_count"] = os.cpu_count()
+
+    per_doc_type_recall = compute_breakdown_metrics(card_dets, card_gts, key="doc_type")
+    per_condition_recall = compute_breakdown_metrics(card_dets, card_gts, key="condition")
 
     report = {
         "dataset": {
@@ -213,8 +319,11 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
         },
         "card_detector": {
             "model": "YOLOv8s-Card (card.onnx)",
+            "test_source": "data/coco_card/test (MIDV-2020 300 photos)" if has_card_coco else "data/IDcard/test",
             "metrics": card_metrics,
             "optimal_thresholds": opt_card_thresh,
+            "per_document_type_recall": per_doc_type_recall,
+            "per_capture_condition_recall": per_condition_recall,
             "latency": card_latency,
         },
         "aadhaar_fields_detector": {
@@ -251,18 +360,44 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
         opt_t = opt_aadhaar_thresh.get(c, 0.35)
         print(f"{c:<16} | {m.get('mAP50', 0):<8.3f} | {m.get('mAP50_95', 0):<9.3f} | {m.get('precision', 0):<9.3f} | {m.get('recall', 0):<8.3f} | {opt_t:<10.2f}")
 
+    if per_doc_type_recall:
+        print("\n" + "-" * 78)
+        print(" [BREAKDOWN] CARD RECALL BY DOCUMENT TYPE (IoU >= 0.50, Conf >= 0.35)")
+        print("-" * 78)
+        print(f"{'Document Type':<25} | {'GT':<6} | {'Det':<6} | {'TP':<6} | {'Recall':<8} | {'Precision':<9}")
+        print("-" * 78)
+        for dt, stats in per_doc_type_recall.items():
+            print(f"{dt:<25} | {stats['ground_truths']:<6} | {stats['detections']:<6} | {stats['true_positives']:<6} | {stats['recall']:<8.3f} | {stats['precision']:<9.3f}")
+
+    if per_condition_recall:
+        print("\n" + "-" * 78)
+        print(" [BREAKDOWN] CARD RECALL BY CAPTURE CONDITION (IoU >= 0.50, Conf >= 0.35)")
+        print("-" * 78)
+        print(f"{'Capture Condition':<25} | {'GT':<6} | {'Det':<6} | {'TP':<6} | {'Recall':<8} | {'Precision':<9}")
+        print("-" * 78)
+        for cond, stats in per_condition_recall.items():
+            print(f"{cond:<25} | {stats['ground_truths']:<6} | {stats['detections']:<6} | {stats['true_positives']:<6} | {stats['recall']:<8.3f} | {stats['precision']:<9.3f}")
+
     print("-" * 78)
     print("[BENCHMARK] LATENCY (CPU, ONNX Runtime):")
     if card_latency:
-        print(f"  * Card Model:    p50 = {card_latency.get('p50_ms')} ms | p95 = {card_latency.get('p95_ms')} ms (mean = {card_latency.get('mean_ms')} ms)")
+        print(f"  * Card Model:    p50 = {card_latency.get('p50_ms')} ms | p95 = {card_latency.get('p95_ms')} ms (mean = {card_latency.get('mean_ms')} ms) | {card_latency.get('cpu_model')} ({card_latency.get('thread_count')} threads)")
     if aadhaar_latency:
-        print(f"  * Aadhaar Model: p50 = {aadhaar_latency.get('p50_ms')} ms | p95 = {aadhaar_latency.get('p95_ms')} ms (mean = {aadhaar_latency.get('mean_ms')} ms)")
+        print(f"  * Aadhaar Model: p50 = {aadhaar_latency.get('p50_ms')} ms | p95 = {aadhaar_latency.get('p95_ms')} ms (mean = {aadhaar_latency.get('mean_ms')} ms) | {aadhaar_latency.get('cpu_model')} ({aadhaar_latency.get('thread_count')} threads)")
     print("=" * 78 + "\n")
 
     report_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "eval_report.json")
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
     print(f"[eval] Report exported to {report_path}")
+
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_dir = os.path.join(repo_root, "eval", "runs", f"{ts}_baseline_yolo_card")
+    os.makedirs(run_dir, exist_ok=True)
+    baseline_run_report_path = os.path.join(run_dir, "report.json")
+    with open(baseline_run_report_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2)
+    print(f"[eval] Baseline run report saved to {baseline_run_report_path}")
 
     return report
 

@@ -1,43 +1,127 @@
 {
   "dataset": {
-    "samples": 87,
-    "card_ground_truths": 12,
+    "samples": 379,
+    "card_ground_truths": 300,
     "aadhaar_ground_truths": 303
   },
   "card_detector": {
     "model": "YOLOv8s-Card (card.onnx)",
+    "test_source": "data/coco_card/test (MIDV-2020 300 photos)",
     "metrics": {
       "overall": {
-        "mAP50": 0.0891,
-        "mAP50_95": 0.0713
+        "mAP50": 0.0,
+        "mAP50_95": 0.0
       },
       "classes": {
         "Card": {
-          "mAP50": 0.0891,
-          "mAP50_95": 0.0713,
-          "precision": 1.0,
-          "recall": 0.0833,
-          "f1": 0.1538,
-          "ground_truths": 12,
-          "detections": 1
+          "mAP50": 0.0,
+          "mAP50_95": 0.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "ground_truths": 300,
+          "detections": 28
         }
       }
     },
     "optimal_thresholds": {
       "Card": 0.15
     },
-    "latency": {
-      "runs": 15,
-      "p50_ms": 400.44,
-      "p95_ms": 473.44,
-      "mean_ms": 406.26,
-      "min_ms": 343.59,
-      "max_ms": 530.48,
-      "breakdown": {
-        "preprocess_ms": 13.21,
-        "inference_ms": 187.12,
-        "postprocess_ms": 205.93
+    "per_document_type_recall": {
+      "alb_id": {
+        "ground_truths": 100,
+        "detections": 12,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "srb_passport": {
+        "ground_truths": 100,
+        "detections": 2,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "svk_id": {
+        "ground_truths": 100,
+        "detections": 14,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
       }
+    },
+    "per_capture_condition_recall": {
+      "cloth": {
+        "ground_truths": 30,
+        "detections": 0,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "highlight": {
+        "ground_truths": 30,
+        "detections": 0,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "keyboard": {
+        "ground_truths": 30,
+        "detections": 16,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "low_light": {
+        "ground_truths": 60,
+        "detections": 7,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "outdoors": {
+        "ground_truths": 30,
+        "detections": 1,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "projective_distortion": {
+        "ground_truths": 60,
+        "detections": 0,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "table": {
+        "ground_truths": 30,
+        "detections": 0,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
+      },
+      "text_document_background": {
+        "ground_truths": 30,
+        "detections": 4,
+        "true_positives": 0,
+        "recall": 0.0,
+        "precision": 0.0
+      }
+    },
+    "latency": {
+      "runs": 30,
+      "p50_ms": 186.21,
+      "p95_ms": 196.03,
+      "mean_ms": 186.13,
+      "min_ms": 175.26,
+      "max_ms": 203.86,
+      "breakdown": {
+        "preprocess_ms": 12.21,
+        "inference_ms": 173.15,
+        "postprocess_ms": 0.76
+      },
+      "cpu_model": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "thread_count": 16
     }
   },
   "aadhaar_fields_detector": {
@@ -103,17 +187,19 @@
       "Photo": 0.15
     },
     "latency": {
-      "runs": 15,
-      "p50_ms": 373.74,
-      "p95_ms": 454.86,
-      "mean_ms": 394.04,
-      "min_ms": 341.31,
-      "max_ms": 477.0,
+      "runs": 30,
+      "p50_ms": 189.75,
+      "p95_ms": 208.15,
+      "mean_ms": 189.69,
+      "min_ms": 173.12,
+      "max_ms": 219.06,
       "breakdown": {
-        "preprocess_ms": 13.07,
-        "inference_ms": 184.24,
-        "postprocess_ms": 196.73
-      }
+        "preprocess_ms": 12.29,
+        "inference_ms": 176.53,
+        "postprocess_ms": 0.88
+      },
+      "cpu_model": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "thread_count": 16
     }
   }
 }
