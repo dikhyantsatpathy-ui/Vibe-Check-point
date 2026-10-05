@@ -54,14 +54,30 @@ Branch: `main`
 
 ---
 
-## 4. Phase Execution Status
+## 4. Dataset Inventory & Manifest (Phase 1)
+
+Verified against disk on 2026-10-06 via `data/DATASET_MANIFEST.md` and direct label parsing:
+
+| Dataset Path | Classes | Splits (Images) | Total Images | Label Counts per Class | Flips / Augs | License | Privacy Check (5.2 B) |
+|:---|:---|:---|:---|:---|:---|:---|:---|
+| `data/AADHAR` | `['Aadhaar_No', 'DOB', 'Gender', 'Name', 'Photo']` | Train: 2,381<br>Valid: 185<br>Test: 79 | 2,645 | **Train:** No: 2344, DOB: 2282, Gender: 2297, Name: 2274, Photo: 79<br>**Valid:** No: 183, DOB: 181, Gender: 183, Name: 180, Photo: 4<br>**Test:** No: 79, DOB: 73, Gender: 74, Name: 73, Photo: 4 | None (Resize 640x640 stretch only) | CC BY 4.0 (Roboflow Universe) | Appears to show real persons: **YES / UNCONFIRMED** |
+| `data/IDcard` | `['Card']` | Train: 39<br>Valid: 10<br>Test: 8 | 57 | **Train:** Card: 71<br>**Valid:** Card: 13<br>**Test:** Card: 12 | None (Resize 640x640 stretch only) | CC BY 4.0 (Roboflow Universe) | Appears to show real persons: **NO / SPECIMEN-LIKE** |
+| `data/card_synth` | `['Card']` | Train: 1,314<br>Valid: 243<br>Test: 0 | 1,557 | **Train:** Card: 1,346<br>**Valid:** Card: 250 | Synthetic internal | Project-generated | Pure synthetic specimens |
+
+- **Git-ignore verification:** Confirmed with `git check-ignore -v` that `data/`, `eval/data/`, and `training/runs/` are completely ignored by git.
+- **Privacy Contact Sheets:** Generated to `eval/runs/contact_sheets/aadhar_contact_sheet.jpg` and `eval/runs/contact_sheets/idcard_contact_sheet.jpg`.
+
+---
+
+## 5. Phase Execution Status
 
 - [x] **Phase 0A: Understand & Baseline Audit** — Test baseline confirmed (243 passed, 3 skipped). Hardware verified (RTX 4060 GPU, PyTorch 2.11.0+cu128). D1–D8 defects verified.
 - [x] **Phase 0B: Truth Fixes (Defects D1–D8)** — All 8 defects fixed. `eval/bakeoff_report.json` deleted. Strict fail-loud on missing weights (`FileNotFoundError` in bakeoff, empty string in `_default_model_path()`). Secret auth fail-closed (503 if unset unless `ML_ALLOW_NO_AUTH=true`). Benchmarking timing isolated (postprocessing ~0.63 ms). Automated drift test added. Full suite: 245 passed, 3 skipped (100%).
-- [ ] **Phase 1: Environment & Data Inventory**
+- [x] **Phase 1: Environment & Data Inventory** — Local RTX 4060 GPU with CUDA 13.3 verified. Full dataset inventory executed on `data/AADHAR`, `data/IDcard`, `data/card_synth`. `data/DATASET_MANIFEST.md` generated.
 - [ ] **Phase 2: Data Preparation & Leakage-Safe Splits**
 - [ ] **Phase 3: Baseline Measurement on New Held-Out Sets**
 - [ ] **Phase 4: Train Model A (Card) & Model B (Fields)**
 - [ ] **Phase 5: Export, ONNX Parity & Integration**
 - [ ] **Phase 6: Bake-Off & Real Decision Matrix**
 - [ ] **Phase 7: Documentation & Handoff**
+
