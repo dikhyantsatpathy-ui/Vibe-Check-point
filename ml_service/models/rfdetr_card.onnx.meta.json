@@ -1,0 +1,28 @@
+{
+  "classes": [
+    "Card"
+  ],
+  "input_size": [
+    640,
+    640
+  ],
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "resize_mode": "square_bilinear",
+  "output_names": [
+    "dets",
+    "labels"
+  ],
+  "rfdetr_version": "1.11.2",
+  "trained_on": "midv2020_real_and_composites",
+  "trained_at": "2026-10-05T19:56:53.519427+00:00",
+  "sha256": "2a4d3d8db7f4921961f636e453c213ff4bd6e2f40c09f54bc7ef04bbda2d6a30"
+}

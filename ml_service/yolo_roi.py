@@ -484,6 +484,7 @@ def _postprocess_rfdetr_predictions(
     conf_threshold: float = 0.25,
     max_boxes: int = 100,
     model_version: str = "rfdetr-v1",
+    box_format: str = "auto",
 ) -> List[Dict[str, Any]]:
     """Decode raw RF-DETR box queries and class logits to original image coordinates."""
     if boxes.ndim == 3:
@@ -498,17 +499,32 @@ def _postprocess_rfdetr_predictions(
     clipped_logits = np.clip(logits, -88.0, 88.0)
     probs = 1.0 / (1.0 + np.exp(-clipped_logits))
 
-    num_queries = min(boxes.shape[0], probs.shape[0])
-    num_classes = len(class_names) if class_names else (probs.shape[1] if probs.ndim > 1 else 1)
+    # In COCO / RF-DETR exported models with 1-indexed categories, logits.shape[1] is num_classes + 1
+    # where index 0 represents the background / unused class.
+    if class_names and probs.ndim > 1 and probs.shape[1] == len(class_names) + 1:
+        fg_probs = probs[:, 1:]
+    else:
+        fg_probs = probs
+
+    num_queries = min(boxes.shape[0], fg_probs.shape[0])
+    num_classes = len(class_names) if class_names else (fg_probs.shape[1] if fg_probs.ndim > 1 else 1)
 
     results: List[Dict[str, Any]] = []
 
-    for i in range(num_queries):
-        if num_classes == 1 or probs.shape[1] == 1:
-            cid = 0
-            score = float(probs[i, 0]) if probs.ndim > 1 else float(probs[i])
+    if box_format == "auto":
+        if (boxes[:, 2] < boxes[:, 0]).any() or (boxes[:, 3] < boxes[:, 1]).any():
+            effective_format = "cxcywh"
         else:
-            avail_probs = probs[i, :num_classes]
+            effective_format = "xyxy"
+    else:
+        effective_format = box_format
+
+    for i in range(num_queries):
+        if num_classes == 1 or fg_probs.shape[1] == 1:
+            cid = 0
+            score = float(fg_probs[i, 0]) if fg_probs.ndim > 1 else float(fg_probs[i])
+        else:
+            avail_probs = fg_probs[i, :num_classes]
             cid = int(np.argmax(avail_probs))
             score = float(avail_probs[cid])
 
@@ -517,11 +533,19 @@ def _postprocess_rfdetr_predictions(
         if score < thresh:
             continue
 
-        cx, cy, bw, bh = boxes[i, :4]
-        x1 = (cx - (bw / 2.0)) * orig_w
-        y1 = (cy - (bh / 2.0)) * orig_h
-        x2 = (cx + (bw / 2.0)) * orig_w
-        y2 = (cy + (bh / 2.0)) * orig_h
+        if effective_format == "cxcywh":
+            cx, cy, bw, bh = boxes[i, :4]
+            x1 = (cx - (bw / 2.0)) * orig_w
+            y1 = (cy - (bh / 2.0)) * orig_h
+            x2 = (cx + (bw / 2.0)) * orig_w
+            y2 = (cy + (bh / 2.0)) * orig_h
+        else:
+            # "xyxy" normalized coordinates [x1, y1, x2, y2]
+            bx1, by1, bx2, by2 = boxes[i, :4]
+            x1 = bx1 * orig_w
+            y1 = by1 * orig_h
+            x2 = bx2 * orig_w
+            y2 = by2 * orig_h
 
         x1_clip = max(0.0, min(float(orig_w), float(x1)))
         y1_clip = max(0.0, min(float(orig_h), float(y1)))
@@ -582,9 +606,9 @@ def _run_rfdetr_onnx(
 
         for name, arr in zip(out_names, outputs):
             name_lower = name.lower()
-            if "box" in name_lower or (arr.ndim == 3 and arr.shape[-1] == 4):
+            if "box" in name_lower or "det" in name_lower or (arr.ndim == 3 and arr.shape[-1] == 4):
                 boxes_tensor = arr
-            elif "logit" in name_lower or "score" in name_lower or (arr.ndim == 3 and arr.shape[-1] != 4):
+            elif "logit" in name_lower or "score" in name_lower or "label" in name_lower or (arr.ndim == 3 and arr.shape[-1] != 4):
                 logits_tensor = arr
 
         if boxes_tensor is None or logits_tensor is None:

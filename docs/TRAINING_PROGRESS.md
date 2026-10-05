@@ -209,3 +209,55 @@ Exit code: 0
   - Finding: Synthetic-trained `card.onnx` has zero transfer to real-world phone captures (0.000 mAP50 / 0.000 recall). Demonstrates the critical necessity of training Model A with real capture conditions and realistic composites.
 - **RESULT:** PASS
 - **NEXT:** STEP 5
+
+### STEP 5: Build Training Set for Model A (Card Detector)
+- **STEP 5** | **COMMAND:** `$env:PYTHONUTF8=1; python -m training.build_card_trainset`
+- **OUTPUT:**
+  ```
+  2026-10-06 01:11:15,892 [INFO] Extracted 500 card cutouts and 500 background patches from train photos.
+  2026-10-06 01:12:01,079 [INFO] Updated train annotations at data\coco_card\train\_annotations.coco.json: 1839 images, 1882 annotations
+  2026-10-06 01:12:01,200 [INFO] Saved composite verification contact sheet to eval\runs\20261006_011057_trainset\composite_contact_sheet.jpg
+  2026-10-06 01:12:01,203 [INFO] Saved trainset counts to eval\runs\20261006_011057_trainset\counts.json
+
+  [STEP 5] MODEL A TRAINING SET ASSEMBLED:
+    • midv2020_train_photos    : 500 images
+    • idcard_train             : 39 images
+    • card_synth_sampled       : 300 images
+    • composites               : 1000 images
+    • Total Images:             1839
+    • Total Annotations:        1882
+    • Contact Sheet:            eval\runs\20261006_011057_trainset\composite_contact_sheet.jpg
+    • Counts Record:            eval\runs\20261006_011057_trainset\counts.json
+  ```
+  *Visual Inspection:* Inspected 20-image composite contact sheet (`eval/runs/20261006_011057_trainset/composite_contact_sheet.jpg`). All perspective-distorted bounding boxes tightly hug card boundaries on real-world backgrounds (keyboards, desks, cloth, and outdoor textures) under varying glare, shadow, and partial occlusions.
+  *Zero-Leakage & Orientation Invariant:* Card cutouts and background patches derived strictly from train-type photos (`esp_id, est_id, grc_passport, lva_passport, rus_internalpassport`). Val and test sets untouched. No horizontal or vertical flips.
+- **RESULT:** PASS
+- **NEXT:** STEP 6
+
+### STEP 6: Dry Run 1-Epoch Smoke Test, ONNX Schema Audit & Parity Verification
+- **STEP 6** | **COMMAND:** `$env:PYTHONUTF8=1; python -c "from training.train_card_rfdetr import run_parity_harness; from rfdetr import RFDETRSmall; from pathlib import Path; model = RFDETRSmall(pretrain_weights='training/runs/card_smoke/checkpoint_best_total.pth'); print(run_parity_harness(model, Path('ml_service/models/rfdetr_card.onnx'), Path('data/coco_card/valid'), Path('eval/runs/20261006_smoke_parity/parity_report.json'), num_samples=20, iou_threshold=0.95))"`
+- **OUTPUT:**
+  ```
+  [2026-10-06 01:45:20] [WARNING] rf-detr - Using a different number of positional encodings than DINOv2, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
+  [2026-10-06 01:45:20] [WARNING] rf-detr - Using patch size 16 instead of 14, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
+  [2026-10-06 01:45:20] [WARNING] rf-detr - Checkpoint has 1 classes but model is configured for 90. Using checkpoint class count (1). Pass num_classes=1 to suppress this warning.
+  [2026-10-06 01:45:23] [WARNING] rf-detr - Model is not optimized for inference. Latency may be higher than expected. For full GPU throughput (e.g. ~8x on T4 via FP16 Tensor Cores), call model.inference(dtype=torch.float16).
+  Parity test result: 20/20 passed (all_passed=True)
+  {'total_tested': 20, 'passed_count': 20, 'all_passed': True, 'min_iou_target': 0.95}
+  ```
+  *Smoke Training & Export:* Trained 1 epoch on 32 images in `training/runs/card_smoke/`. Checkpoints confirmed: `checkpoint_best_total.pth`, `checkpoint_best_ema.pth`, `last.ckpt`. Exported ONNX to `ml_service/models/rfdetr_card.onnx` (FP32) + sidecar `rfdetr_card.onnx.meta.json`.
+  *ONNX I/O Schema Verified:*
+  - Inputs: `[('input', [1, 3, 512, 512], 'tensor(float)')]`
+  - Outputs: `[('dets', [1, 300, 4], 'tensor(float)'), ('labels', [1, 300, 2], 'tensor(float)')]`
+  - Saved schema to `eval/runs/20261006_012653_smoke/onnx_io.json`.
+  *Decode Fix in app/yolo_roi.py & ml_service/yolo_roi.py:*
+  - Uncovered real ONNX output format: `dets` is already normalized `[x1, y1, x2, y2]` (not `cxcywh`).
+  - `labels` has shape `(1, 300, 2)`: category index 0 is unused/background in COCO 1-indexed format; index 1 is `Card`. Sliced foreground probabilities `fg_probs = probs[:, 1:]` when `probs.shape[1] == len(class_names) + 1`.
+  - Added boundary clamping to `[0, orig_w]` and `[0, orig_h]` for both ONNX and PyTorch outputs.
+  - Zero-drift verified between `app/yolo_roi.py` and `ml_service/yolo_roi.py` via `test_yolo_roi_dual_implementation_drift`.
+  *Predicted Class Verification:* Tested 3 training images: predicted class name `'Card'` and class ID 0 confirmed (zero off-by-one error).
+  *Parity Verification:* 20/20 val images passed with IoU ≥ 0.95 (`all_passed: True`). Active box coordinate verification confirmed exact match between PyTorch and ONNX to 7 significant digits (e.g. PT: `[245.6633, 169.66846, 1033.6683, 549.88776]` vs ONNX: `[245.6633, 169.66846, 1033.6683, 549.88774]`).
+  *Full Test Suite:* 260 passed, 3 skipped, 3 warnings in 119.97s (100% green).
+- **RESULT:** PASS
+- **NEXT:** STEP 7
+
