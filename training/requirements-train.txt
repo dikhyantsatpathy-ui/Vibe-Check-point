@@ -1,0 +1,9 @@
+# Dedicated training dependencies (kept strictly isolated from Vercel root requirements.txt)
+rfdetr
+onnx
+onnxruntime
+onnxsim
+opencv-python
+pycocotools
+imagehash
+pyyaml

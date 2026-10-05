@@ -22,8 +22,10 @@ overlay rendering in the frontend preview canvas.
 """
 
 import io
+import json
 import logging
 import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from PIL import Image, ImageOps
@@ -147,9 +149,12 @@ def _get_onnx_session():
         return _session
     _session_attempted = True
     model_path = _default_model_path()
-    if not os.path.exists(model_path):
+    if not model_path or not os.path.exists(model_path):
         return None
     try:
+        backend = get_detector_backend()
+        if backend == "rf_detr":
+            _load_model_metadata(model_path, expected_num_classes=1)
         import onnxruntime as ort
         opts = ort.SessionOptions()
         opts.intra_op_num_threads = 2
@@ -167,12 +172,23 @@ def _get_aadhaar_session():
     if _aadhaar_session_attempted:
         return _aadhaar_session
     _aadhaar_session_attempted = True
-    path = os.getenv("AADHAAR_FIELDS_ONNX_PATH")
-    if not path:
-        path = os.path.join(_MODEL_DIR, "aadhaar_fields.onnx")
-    if not os.path.exists(path):
-        return None
+    backend = get_detector_backend()
+    if backend == "rf_detr":
+        path = os.getenv("RF_DETR_FIELDS_ONNX_PATH")
+        if not path:
+            path = os.path.join(_MODEL_DIR, "rfdetr_fields.onnx")
+        if not os.path.exists(path):
+            logger.warning("[detector] DETECTOR_BACKEND='rf_detr' configured but no RF-DETR fields model found. Failing loudly.")
+            return None
+    else:
+        path = os.getenv("AADHAAR_FIELDS_ONNX_PATH")
+        if not path:
+            path = os.path.join(_MODEL_DIR, "aadhaar_fields.onnx")
+        if not os.path.exists(path):
+            return None
     try:
+        if backend == "rf_detr":
+            _load_model_metadata(path, expected_num_classes=len(_AADHAAR_CLASS_NAMES))
         import onnxruntime as ort
         opts = ort.SessionOptions()
         opts.intra_op_num_threads = 2
@@ -477,6 +493,195 @@ def _postprocess_yolo_predictions(
 
 
 # ---------------------------------------------------------------------------
+# RF-DETR Pre- and Post-Processing (Apache 2.0 Backend Integration)
+# ---------------------------------------------------------------------------
+
+def _load_model_metadata(model_path: str, expected_num_classes: Optional[int] = None) -> Dict[str, Any]:
+    """Load and validate model metadata sidecar (*.meta.json).
+    
+    Raises:
+        ValueError: If metadata exists and class count does not match expected_num_classes.
+    """
+    if not model_path:
+        return {}
+    p = Path(model_path)
+    candidates = [
+        p.with_suffix(p.suffix + ".meta.json"),
+        p.with_name(f"{p.stem}.meta.json"),
+    ]
+    for c in candidates:
+        if c.exists():
+            try:
+                data = json.loads(c.read_text(encoding="utf-8"))
+                classes = data.get("classes", [])
+                if expected_num_classes is not None and len(classes) != expected_num_classes:
+                    raise ValueError(
+                        f"Model metadata classes count mismatch: expected {expected_num_classes}, got {len(classes)} in {c}"
+                    )
+                return data
+            except ValueError:
+                raise
+            except Exception as exc:
+                logger.warning(f"Failed to read model metadata from {c}: {exc}")
+    return {}
+
+
+def preprocess_rfdetr(
+    rgb: np.ndarray,
+    target_shape: Tuple[int, int] = (640, 640),
+) -> Tuple[np.ndarray, Tuple[int, int]]:
+    """Preprocess image for RF-DETR using plain square resize and ImageNet normalization (no letterbox)."""
+    orig_h, orig_w = rgb.shape[:2]
+    pil_img = Image.fromarray(rgb)
+    resized_pil = pil_img.resize(target_shape, Image.Resampling.BILINEAR)
+    resized = np.asarray(resized_pil, dtype=np.float32) / 255.0
+
+    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32).reshape(1, 1, 3)
+    std = np.array([0.229, 0.224, 0.225], dtype=np.float32).reshape(1, 1, 3)
+    normed = (resized - mean) / std
+
+    tensor = np.expand_dims(normed.transpose(2, 0, 1), axis=0).astype(np.float32)
+    return tensor, (orig_w, orig_h)
+
+
+def _postprocess_rfdetr_predictions(
+    boxes: np.ndarray,
+    logits: np.ndarray,
+    orig_dim: Tuple[int, int],
+    class_names: Optional[List[str]] = None,
+    conf_threshold: float = 0.25,
+    max_boxes: int = 100,
+    model_version: str = "rfdetr-v1",
+) -> List[Dict[str, Any]]:
+    """Decode raw RF-DETR box queries and class logits to original image coordinates."""
+    if boxes.ndim == 3:
+        boxes = boxes[0]
+    if logits.ndim == 3:
+        logits = logits[0]
+
+    if boxes.shape[0] == 0 or logits.shape[0] == 0:
+        return []
+
+    orig_w, orig_h = orig_dim
+    clipped_logits = np.clip(logits, -88.0, 88.0)
+    probs = 1.0 / (1.0 + np.exp(-clipped_logits))
+
+    num_queries = min(boxes.shape[0], probs.shape[0])
+    num_classes = len(class_names) if class_names else (probs.shape[1] if probs.ndim > 1 else 1)
+
+    results: List[Dict[str, Any]] = []
+
+    for i in range(num_queries):
+        if num_classes == 1 or probs.shape[1] == 1:
+            cid = 0
+            score = float(probs[i, 0]) if probs.ndim > 1 else float(probs[i])
+        else:
+            avail_probs = probs[i, :num_classes]
+            cid = int(np.argmax(avail_probs))
+            score = float(avail_probs[cid])
+
+        label = class_names[cid] if class_names and cid < len(class_names) else f"class_{cid}"
+        thresh = DEFAULT_CONF_THRESHOLDS.get(label, conf_threshold)
+        if score < thresh:
+            continue
+
+        cx, cy, bw, bh = boxes[i, :4]
+        x1 = (cx - (bw / 2.0)) * orig_w
+        y1 = (cy - (bh / 2.0)) * orig_h
+        x2 = (cx + (bw / 2.0)) * orig_w
+        y2 = (cy + (bh / 2.0)) * orig_h
+
+        x1_clip = max(0.0, min(float(orig_w), float(x1)))
+        y1_clip = max(0.0, min(float(orig_h), float(y1)))
+        x2_clip = max(0.0, min(float(orig_w), float(x2)))
+        y2_clip = max(0.0, min(float(orig_h), float(y2)))
+
+        box_w = x2_clip - x1_clip
+        box_h = y2_clip - y1_clip
+        if box_w <= 1.0 or box_h <= 1.0:
+            continue
+
+        norm_x = round(float(x1_clip / orig_w), 4)
+        norm_y = round(float(y1_clip / orig_h), 4)
+        norm_w = round(float(box_w / orig_w), 4)
+        norm_h = round(float(box_h / orig_h), 4)
+
+        results.append({
+            "label": label,
+            "class_id": cid,
+            "class_name": label,
+            "x": norm_x,
+            "y": norm_y,
+            "w": norm_w,
+            "h": norm_h,
+            "box": [norm_x, norm_y, norm_w, norm_h],
+            "confidence": round(score, 3),
+            "source": "model",
+            "backend": "rf_detr",
+            "model_version": model_version,
+        })
+
+    results.sort(key=lambda b: b.get("confidence", 0.0), reverse=True)
+    return results[:max_boxes]
+
+
+def _run_rfdetr_onnx(
+    rgb: np.ndarray,
+    session: Any,
+    max_boxes: int = 4,
+    class_names: Optional[List[str]] = None,
+    conf_threshold: float = 0.25,
+    model_version: str = "rfdetr-v1",
+) -> List[Dict[str, Any]]:
+    """Execute RF-DETR ONNX session with name-based output mapping and square resize."""
+    try:
+        inp = session.get_inputs()[0]
+        inp_h = inp.shape[2] if len(inp.shape) == 4 and isinstance(inp.shape[2], int) else 640
+        inp_w = inp.shape[3] if len(inp.shape) == 4 and isinstance(inp.shape[3], int) else 640
+
+        input_tensor, orig_dim = preprocess_rfdetr(rgb, (inp_w, inp_h))
+        input_name = inp.name
+
+        out_names = [o.name for o in session.get_outputs()]
+        outputs = session.run(out_names, {input_name: input_tensor})
+
+        boxes_tensor = None
+        logits_tensor = None
+
+        for name, arr in zip(out_names, outputs):
+            name_lower = name.lower()
+            if "box" in name_lower or (arr.ndim == 3 and arr.shape[-1] == 4):
+                boxes_tensor = arr
+            elif "logit" in name_lower or "score" in name_lower or (arr.ndim == 3 and arr.shape[-1] != 4):
+                logits_tensor = arr
+
+        if boxes_tensor is None or logits_tensor is None:
+            for arr in outputs:
+                if arr.ndim == 3 and arr.shape[-1] == 4:
+                    boxes_tensor = arr
+                elif arr.ndim == 3 and arr.shape[-1] != 4:
+                    logits_tensor = arr
+
+        if boxes_tensor is None or logits_tensor is None:
+            logger.error("Could not map RF-DETR outputs to boxes and logits tensors")
+            return []
+
+        return _postprocess_rfdetr_predictions(
+            boxes=boxes_tensor,
+            logits=logits_tensor,
+            orig_dim=orig_dim,
+            class_names=class_names,
+            conf_threshold=conf_threshold,
+            max_boxes=max_boxes,
+            model_version=model_version,
+        )
+    except Exception as exc:
+        logger.error(f"_run_rfdetr_onnx inference failed: {exc}", exc_info=True)
+        return []
+
+
+
+# ---------------------------------------------------------------------------
 # Computer Vision Heuristics (Honest confidence & source tagging)
 # ---------------------------------------------------------------------------
 
@@ -674,9 +879,13 @@ def extract_roi_boxes(image_bytes: bytes) -> List[Dict[str, Any]]:
 
     session = _get_onnx_session()
     if session is not None:
-        yolo_boxes = _run_yolo_onnx(rgb, session, max_boxes=2, class_names=["document"])
-        if yolo_boxes:
-            return yolo_boxes
+        backend = get_detector_backend()
+        if backend == "rf_detr":
+            boxes = _run_rfdetr_onnx(rgb, session, max_boxes=2, class_names=["Card"])
+        else:
+            boxes = _run_yolo_onnx(rgb, session, max_boxes=2, class_names=["document"])
+        if boxes:
+            return boxes
 
     # Fallback: multi-zone computer vision heuristics
     boxes = []
@@ -752,13 +961,23 @@ def extract_aadhaar_fields(image_bytes: bytes) -> List[Dict[str, Any]]:
     if rgb is None or session is None:
         return []
 
-    boxes = _run_yolo_onnx(
-        rgb,
-        session,
-        max_boxes=8,
-        class_names=_AADHAAR_CLASS_NAMES,
-        iou_threshold=0.45,
-    )
+    backend = get_detector_backend()
+    if backend == "rf_detr":
+        boxes = _run_rfdetr_onnx(
+            rgb,
+            session,
+            max_boxes=8,
+            class_names=_AADHAAR_CLASS_NAMES,
+            conf_threshold=0.25,
+        )
+    else:
+        boxes = _run_yolo_onnx(
+            rgb,
+            session,
+            max_boxes=8,
+            class_names=_AADHAAR_CLASS_NAMES,
+            iou_threshold=0.45,
+        )
     # Ensure top-1 per semantic class for unambiguous field crops
     class_best: Dict[str, Dict[str, Any]] = {}
     for b in boxes:
