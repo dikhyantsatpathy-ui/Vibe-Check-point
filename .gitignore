@@ -57,12 +57,15 @@ ui-before.png
 # ---- Vercel CLI ----
 .vercel/
 
-# ---- Agent runtime cache (session-local, not committed) ----
+# ---- Agent runtime & IDE config (local only, never pushed) ----
 .opencode/
 .playwright-mcp/
 tasks/
-.agents/**/*.log
-.agents/**/cache/
+.agents/
+.claude/
+.codex/
+.mcp.json
+opencode.json
 
 # ---- Frontend (React + Vite) ----
 node_modules/
@@ -75,13 +78,10 @@ frontend/smoke/out.*
 .env*
 pics/
 
-# Ignore generated documentation and chat logs
+# Ignore generated documentation, blueprints, and chat logs
 *.md
 !README.md
-!SIH26188_ENGINEERING_BLUEPRINT.md
-# ...except agent skills, which are markdown but must be versioned
-!/.agents/skills/
-!/.agents/skills/**
+!ml_service/README.md
 CHAT_EXPORT.html
 chat_transcripts/
 clean up for hackathon/
