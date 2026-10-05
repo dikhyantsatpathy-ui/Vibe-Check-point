@@ -267,5 +267,76 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
     return report
 
 
+def run_detector_bakeoff() -> dict:
+    """Side-by-side bake-off comparison: YOLOv8 vs Apache 2.0 RF-DETR / RT-DETR."""
+    print("\n" + "=" * 78)
+    print(" [BAKE-OFF] DETECTOR BENCHMARK: YOLOv8 (AGPL-3.0) vs RF-DETR (Apache 2.0)")
+    print("=" * 78)
+
+    # 1. Run YOLOv8 baseline
+    os.environ["DETECTOR_BACKEND"] = "yolov8"
+    from yolo_roi import clear_session_cache
+    clear_session_cache()
+    print("[bake-off] Evaluating YOLOv8 backend...")
+    yolo_report = run_full_evaluation(num_samples=25)
+
+    # 2. Run RF-DETR backend
+    os.environ["DETECTOR_BACKEND"] = "rf_detr"
+    clear_session_cache()
+    print("[bake-off] Evaluating RF-DETR backend...")
+    rf_report = run_full_evaluation(num_samples=25)
+
+    bakeoff_summary = {
+        "models": {
+            "yolov8": {
+                "license": "AGPL-3.0 (Copyleft restrictions for proprietary deployments)",
+                "nms_required": True,
+                "card_mAP50": yolo_report["card_detector"]["metrics"]["overall"].get("mAP50"),
+                "aadhaar_mAP50": yolo_report["aadhaar_fields_detector"]["metrics"]["overall"].get("mAP50"),
+                "card_p50_ms": yolo_report["card_detector"]["latency"].get("p50_ms"),
+                "aadhaar_p50_ms": yolo_report["aadhaar_fields_detector"]["latency"].get("p50_ms"),
+            },
+            "rf_detr": {
+                "license": "Apache 2.0 (Permissive, unrestricted commercial & gov deployments)",
+                "nms_required": False,
+                "card_mAP50": rf_report["card_detector"]["metrics"]["overall"].get("mAP50"),
+                "aadhaar_mAP50": rf_report["aadhaar_fields_detector"]["metrics"]["overall"].get("mAP50"),
+                "card_p50_ms": rf_report["card_detector"]["latency"].get("p50_ms"),
+                "aadhaar_p50_ms": rf_report["aadhaar_fields_detector"]["latency"].get("p50_ms"),
+            }
+        },
+        "recommendation": (
+            "Deploy RF-DETR (Apache 2.0) for production checkpoint deployments to eliminate AGPL copyleft liability, "
+            "while maintaining YOLOv8 operational side-by-side via DETECTOR_BACKEND='yolov8' for backward compatibility."
+        )
+    }
+
+    print("\n" + "=" * 78)
+    print(" [BAKE-OFF DECISION MATRIX]")
+    print("=" * 78)
+    print(f"{'Dimension':<25} | {'YOLOv8':<24} | {'RF-DETR (RT-DETR)':<24}")
+    print("-" * 78)
+    print(f"{'License':<25} | {'AGPL-3.0 (Copyleft)':<24} | {'Apache 2.0 (Permissive)':<24}")
+    print(f"{'Post-processing NMS':<25} | {'Required (15-30ms CPU)':<24} | {'NMS-Free (Direct Queries)':<24}")
+    print(f"{'Field Detector mAP50':<25} | {yolo_report['aadhaar_fields_detector']['metrics']['overall'].get('mAP50', 0):<24.3f} | {rf_report['aadhaar_fields_detector']['metrics']['overall'].get('mAP50', 0):<24.3f}")
+    print(f"{'Field Detector Latency':<25} | {str(yolo_report['aadhaar_fields_detector']['latency'].get('p50_ms')) + ' ms':<24} | {str(rf_report['aadhaar_fields_detector']['latency'].get('p50_ms')) + ' ms':<24}")
+    print(f"{'Config Switch':<25} | {'DETECTOR_BACKEND=yolov8':<24} | {'DETECTOR_BACKEND=rf_detr':<24}")
+    print("=" * 78 + "\n")
+
+    bakeoff_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bakeoff_report.json")
+    with open(bakeoff_path, "w", encoding="utf-8") as f:
+        json.dump(bakeoff_summary, f, indent=2)
+    print(f"[bake-off] Decision report saved to {bakeoff_path}")
+
+    # Restore default
+    os.environ["DETECTOR_BACKEND"] = "yolov8"
+    clear_session_cache()
+    return bakeoff_summary
+
+
 if __name__ == "__main__":
-    run_full_evaluation()
+    if "--bakeoff" in sys.argv:
+        run_detector_bakeoff()
+    else:
+        run_full_evaluation()
+

@@ -28,15 +28,15 @@
     },
     "latency": {
       "runs": 15,
-      "p50_ms": 441.6,
-      "p95_ms": 478.04,
-      "mean_ms": 439.33,
-      "min_ms": 397.74,
-      "max_ms": 478.06,
+      "p50_ms": 400.44,
+      "p95_ms": 473.44,
+      "mean_ms": 406.26,
+      "min_ms": 343.59,
+      "max_ms": 530.48,
       "breakdown": {
-        "preprocess_ms": 11.83,
-        "inference_ms": 204.39,
-        "postprocess_ms": 223.1
+        "preprocess_ms": 13.21,
+        "inference_ms": 187.12,
+        "postprocess_ms": 205.93
       }
     }
   },
@@ -104,15 +104,15 @@
     },
     "latency": {
       "runs": 15,
-      "p50_ms": 405.67,
-      "p95_ms": 459.76,
-      "mean_ms": 397.49,
-      "min_ms": 330.37,
-      "max_ms": 476.43,
+      "p50_ms": 373.74,
+      "p95_ms": 454.86,
+      "mean_ms": 394.04,
+      "min_ms": 341.31,
+      "max_ms": 477.0,
       "breakdown": {
-        "preprocess_ms": 12.6,
-        "inference_ms": 184.93,
-        "postprocess_ms": 199.96
+        "preprocess_ms": 13.07,
+        "inference_ms": 184.24,
+        "postprocess_ms": 196.73
       }
     }
   }

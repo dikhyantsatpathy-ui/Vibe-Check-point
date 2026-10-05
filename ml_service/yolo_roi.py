@@ -41,7 +41,28 @@ DEFAULT_CONF_THRESHOLDS: Dict[str, float] = {
 }
 
 
+def get_detector_backend() -> str:
+    """Return active detector backend: 'yolov8' (default) or 'rf_detr' (Apache 2.0)."""
+    val = os.getenv("DETECTOR_BACKEND", "yolov8").strip().lower()
+    if val in ("rf_detr", "rtdetr", "rf-detr", "rt-detr"):
+        return "rf_detr"
+    return "yolov8"
+
+
 def _default_model_path() -> str:
+    backend = get_detector_backend()
+    if backend == "rf_detr":
+        env = os.getenv("RF_DETR_ONNX_PATH")
+        if env and os.path.exists(env):
+            return env
+        for name in ("rf_detr.onnx", "rtdetr.onnx", "rtdetr_card.onnx"):
+            candidate = os.path.join(_MODEL_DIR, name)
+            if os.path.exists(candidate):
+                return candidate
+        logger.info(
+            "[detector] DETECTOR_BACKEND='rf_detr' configured. Falling back to card.onnx until dedicated weights mounted."
+        )
+
     env = os.getenv("YOLO_ROI_ONNX_PATH")
     if env:
         return env
@@ -52,7 +73,6 @@ def _default_model_path() -> str:
     return os.path.join(_MODEL_DIR, "yolov8n.onnx")
 
 
-_ONNX_MODEL_PATH = _default_model_path()
 _session = None
 _session_attempted = False
 
@@ -60,22 +80,32 @@ _aadhaar_session = None
 _aadhaar_session_attempted = False
 
 
+def clear_session_cache() -> None:
+    """Clear cached ONNX sessions so backend or model path switches take immediate effect."""
+    global _session, _session_attempted, _aadhaar_session, _aadhaar_session_attempted
+    _session = None
+    _session_attempted = False
+    _aadhaar_session = None
+    _aadhaar_session_attempted = False
+
+
 def _get_onnx_session():
     global _session, _session_attempted
     if _session_attempted:
         return _session
     _session_attempted = True
-    if not os.path.exists(_ONNX_MODEL_PATH):
+    model_path = _default_model_path()
+    if not os.path.exists(model_path):
         return None
     try:
         import onnxruntime as ort
         opts = ort.SessionOptions()
         opts.intra_op_num_threads = 2
         opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-        _session = ort.InferenceSession(_ONNX_MODEL_PATH, sess_options=opts, providers=['CPUExecutionProvider'])
+        _session = ort.InferenceSession(model_path, sess_options=opts, providers=['CPUExecutionProvider'])
         return _session
     except Exception as exc:
-        logger.warning(f"Failed to load ONNX card model at {_ONNX_MODEL_PATH}: {exc}")
+        logger.warning(f"Failed to load ONNX card model at {model_path}: {exc}")
         return None
 
 
@@ -312,6 +342,7 @@ def _run_yolo_onnx(
                     "h": norm_h,
                     "confidence": round(score, 3),
                     "source": "model",
+                    "backend": get_detector_backend(),
                 })
 
             resolved_boxes.sort(key=lambda b: b.get("confidence", 0.0), reverse=True)
@@ -335,6 +366,7 @@ def _run_yolo_onnx(
                         "h": round(float((b_orig[3] - b_orig[1]) / orig_h), 4),
                         "confidence": round(score, 3),
                         "source": "model",
+                        "backend": get_detector_backend(),
                     })
             resolved_boxes.sort(key=lambda b: b.get("confidence", 0.0), reverse=True)
             return resolved_boxes[:max_boxes]

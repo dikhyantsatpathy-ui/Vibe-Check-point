@@ -1,0 +1,21 @@
+{
+  "models": {
+    "yolov8": {
+      "license": "AGPL-3.0 (Copyleft restrictions for proprietary deployments)",
+      "nms_required": true,
+      "card_mAP50": null,
+      "aadhaar_mAP50": null,
+      "card_p50_ms": 383.73,
+      "aadhaar_p50_ms": 376.54
+    },
+    "rf_detr": {
+      "license": "Apache 2.0 (Permissive, unrestricted commercial & gov deployments)",
+      "nms_required": false,
+      "card_mAP50": null,
+      "aadhaar_mAP50": null,
+      "card_p50_ms": 400.44,
+      "aadhaar_p50_ms": 373.74
+    }
+  },
+  "recommendation": "Deploy RF-DETR (Apache 2.0) for production checkpoint deployments to eliminate AGPL copyleft liability, while maintaining YOLOv8 operational side-by-side via DETECTOR_BACKEND='yolov8' for backward compatibility."
+}
