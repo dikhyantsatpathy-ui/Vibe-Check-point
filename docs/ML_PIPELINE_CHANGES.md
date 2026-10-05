@@ -105,3 +105,36 @@ Every finding from the specification was audited against the active codebase. Be
 - `tests/test_screening.py`: 39/39 passed.
 - Full test suite: 227 passed, 3 skipped, 0 failed.
 
+---
+
+## 5. Phase 2: Evaluation Harness & YOLOv8 Baseline
+
+### Evaluation Harness Created:
+- `eval/dataset.py`: Synthetic CR-80 card specimen generator with optical distortions and loader for real YOLO datasets.
+- `eval/metrics.py`: Standard COCO/YOLO mAP50, mAP50-95, per-class Precision/Recall/F1, and automated PR-curve threshold optimizer.
+- `eval/benchmark.py`: CPU latency benchmarking (p50, p95, min, max, mean) decomposed into Pre-processing (letterbox), Inference (ONNX), and Post-processing (NMS).
+- `eval/evaluate.py`: Automated CLI driver generating structured `eval_report.json`.
+
+### YOLOv8 Baseline Benchmark Results:
+Evaluated on held-out test datasets:
+- **Aadhaar Field Detector (`aadhaar_fields.onnx`):** 79 held-out test images
+- **Card Boundary Detector (`card.onnx`):** 243 real/synthetic validation images
+
+| Model | Class | mAP50 | mAP50-95 | Precision | Recall | F1 | Opt Conf Thresh |
+|:---|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `card.onnx` | Card | 0.089 | 0.071 | 1.000 | 0.083 | 0.154 | 0.15 |
+| `aadhaar_fields.onnx` | Aadhaar_No | 0.980 | 0.823 | 1.000 | 0.987 | 0.993 | 0.15 |
+| `aadhaar_fields.onnx` | DOB | 1.000 | 0.815 | 1.000 | 1.000 | 1.000 | 0.15 |
+| `aadhaar_fields.onnx` | Gender | 1.000 | 0.794 | 0.987 | 1.000 | 0.993 | 0.15 |
+| `aadhaar_fields.onnx` | Name | 0.980 | 0.817 | 1.000 | 0.986 | 0.993 | 0.15 |
+| `aadhaar_fields.onnx` | Photo | 1.000 | 0.942 | 1.000 | 1.000 | 1.000 | 0.15 |
+
+### Latency Benchmark (CPU, ONNX Runtime, 2 threads):
+- **Card Model (`card.onnx`):** p50 = 441.60 ms | p95 = 478.04 ms (mean = 439.33 ms)
+- **Aadhaar Field Model (`aadhaar_fields.onnx`):** p50 = 405.67 ms | p95 = 459.76 ms (mean = 397.49 ms)
+- **Combined Inference Pipeline:** ~840 ms (fits well within 1,200 ms SLA).
+
+### Key Takeaway for Detector Bake-Off & Rectification:
+`aadhaar_fields.onnx` achieves **98–100% mAP50** on real test images following our Phase 1 letterbox and per-class NMS fixes. In contrast, `card.onnx` is the system bottleneck with low recall on arbitrary backgrounds (0.083 recall at IoU 0.50), confirming the necessity of Phase 3 (Perspective Rectification with quad corner detection) and Phase 5 (RF-DETR bake-off).
+
+

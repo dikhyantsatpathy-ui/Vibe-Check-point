@@ -1,0 +1,119 @@
+{
+  "dataset": {
+    "samples": 87,
+    "card_ground_truths": 12,
+    "aadhaar_ground_truths": 303
+  },
+  "card_detector": {
+    "model": "YOLOv8s-Card (card.onnx)",
+    "metrics": {
+      "overall": {
+        "mAP50": 0.0891,
+        "mAP50_95": 0.0713
+      },
+      "classes": {
+        "Card": {
+          "mAP50": 0.0891,
+          "mAP50_95": 0.0713,
+          "precision": 1.0,
+          "recall": 0.0833,
+          "f1": 0.1538,
+          "ground_truths": 12,
+          "detections": 1
+        }
+      }
+    },
+    "optimal_thresholds": {
+      "Card": 0.15
+    },
+    "latency": {
+      "runs": 15,
+      "p50_ms": 441.6,
+      "p95_ms": 478.04,
+      "mean_ms": 439.33,
+      "min_ms": 397.74,
+      "max_ms": 478.06,
+      "breakdown": {
+        "preprocess_ms": 11.83,
+        "inference_ms": 204.39,
+        "postprocess_ms": 223.1
+      }
+    }
+  },
+  "aadhaar_fields_detector": {
+    "model": "YOLOv8s-Aadhaar (aadhaar_fields.onnx)",
+    "metrics": {
+      "overall": {
+        "mAP50": 0.992,
+        "mAP50_95": 0.838
+      },
+      "classes": {
+        "Aadhaar_No": {
+          "mAP50": 0.9802,
+          "mAP50_95": 0.8228,
+          "precision": 1.0,
+          "recall": 0.9873,
+          "f1": 0.9936,
+          "ground_truths": 79,
+          "detections": 78
+        },
+        "DOB": {
+          "mAP50": 1.0,
+          "mAP50_95": 0.8146,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "ground_truths": 73,
+          "detections": 73
+        },
+        "Gender": {
+          "mAP50": 0.9997,
+          "mAP50_95": 0.794,
+          "precision": 0.9867,
+          "recall": 1.0,
+          "f1": 0.9933,
+          "ground_truths": 74,
+          "detections": 75
+        },
+        "Name": {
+          "mAP50": 0.9802,
+          "mAP50_95": 0.8166,
+          "precision": 1.0,
+          "recall": 0.9863,
+          "f1": 0.9931,
+          "ground_truths": 73,
+          "detections": 72
+        },
+        "Photo": {
+          "mAP50": 1.0,
+          "mAP50_95": 0.9422,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "ground_truths": 4,
+          "detections": 4
+        }
+      }
+    },
+    "optimal_thresholds": {
+      "Aadhaar_No": 0.15,
+      "DOB": 0.15,
+      "Gender": 0.15,
+      "Name": 0.15,
+      "Photo": 0.15
+    },
+    "latency": {
+      "runs": 15,
+      "p50_ms": 405.67,
+      "p95_ms": 459.76,
+      "mean_ms": 397.49,
+      "min_ms": 330.37,
+      "max_ms": 476.43,
+      "breakdown": {
+        "preprocess_ms": 12.6,
+        "inference_ms": 184.93,
+        "postprocess_ms": 199.96
+      }
+    }
+  }
+}

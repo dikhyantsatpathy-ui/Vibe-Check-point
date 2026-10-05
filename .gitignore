@@ -77,6 +77,7 @@ frontend/smoke/out.*
 .vercel
 .env*
 pics/
+eval/data/
 
 # Ignore generated documentation, blueprints, and chat logs
 *.md
