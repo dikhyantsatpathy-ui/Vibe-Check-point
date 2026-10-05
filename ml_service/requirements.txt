@@ -9,3 +9,5 @@ pydantic
 httpx
 requests
 gradio
+pypdf
+pypdfium2

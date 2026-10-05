@@ -169,5 +169,41 @@ In Phase 3, we built a zero-heavy-dependency perspective rectification module:
 - `tests/test_rectification.py`: 5/5 unit & integration tests passing (ordering, homography projection, Pillow warp, flag gating, and `isolate_document_card` integration).
 - Full regression suite: **232 passed, 3 skipped, 0 failed**.
 
+---
+
+## 7. Phase 4: PDFs, Live Photos & Mixed Media in ML Microservice
+
+### Overview & Architecture:
+Modern border checkpoints encounter mixed media submissions: multi-page PDF document bundles (often containing digital signatures, e.g. e-Aadhaar or e-Visas) and mobile Live/Motion Photos (Apple/Google).
+
+Handling these heavy binary formats in root Vercel would exceed serverless bundle quotas and RAM constraints. Phase 4 isolates mixed-media pipelines inside `ml_service/` under Zero-Raw-Storage invariants:
+- **Zero-Disk Persistence**: Media streams, extracted PDF pages, and burst frames remain in memory (`io.BytesIO`).
+- **Cryptographic Scrubbing**: Temporary decoding handles are guaranteed immediate unlinking in `finally:` blocks.
+
+### Technical Implementation:
+1. **In-Memory PDF Signature & Metadata Inspection (`inspect_pdf_signatures`):**
+   - High-speed structural regex and PDF object scanner for standard PKCS#7 / CAdES / X.509 detached signatures (`/SubFilter /adbe.pkcs7.detached`, etc.).
+   - Extracts signer identity (`/Name`), timestamp (`/M`), signing purpose/reason (`/Reason`), and verifies `/ByteRange` integrity across the document body.
+2. **In-Memory Vector & Embedded Page Rendering (`render_pdf_pages_in_memory`):**
+   - Implements multi-tier rasterization: `pypdfium2` (vector high-fidelity) $\rightarrow$ `fitz` (PyMuPDF) $\rightarrow$ `pypdf` (embedded image and text extraction).
+   - Emits lossless in-memory PNG bytes for downstream YOLO field extraction, OCR, and document forgery analysis.
+3. **Live Photo / Motion Photo Stream Separation (`extract_motion_photo_streams`):**
+   - Slices embedded MP4 video bursts from Google Motion Photos (`ftypmp42`, `ftypisom`) and Apple Live Photos without modifying the primary still image.
+   - Converts primary still to normalized lossless PNG for standard ID screening.
+4. **Physiological Burst Micro-Motion Analysis (`analyze_motion_liveness_frames`):**
+   - Extracts up to 15 keyframes across the embedded video burst.
+   - Computes inter-frame Mean Absolute Difference (MAD) to discern natural human physiological motion (breathing, micro-saccades, blinking, score $\in [0.8, 25.0]$) from:
+     - Static paper/screen replay attacks ($\Delta < 0.8$)
+     - Severe camera shake or synthetic deepfake warp ($\Delta > 25.0$)
+5. **New Endpoints in `ml_service/main.py`:**
+   - `POST /api/ml/media/process_pdf`: In-memory PDF analysis returning signature verification, page count, and serialized page PNG images.
+   - `POST /api/ml/media/process_live_photo`: Analyzes live photo, extracts primary still image, and produces physiological liveness scoring.
+   - Both protected by `verify_ml_auth` shared-secret header (`X-ML-Secret-Key`).
+
+### Test Results:
+- `tests/test_mixed_media.py`: 6/6 tests passing (signature detection, unsigned handling, pipeline execution, motion photo stream splitting, static image fallback, and FastAPI TestClient endpoint integration).
+- `ml_service/requirements.txt`: Added `pypdf` and `pypdfium2`.
+
+
 
 

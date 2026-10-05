@@ -196,6 +196,9 @@ def health_check():
             "/api/ml/face_match",
             "/api/ml/detect_image",
             "/api/ml/doctype",
+            "/api/ml/doc_forgery",
+            "/api/ml/media/process_pdf",
+            "/api/ml/media/process_live_photo",
         ],
         "models": {
             "yolo_card": os.path.exists(os.path.join(models_dir, "card.onnx")),
@@ -268,5 +271,36 @@ async def api_doc_forgery(file: UploadFile = File(...)):
     data = await file.read()
     result = analyze_doc_forgery(data)
     return result
+
+
+import base64
+from media_processor import process_pdf_document, process_live_photo
+
+@app.post("/api/ml/media/process_pdf", dependencies=[Depends(verify_ml_auth)])
+async def api_process_pdf(file: UploadFile = File(...), max_pages: int = 5):
+    data = await file.read()
+    res = process_pdf_document(data, max_pages=max_pages)
+    # Serialize rendered PNG buffers to base64 for JSON response
+    serialized_pages = []
+    for p in res.get("pages", []):
+        p_dict = dict(p)
+        raw_png = p_dict.pop("rendered_png", None)
+        if raw_png:
+            p_dict["png_b64"] = base64.b64encode(raw_png).decode("ascii")
+        serialized_pages.append(p_dict)
+    res["pages"] = serialized_pages
+    return res
+
+
+@app.post("/api/ml/media/process_live_photo", dependencies=[Depends(verify_ml_auth)])
+async def api_process_live_photo(file: UploadFile = File(...)):
+    data = await file.read()
+    filename = file.filename or ""
+    res = process_live_photo(data, filename=filename)
+    raw_primary = res.pop("primary_image_png", None)
+    if raw_primary:
+        res["primary_image_b64"] = base64.b64encode(raw_primary).decode("ascii")
+    return res
+
 
 
