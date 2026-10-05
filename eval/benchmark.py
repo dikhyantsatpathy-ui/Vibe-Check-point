@@ -18,7 +18,13 @@ def benchmark_model_latency(
     import sys
     import os
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app"))
-    from yolo_roi import letterbox, _run_yolo_onnx
+    from yolo_roi import letterbox, _postprocess_yolo_predictions, _run_yolo_onnx
+
+    inp = session.get_inputs()[0]
+    inp_h = inp.shape[2] if len(inp.shape) == 4 and isinstance(inp.shape[2], int) else 640
+    inp_w = inp.shape[3] if len(inp.shape) == 4 and isinstance(inp.shape[3], int) else 640
+    input_name = inp.name
+    output_name = session.get_outputs()[0].name
 
     # 1. Warm-up
     for _ in range(num_warmup):
@@ -29,39 +35,40 @@ def benchmark_model_latency(
     latencies_inf = []
     latencies_post = []
 
-    inp = session.get_inputs()[0]
-    inp_h = inp.shape[2] if len(inp.shape) == 4 and isinstance(inp.shape[2], int) else 640
-    inp_w = inp.shape[3] if len(inp.shape) == 4 and isinstance(inp.shape[3], int) else 640
-    input_name = inp.name
-    output_name = session.get_outputs()[0].name
-
     for _ in range(num_runs):
-        t0 = time.perf_counter()
-
-        # Preprocessing
+        # Preprocessing (Letterbox + Transpose + Normalize)
         t_pre0 = time.perf_counter()
         canvas, scale, padding, orig_dim = letterbox(sample_rgb, (inp_w, inp_h))
         input_tensor = canvas.astype(np.float32).transpose(2, 0, 1) / 255.0
         input_tensor = np.expand_dims(input_tensor, axis=0)
         t_pre1 = time.perf_counter()
 
-        # Inference
+        # Inference (ONNX Session)
         t_inf0 = time.perf_counter()
         raw_preds = session.run([output_name], {input_name: input_tensor})[0]
         t_inf1 = time.perf_counter()
 
-        # Postprocessing
+        # Postprocessing (Candidate thresholding + Per-class NMS + Coordinate unscaling)
         t_post0 = time.perf_counter()
-        # Parse outputs via _run_yolo_onnx
-        _run_yolo_onnx(sample_rgb, session)
+        _postprocess_yolo_predictions(
+            raw_preds=raw_preds,
+            scale=scale,
+            padding=padding,
+            orig_dim=orig_dim,
+            conf_threshold=0.25,
+            iou_threshold=0.45,
+        )
         t_post1 = time.perf_counter()
 
-        t_total = time.perf_counter() - t0
+        pre_ms = (t_pre1 - t_pre0) * 1000.0
+        inf_ms = (t_inf1 - t_inf0) * 1000.0
+        post_ms = (t_post1 - t_post0) * 1000.0
+        total_ms = pre_ms + inf_ms + post_ms
 
-        latencies_total.append(t_total * 1000.0)
-        latencies_pre.append((t_pre1 - t_pre0) * 1000.0)
-        latencies_inf.append((t_inf1 - t_inf0) * 1000.0)
-        latencies_post.append((t_post1 - t_post0) * 1000.0)
+        latencies_total.append(total_ms)
+        latencies_pre.append(pre_ms)
+        latencies_inf.append(inf_ms)
+        latencies_post.append(post_ms)
 
     p50 = float(np.percentile(latencies_total, 50))
     p95 = float(np.percentile(latencies_total, 95))

@@ -206,30 +206,26 @@ Handling these heavy binary formats in root Vercel would exceed serverless bundl
 
 ---
 
-## 8. Phase 5: Detector Bake-Off (Apache 2.0 RF-DETR vs YOLOv8) & Runtime Switch
+## 8. Phase 5: Detector Backend Abstraction (Apache 2.0 RF-DETR vs YOLOv8) & Runtime Switch
 
 ### Overview & Architecture:
 Ultralytics YOLOv8 is distributed under **AGPL-3.0**, which imposes copyleft requirements for cloud-hosted backend systems or requires purchasing proprietary enterprise licensing.
 
-In Phase 5, we engineered a runtime-switchable detector backend abstraction supporting **Apache 2.0 Real-Time Detection Transformers (RF-DETR / RT-DETR)** alongside the existing YOLOv8 CNN model.
+In Phase 5, we engineered a runtime-switchable detector backend abstraction supporting **Apache 2.0 Real-Time Detection Transformers (RF-DETR)** alongside the existing YOLOv8 CNN model.
 - **Zero Downtime / Instant Toggle**: Switchable via `DETECTOR_BACKEND="yolov8"|"rf_detr"` in both `app/yolo_roi.py` and `ml_service/yolo_roi.py`.
 - **Runtime Cache Eviction**: `clear_session_cache()` allows dynamic backend migration within 1–2 seconds without restarting the FastAPI or container process.
+- **Fail-Loud Security**: With `DETECTOR_BACKEND=rf_detr`, if dedicated RF-DETR weights are absent, the system fails loudly (`_default_model_path()` returns empty string, triggering explainable heuristic fallback and routing to `REVIEW`). It never silently substitutes YOLO weights.
 - **Backwards-Compatible Schema**: Both models output identical structured bounding box dictionaries with an added `"backend": "..."` audit tag:
   `{"label": ..., "class_id": ..., "x": ..., "y": ..., "w": ..., "h": ..., "confidence": ..., "source": "model", "backend": "yolov8"|"rf_detr"}`.
 
-### Bake-Off Decision Matrix:
-
-| Dimension | YOLOv8 | RF-DETR (RT-DETR) | Decision / Impact |
-|:---|:---|:---|:---|
-| **License** | AGPL-3.0 (Strict copyleft viral terms) | **Apache 2.0 (Permissive, unrestricted)** | **RF-DETR Wins**: Safe for proprietary and government border operations. |
-| **Post-Processing** | Requires CPU NMS (15–35 ms overhead) | **NMS-Free (Direct bipartite query matching)** | **RF-DETR Wins**: Eliminates CPU NMS bottleneck on dense scenes. |
-| **Aadhaar Field mAP50** | **0.992** (99.2% mean across fields) | **0.992** (Identical field accuracy) | **Tie**: Both models deliver production-grade extraction. |
-| **CPU p50 Latency** | 376.54 ms | **373.74 ms** | **RF-DETR Wins**: Marginally faster CPU throughput due to zero NMS. |
-| **Operational Risk** | Proven baseline | Newer transformer backbone | **Dual Support**: YOLOv8 retained as hot fallback via `DETECTOR_BACKEND=yolov8`. |
+### Detector Bake-Off Status:
+- **Backend Infrastructure:** Operational. Both `app/` and `ml_service/` support RF-DETR format, per-class threshold sweeps, and session management.
+- **Trained Weights:** Pending. Dedicated RF-DETR checkpoints must be trained and exported to `ml_service/models/rfdetr_card.onnx` and `rfdetr_fields.onnx`.
+- **Comparative Metrics:** No empirical comparative result is reported until RF-DETR weights are trained and evaluated on real held-out datasets. `eval/evaluate.py:run_detector_bakeoff` aborts with `FileNotFoundError` if weights are missing, preventing unverified comparisons.
 
 ### Test & Benchmark Verification:
-- `tests/test_detector_backend.py`: 5/5 unit tests passing (default resolution, `DETECTOR_BACKEND` aliases, path resolution, `clear_session_cache()`, box backend tagging).
-- CLI Bake-Off Benchmark: `python eval/evaluate.py --bakeoff` executed on held-out test datasets; outputs structured decision report `eval/bakeoff_report.json`.
+- `tests/test_detector_backend.py`: 6/6 unit tests passing (default resolution, `DETECTOR_BACKEND` strict values and RT-DETR rejection, fail-loud missing weights handling, `clear_session_cache()`, box backend tagging, and bakeoff weight validation).
+- Automated drift protection verified across `app/yolo_roi.py` and `ml_service/yolo_roi.py`.
 
 ---
 
@@ -238,22 +234,22 @@ In Phase 5, we engineered a runtime-switchable detector backend abstraction supp
 ### Decision Hardening & Explainability:
 1. **Explainable Degradation & Fallback Tagging:**
    - Every detected bounding box carries immutable provenance: `source: "model" | "heuristic"`, `confidence: float | None`, and `backend: "yolov8" | "rf_detr"`.
-   - When card localization operates via heuristics (e.g. cold-start remote ML outage), `app/screening.py` strictly sets `can_clear = False`, forcing manual officer `REVIEW` with an advisory rationale.
+   - When card localization operates via heuristics (e.g. cold-start remote ML outage or unmounted weights), `app/screening.py` strictly sets `can_clear = False`, forcing manual officer `REVIEW` with an advisory rationale.
    - Low-confidence or unlocalized crops are clearly tagged in `app/tampering.py` (`checks: [{"label": "card-localization", ...}]`) and `crop_meta`.
 2. **Perspective Rectification Visibility:**
    - When homography perspective warping is triggered, `app/tampering.py` surfaces a dedicated check:
      `{"label": "perspective-rectification", "ok": True, "detail": "Perspective distortion rectified to canonical CR-80 ratio (1000x630)."}`.
 3. **Synchronized Dual-Stream Forgery Detector:**
-   - `ml_service/doc_forgery.py` and `app/doc_forgery.py` now share identical schemas including `dead_block_ratio`, `largest_component`, `void_kind`, and `seam_anomaly`.
+   - `ml_service/doc_forgery.py` and `app/doc_forgery.py` share identical schemas including `dead_block_ratio`, `largest_component`, `void_kind`, and `seam_anomaly`.
 
 ### Observability & Documentation Upgrades:
-- **`ml_service/README.md`**: Fully updated with all neural models, Apache 2.0 / MIT licenses, endpoint signatures, authentication header (`X-ML-Secret-Key`), configuration flags, and ZeroGPU / Docker setup instructions.
-- **`SIH26188_ENGINEERING_BLUEPRINT.md`**: Synchronized Section 15 (Module 1 detection upgrades) and Section 31 (Definition of Done) to reflect all Phase 1–5 architectural improvements.
+- **`ml_service/README.md`**: Updated with all neural models, Apache 2.0 / MIT licenses, endpoint signatures, authentication header (`X-ML-Secret-Key`, fail-closed unless `ML_ALLOW_NO_AUTH=true`), configuration flags, and ZeroGPU / Docker setup instructions.
+- **`SIH26188_ENGINEERING_BLUEPRINT.md`**: Synchronized Section 15 (Module 1 detection upgrades) and Section 31 (Definition of Done) to reflect all architectural improvements honestly.
 - **Supply-Chain Integrity**: Pinned SHA-256 digests for all neural checkpoints (`model.onnx`, `w600k_r50.onnx`, `aadhaar_fields.onnx`, `card.onnx`).
 
-### Final Regression Test Summary:
-- **Total Tests Passing**: **243 passed, 3 skipped, 0 failed** ($100\%$ pass rate across 246 test items).
-- All unit, integration, crypto-ledger, zero-storage, and CV detection suites verified.
+### Test Suite Status:
+- **Automated Tests**: **245 passed, 3 skipped, 0 failed** ($100\%$ pass rate across 248 test items).
+- All unit, integration, crypto-ledger, zero-storage, dual-implementation drift, and CV detection suites verified.
 
 
 

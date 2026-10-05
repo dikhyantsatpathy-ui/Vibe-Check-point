@@ -25,25 +25,38 @@ def test_detector_backend_default(monkeypatch):
 
 
 def test_detector_backend_rf_detr_toggle(monkeypatch):
-    """Verify switching DETECTOR_BACKEND to 'rf_detr' or aliases."""
-    for alias in ("rf_detr", "rtdetr", "rf-detr", "RT-DETR"):
+    """Verify switching DETECTOR_BACKEND to 'rf_detr' succeeds, but RT-DETR raises ValueError."""
+    for alias in ("rf_detr", "rf-detr"):
         monkeypatch.setenv("DETECTOR_BACKEND", alias)
         assert get_detector_backend() == "rf_detr"
 
+    for disallowed in ("rtdetr", "rt-detr", "RT-DETR"):
+        monkeypatch.setenv("DETECTOR_BACKEND", disallowed)
+        with pytest.raises(ValueError, match="RT-DETR and RF-DETR are distinct models"):
+            get_detector_backend()
+
 
 def test_detector_backend_model_path_resolution(monkeypatch, tmp_path):
-    """Verify model path resolution checks for rf_detr weights and falls back gracefully."""
-    # 1. Fallback when no rf_detr weights exist
+    """Verify model path resolution fails loud when rf_detr weights are missing (no silent fallback)."""
+    # 1. No silent fallback to YOLO when rf_detr weights do not exist
     monkeypatch.setenv("DETECTOR_BACKEND", "rf_detr")
     monkeypatch.delenv("RF_DETR_ONNX_PATH", raising=False)
     path = _default_model_path()
-    assert path.endswith("card.onnx") or path.endswith("yolov8n.onnx")
+    assert path == "", "Must return empty string and fail loud rather than loading YOLO card.onnx"
 
-    # 2. Specific mounted rf_detr weights
+    # 2. Specific mounted rf_detr weights are loaded properly
     dummy_rf = tmp_path / "custom_rf_detr.onnx"
     dummy_rf.write_bytes(b"dummy")
     monkeypatch.setenv("RF_DETR_ONNX_PATH", str(dummy_rf))
     assert _default_model_path() == str(dummy_rf)
+
+
+def test_bakeoff_aborts_without_rf_detr_weights(monkeypatch):
+    """Verify bakeoff function strictly fails if RF-DETR weights are not mounted."""
+    from eval.evaluate import run_detector_bakeoff
+    monkeypatch.delenv("RF_DETR_ONNX_PATH", raising=False)
+    with pytest.raises(FileNotFoundError, match="RF-DETR weights not found"):
+        run_detector_bakeoff()
 
 
 def test_clear_session_cache_allows_instant_backend_switching(monkeypatch):

@@ -197,3 +197,50 @@ def test_degraded_mode_prevents_clear():
 
     verdict_clean = _grade(score=15, hard_flag=False, can_clear=True)
     assert verdict_clean == "CLEAR"
+
+
+def test_yolo_roi_dual_implementation_drift():
+    """Verify defect D8: ensure core detection algorithms in app/yolo_roi.py
+    and ml_service/yolo_roi.py remain strictly aligned without behavioral drift."""
+    import importlib.util
+
+    app_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app", "yolo_roi.py")
+    ml_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ml_service", "yolo_roi.py")
+
+    spec_app = importlib.util.spec_from_file_location("app_yolo_roi_drift", app_path)
+    mod_app = importlib.util.module_from_spec(spec_app)
+    spec_app.loader.exec_module(mod_app)
+
+    spec_ml = importlib.util.spec_from_file_location("ml_yolo_roi_drift", ml_path)
+    mod_ml = importlib.util.module_from_spec(spec_ml)
+    spec_ml.loader.exec_module(mod_ml)
+
+    # 1. Verify default thresholds match
+    assert mod_app.DEFAULT_CONF_THRESHOLDS == mod_ml.DEFAULT_CONF_THRESHOLDS
+
+    # 2. Verify letterbox outputs match exactly
+    dummy_rgb = np.arange(100 * 150 * 3, dtype=np.uint8).reshape((100, 150, 3))
+    lb_app, s_app, p_app, d_app = mod_app.letterbox(dummy_rgb, (640, 640))
+    lb_ml, s_ml, p_ml, d_ml = mod_ml.letterbox(dummy_rgb, (640, 640))
+
+    np.testing.assert_array_equal(lb_app, lb_ml)
+    assert s_app == s_ml
+    assert p_app == p_ml
+    assert d_app == d_ml
+
+    # 3. Verify NMS outputs match exactly
+    boxes = np.array([
+        [10, 10, 50, 50],
+        [12, 12, 52, 52],
+        [100, 100, 180, 180],
+    ], dtype=np.float32)
+    scores = np.array([0.9, 0.85, 0.7], dtype=np.float32)
+    assert mod_app.nms_numpy(boxes, scores) == mod_ml.nms_numpy(boxes, scores)
+
+    # 4. Verify postprocessing outputs match exactly
+    raw_preds = np.zeros((1, 5, 10), dtype=np.float32)
+    raw_preds[0, :4, 0] = [320, 320, 200, 200]
+    raw_preds[0, 4, 0] = 0.95
+    boxes_app = mod_app._postprocess_yolo_predictions(raw_preds, 1.0, (0.0, 0.0), (640, 640))
+    boxes_ml = mod_ml._postprocess_yolo_predictions(raw_preds, 1.0, (0.0, 0.0), (640, 640))
+    assert boxes_app == boxes_ml

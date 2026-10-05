@@ -69,6 +69,7 @@ def test_pdf_signature_detection():
     assert len(sigs) >= 1
     sig = sigs[0]
     assert sig["is_digitally_signed"] is True
+    assert sig["cryptographically_verified"] is False
     assert "UIDAI" in (sig.get("signer_name") or "")
     assert "adbe.pkcs7.detached" in sig.get("subfilter", "")
     assert sig["is_range_valid"] is True
@@ -125,25 +126,57 @@ def test_process_live_photo_static_image():
     assert res["primary_image_height"] == 240
     assert "primary_image_png" in res
     assert res["liveness"]["liveness_detected"] is False
+    assert res["liveness"]["experimental"] is True
 
 
 def test_api_media_endpoints_via_testclient(monkeypatch):
-    """Verify /api/ml/media/process_pdf and /api/ml/media/process_live_photo via FastAPI client."""
+    """Verify /api/ml/media/process_pdf and /api/ml/media/process_live_photo with auth checks."""
     client = TestClient(ml_app)
-
-    # 1. PDF processing endpoint
     pdf_bytes = _create_signed_pdf_specimen()
+
+    # 1. Unset ML_SECRET_KEY and ML_ALLOW_NO_AUTH -> 503 Service Unavailable (Fail closed, D4)
+    monkeypatch.delenv("ML_SECRET_KEY", raising=False)
+    monkeypatch.delenv("ML_ALLOW_NO_AUTH", raising=False)
+    res_fail = client.post(
+        "/api/ml/media/process_pdf",
+        files={"file": ("specimen.pdf", pdf_bytes, "application/pdf")},
+    )
+    assert res_fail.status_code == 503
+
+    # 2. Set ML_ALLOW_NO_AUTH=true -> succeeds without key
+    monkeypatch.setenv("ML_ALLOW_NO_AUTH", "true")
+    res_dev = client.post(
+        "/api/ml/media/process_pdf",
+        files={"file": ("specimen.pdf", pdf_bytes, "application/pdf")},
+    )
+    assert res_dev.status_code == 200
+
+    # 3. Enforce ML_SECRET_KEY
+    monkeypatch.delenv("ML_ALLOW_NO_AUTH", raising=False)
+    monkeypatch.setenv("ML_SECRET_KEY", "secure_border_key_42")
+
+    # Missing header -> 401
+    res_unauth = client.post(
+        "/api/ml/media/process_pdf",
+        files={"file": ("specimen.pdf", pdf_bytes, "application/pdf")},
+    )
+    assert res_unauth.status_code == 401
+
+    # Valid header -> 200
+    headers = {"X-ML-Secret-Key": "secure_border_key_42"}
     res_pdf = client.post(
         "/api/ml/media/process_pdf",
         files={"file": ("specimen.pdf", pdf_bytes, "application/pdf")},
+        headers=headers,
     )
     assert res_pdf.status_code == 200
     pdf_data = res_pdf.json()
     assert pdf_data["is_pdf"] is True
     assert pdf_data["is_digitally_signed"] is True
     assert len(pdf_data["signatures"]) >= 1
+    assert pdf_data["signatures"][0]["cryptographically_verified"] is False
 
-    # 2. Live photo processing endpoint
+    # 4. Live photo processing endpoint with auth
     img = Image.new("RGB", (200, 200), color=(100, 120, 140))
     buf = io.BytesIO()
     img.save(buf, format="JPEG")
@@ -152,8 +185,10 @@ def test_api_media_endpoints_via_testclient(monkeypatch):
     res_live = client.post(
         "/api/ml/media/process_live_photo",
         files={"file": ("live.jpg", raw_img, "image/jpeg")},
+        headers=headers,
     )
     assert res_live.status_code == 200
     live_data = res_live.json()
     assert "primary_image_b64" in live_data
     assert "liveness" in live_data
+    assert live_data["liveness"].get("experimental") is True

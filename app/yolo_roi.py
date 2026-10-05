@@ -87,25 +87,32 @@ DEFAULT_CONF_THRESHOLDS: Dict[str, float] = {
 def get_detector_backend() -> str:
     """Return active detector backend: 'yolov8' (default) or 'rf_detr' (Apache 2.0)."""
     val = os.getenv("DETECTOR_BACKEND", "yolov8").strip().lower()
-    if val in ("rf_detr", "rtdetr", "rf-detr", "rt-detr"):
+    if val in ("rf_detr", "rf-detr"):
         return "rf_detr"
+    if val in ("rtdetr", "rt-detr"):
+        raise ValueError(
+            f"Unsupported DETECTOR_BACKEND='{val}'. RT-DETR and RF-DETR are distinct models. Use 'rf_detr' or 'yolov8'."
+        )
     return "yolov8"
 
 
 def _default_model_path() -> str:
-    """Resolve active model path based on DETECTOR_BACKEND and environment variables."""
+    """Resolve active model path based on DETECTOR_BACKEND and environment variables.
+    Fails loudly with empty string if RF-DETR weights are absent (never silently loads YOLO)."""
     backend = get_detector_backend()
     if backend == "rf_detr":
         env = os.getenv("RF_DETR_ONNX_PATH")
         if env and os.path.exists(env):
             return env
-        for name in ("rf_detr.onnx", "rtdetr.onnx", "rtdetr_card.onnx"):
+        for name in ("rf_detr.onnx", "rf_detr_card.onnx"):
             candidate = os.path.join(_MODEL_DIR, name)
             if os.path.exists(candidate):
                 return candidate
-        logger.info(
-            "[detector] DETECTOR_BACKEND='rf_detr' configured. Falling back to card.onnx until dedicated weights mounted."
+        logger.warning(
+            "[detector] DETECTOR_BACKEND='rf_detr' configured but no RF-DETR weights found. "
+            "Failing loudly without fallback to YOLO."
         )
+        return ""
 
     env = os.getenv("YOLO_ROI_ONNX_PATH")
     if env:
@@ -303,6 +310,7 @@ def _run_yolo_onnx(
     max_boxes: int = 4,
     class_names: Optional[List[str]] = None,
     iou_threshold: float = 0.45,
+    conf_threshold: float = 0.25,
 ) -> List[Dict[str, Any]]:
     """Run YOLO ONNX with letterboxing, per-class NMS, and output format detection."""
     try:
@@ -319,133 +327,153 @@ def _run_yolo_onnx(
         output_name = session.get_outputs()[0].name
         raw_preds = session.run([output_name], {input_name: input_tensor})[0]
 
-        # Output format detection
-        # Standard YOLOv8: [1, 4 + nc, G] (e.g. [1, 5, 8400] or [1, 9, 8400])
-        # End-to-end / RT-DETR: [1, G, 4 + nc] or [1, 300, 6]
-        if raw_preds.ndim != 3:
-            logger.error(f"Unexpected YOLO output dimensionality: ndim={raw_preds.ndim}, shape={raw_preds.shape}")
-            return []
-
-        if raw_preds.shape[1] <= 32 and raw_preds.shape[2] > raw_preds.shape[1]:
-            # Standard YOLOv8 layout: [1, 4+nc, G] -> transpose to [G, 4+nc]
-            nc = raw_preds.shape[1] - 4
-            preds = raw_preds[0].transpose(1, 0)
-            is_end2end = False
-        else:
-            # End-to-end layout: [1, G, 4+nc] or [1, G, 6]
-            preds = raw_preds[0]
-            nc = preds.shape[1] - 4
-            is_end2end = True
-
-        if preds.shape[0] == 0:
-            return []
-
-        orig_w, orig_h = orig_dim
-        resolved_boxes: List[Dict[str, Any]] = []
-
-        if not is_end2end:
-            # Vectorized candidate parsing across all predictions
-            cx = preds[:, 0]
-            cy = preds[:, 1]
-            bw = preds[:, 2]
-            bh = preds[:, 3]
-
-            x1 = cx - bw / 2.0
-            y1 = cy - bh / 2.0
-            x2 = cx + bw / 2.0
-            y2 = cy + bh / 2.0
-            boxes_xyxy_letterbox = np.stack([x1, y1, x2, y2], axis=1)
-
-            scores_matrix = preds[:, 4:]  # shape [G, nc]
-            class_ids = np.argmax(scores_matrix, axis=1)
-            confidences = scores_matrix[np.arange(preds.shape[0]), class_ids]
-
-            # Scale letterbox boxes back to original image space
-            boxes_xyxy_orig = scale_boxes_to_original(boxes_xyxy_letterbox, scale, padding, orig_dim)
-
-            # Per-class NMS grouping
-            unique_classes = np.unique(class_ids)
-            all_kept_indices: List[int] = []
-
-            for cid in unique_classes:
-                c_mask = class_ids == cid
-                if class_names and cid < len(class_names):
-                    c_label = class_names[cid]
-                else:
-                    c_label = "document" if nc == 1 else f"class_{cid}"
-
-                thresh = DEFAULT_CONF_THRESHOLDS.get(c_label, 0.35)
-                valid_mask = c_mask & (confidences >= thresh)
-                subset_indices = np.where(valid_mask)[0]
-
-                if subset_indices.size == 0:
-                    continue
-
-                sub_boxes = boxes_xyxy_orig[subset_indices]
-                sub_scores = confidences[subset_indices]
-
-                kept_sub = nms_numpy(sub_boxes, sub_scores, iou_threshold=iou_threshold)
-                all_kept_indices.extend(subset_indices[k] for k in kept_sub)
-
-            # Build structured output objects
-            for idx in all_kept_indices:
-                cid = int(class_ids[idx])
-                score = float(confidences[idx])
-                b_orig = boxes_xyxy_orig[idx]
-
-                norm_x = round(float(b_orig[0] / orig_w), 4)
-                norm_y = round(float(b_orig[1] / orig_h), 4)
-                norm_w = round(float((b_orig[2] - b_orig[0]) / orig_w), 4)
-                norm_h = round(float((b_orig[3] - b_orig[1]) / orig_h), 4)
-
-                if class_names and cid < len(class_names):
-                    label = class_names[cid]
-                else:
-                    label = "document" if nc == 1 else f"class_{cid}"
-
-                resolved_boxes.append({
-                    "label": label,
-                    "class_id": cid,
-                    "x": norm_x,
-                    "y": norm_y,
-                    "w": norm_w,
-                    "h": norm_h,
-                    "confidence": round(score, 3),
-                    "source": "model",
-                    "backend": get_detector_backend(),
-                })
-
-            # Sort by confidence descending
-            resolved_boxes.sort(key=lambda b: b.get("confidence", 0.0), reverse=True)
-            return resolved_boxes[:max_boxes]
-
-        else:
-            # End-to-end / NMS-free format parser
-            for pred in preds:
-                b_coords = pred[:4]
-                score = float(pred[4])
-                cid = int(pred[5]) if pred.shape[0] > 5 else 0
-                label = class_names[cid] if class_names and cid < len(class_names) else "document"
-                thresh = DEFAULT_CONF_THRESHOLDS.get(label, 0.35)
-                if score >= thresh:
-                    b_orig = scale_boxes_to_original(b_coords[None, :], scale, padding, orig_dim)[0]
-                    resolved_boxes.append({
-                        "label": label,
-                        "class_id": cid,
-                        "x": round(float(b_orig[0] / orig_w), 4),
-                        "y": round(float(b_orig[1] / orig_h), 4),
-                        "w": round(float((b_orig[2] - b_orig[0]) / orig_w), 4),
-                        "h": round(float((b_orig[3] - b_orig[1]) / orig_h), 4),
-                        "confidence": round(score, 3),
-                        "source": "model",
-                        "backend": get_detector_backend(),
-                    })
-            resolved_boxes.sort(key=lambda b: b.get("confidence", 0.0), reverse=True)
-            return resolved_boxes[:max_boxes]
+        return _postprocess_yolo_predictions(
+            raw_preds=raw_preds,
+            scale=scale,
+            padding=padding,
+            orig_dim=orig_dim,
+            class_names=class_names,
+            conf_threshold=conf_threshold,
+            iou_threshold=iou_threshold,
+            max_boxes=max_boxes,
+        )
 
     except Exception as exc:
         logger.error(f"_run_yolo_onnx inference failed: {exc}", exc_info=True)
         return []
+
+
+def _postprocess_yolo_predictions(
+    raw_preds: np.ndarray,
+    scale: float,
+    padding: Tuple[float, float],
+    orig_dim: Tuple[int, int],
+    class_names: Optional[List[str]] = None,
+    conf_threshold: float = 0.25,
+    iou_threshold: float = 0.45,
+    max_boxes: int = 100,
+) -> List[Dict[str, Any]]:
+    """Decode raw ONNX predictions, apply per-class NMS, and scale to original dimensions."""
+    if raw_preds.ndim != 3:
+        logger.error(f"Unexpected YOLO output dimensionality: ndim={raw_preds.ndim}, shape={raw_preds.shape}")
+        return []
+
+    if raw_preds.shape[1] <= 32 and raw_preds.shape[2] > raw_preds.shape[1]:
+        # Standard YOLOv8 layout: [1, 4+nc, G] -> transpose to [G, 4+nc]
+        nc = raw_preds.shape[1] - 4
+        preds = raw_preds[0].transpose(1, 0)
+        is_end2end = False
+    else:
+        # End-to-end layout: [1, G, 4+nc] or [1, G, 6]
+        preds = raw_preds[0]
+        nc = preds.shape[1] - 4
+        is_end2end = True
+
+    if preds.shape[0] == 0:
+        return []
+
+    orig_w, orig_h = orig_dim
+    resolved_boxes: List[Dict[str, Any]] = []
+
+    if not is_end2end:
+        # Vectorized candidate parsing across all predictions
+        cx = preds[:, 0]
+        cy = preds[:, 1]
+        bw = preds[:, 2]
+        bh = preds[:, 3]
+
+        x1 = cx - bw / 2.0
+        y1 = cy - bh / 2.0
+        x2 = cx + bw / 2.0
+        y2 = cy + bh / 2.0
+        boxes_xyxy_letterbox = np.stack([x1, y1, x2, y2], axis=1)
+
+        scores_matrix = preds[:, 4:]  # shape [G, nc]
+        class_ids = np.argmax(scores_matrix, axis=1)
+        confidences = scores_matrix[np.arange(preds.shape[0]), class_ids]
+
+        # Scale letterbox boxes back to original image space
+        boxes_xyxy_orig = scale_boxes_to_original(boxes_xyxy_letterbox, scale, padding, orig_dim)
+
+        # Per-class NMS grouping
+        unique_classes = np.unique(class_ids)
+        all_kept_indices: List[int] = []
+
+        for cid in unique_classes:
+            c_mask = class_ids == cid
+            if class_names and cid < len(class_names):
+                c_label = class_names[cid]
+            else:
+                c_label = "document" if nc == 1 else f"class_{cid}"
+
+            thresh = DEFAULT_CONF_THRESHOLDS.get(c_label, conf_threshold)
+            valid_mask = c_mask & (confidences >= thresh)
+            subset_indices = np.where(valid_mask)[0]
+
+            if subset_indices.size == 0:
+                continue
+
+            sub_boxes = boxes_xyxy_orig[subset_indices]
+            sub_scores = confidences[subset_indices]
+
+            kept_sub = nms_numpy(sub_boxes, sub_scores, iou_threshold=iou_threshold)
+            all_kept_indices.extend(subset_indices[k] for k in kept_sub)
+
+        # Build structured output objects
+        for idx in all_kept_indices:
+            cid = int(class_ids[idx])
+            score = float(confidences[idx])
+            b_orig = boxes_xyxy_orig[idx]
+
+            norm_x = round(float(b_orig[0] / orig_w), 4)
+            norm_y = round(float(b_orig[1] / orig_h), 4)
+            norm_w = round(float((b_orig[2] - b_orig[0]) / orig_w), 4)
+            norm_h = round(float((b_orig[3] - b_orig[1]) / orig_h), 4)
+
+            if class_names and cid < len(class_names):
+                label = class_names[cid]
+            else:
+                label = "document" if nc == 1 else f"class_{cid}"
+
+            resolved_boxes.append({
+                "label": label,
+                "class_id": cid,
+                "x": norm_x,
+                "y": norm_y,
+                "w": norm_w,
+                "h": norm_h,
+                "confidence": round(score, 3),
+                "source": "model",
+                "backend": get_detector_backend(),
+            })
+
+        # Sort by confidence descending
+        resolved_boxes.sort(key=lambda b: b.get("confidence", 0.0), reverse=True)
+        return resolved_boxes[:max_boxes]
+
+    else:
+        # End-to-end / NMS-free format parser
+        for pred in preds:
+            b_coords = pred[:4]
+            score = float(pred[4])
+            cid = int(pred[5]) if pred.shape[0] > 5 else 0
+            label = class_names[cid] if class_names and cid < len(class_names) else "document"
+            thresh = DEFAULT_CONF_THRESHOLDS.get(label, conf_threshold)
+            if score >= thresh:
+                b_orig = scale_boxes_to_original(b_coords[None, :], scale, padding, orig_dim)[0]
+                resolved_boxes.append({
+                    "label": label,
+                    "class_id": cid,
+                    "x": round(float(b_orig[0] / orig_w), 4),
+                    "y": round(float(b_orig[1] / orig_h), 4),
+                    "w": round(float((b_orig[2] - b_orig[0]) / orig_w), 4),
+                    "h": round(float((b_orig[3] - b_orig[1]) / orig_h), 4),
+                    "confidence": round(score, 3),
+                    "source": "model",
+                    "backend": get_detector_backend(),
+                })
+        resolved_boxes.sort(key=lambda b: b.get("confidence", 0.0), reverse=True)
+        return resolved_boxes[:max_boxes]
 
 
 # ---------------------------------------------------------------------------

@@ -2,6 +2,7 @@ import io
 import os
 import sys
 import time
+import logging
 import urllib.request
 import numpy as np
 from PIL import Image
@@ -9,6 +10,8 @@ from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, Sec
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from typing import Optional
+
+logger = logging.getLogger("ml_service")
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
@@ -26,8 +29,15 @@ _API_KEY_HEADER = APIKeyHeader(name="X-ML-Secret-Key", auto_error=False)
 def verify_ml_auth(x_ml_secret_key: Optional[str] = Security(_API_KEY_HEADER)):
     expected = (os.getenv("ML_SECRET_KEY") or "").strip()
     if not expected:
-        # Development / local mode: no key enforced
-        return True
+        if os.getenv("ML_ALLOW_NO_AUTH", "").strip().lower() == "true":
+            logger.warning(
+                "[auth] ML_SECRET_KEY unset. Request permitted because ML_ALLOW_NO_AUTH=true is explicitly set."
+            )
+            return True
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ML microservice auth not configured: ML_SECRET_KEY is required (or set ML_ALLOW_NO_AUTH=true for local dev).",
+        )
     if not x_ml_secret_key or x_ml_secret_key.strip() != expected:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

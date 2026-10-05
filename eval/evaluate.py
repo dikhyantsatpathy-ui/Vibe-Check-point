@@ -268,7 +268,21 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
 
 
 def run_detector_bakeoff() -> dict:
-    """Side-by-side bake-off comparison: YOLOv8 vs Apache 2.0 RF-DETR / RT-DETR."""
+    """Side-by-side bake-off comparison: YOLOv8 vs Apache 2.0 RF-DETR."""
+    # Defect D1: Fail loudly if RF-DETR weights are missing
+    rf_path = os.getenv("RF_DETR_ONNX_PATH")
+    if not rf_path:
+        for name in ("rf_detr.onnx", "rf_detr_card.onnx"):
+            cand = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ml_service", "models", name)
+            if os.path.exists(cand):
+                rf_path = cand
+                break
+    if not rf_path or not os.path.exists(rf_path):
+        raise FileNotFoundError(
+            "Cannot run detector bake-off: RF-DETR weights not found. "
+            "Trained RF-DETR weights must be present before executing a bake-off."
+        )
+
     print("\n" + "=" * 78)
     print(" [BAKE-OFF] DETECTOR BENCHMARK: YOLOv8 (AGPL-3.0) vs RF-DETR (Apache 2.0)")
     print("=" * 78)

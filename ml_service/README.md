@@ -18,7 +18,7 @@ High-performance computer vision, biometric authentication, and document forensi
 
 | Model Component | Architecture / Weights | License | Primary Function |
 |:---|:---|:---:|:---|
-| **Card Detector** | YOLOv8s (`card.onnx`) / RF-DETR (`rf_detr.onnx`) | Apache 2.0 / AGPL-3.0 | Card boundary localization & aspect-ratio normalization. |
+| **Card Detector** | YOLOv8s (`card.onnx`) / RF-DETR (backend integrated, weights pending) | Apache 2.0 / AGPL-3.0 | Card boundary localization & aspect-ratio normalization. |
 | **Field Zone Detector** | 5-Class YOLO (`aadhaar_fields.onnx`) | Apache 2.0 | Isolates `Aadhaar_No`, `DOB`, `Gender`, `Name`, `Photo`. |
 | **Facial Biometrics** | ArcFace / InsightFace (`w600k_r50.onnx`) | MIT / Permissive | 512-D cosine face embedding & age-aware thresholding. |
 | **AI Image Detection** | ViT-Base CIFAKE Fine-Tuned (`model.onnx`) | Apache 2.0 | Discriminates synthetic / generative AI portrait fakes. |
@@ -28,7 +28,7 @@ High-performance computer vision, biometric authentication, and document forensi
 
 ## 2. API Endpoints
 
-All POST endpoints require the shared secret header `X-ML-Secret-Key` when `ML_SECRET_KEY` is configured in the environment.
+All POST endpoints require the shared secret header `X-ML-Secret-Key`. If `ML_SECRET_KEY` is unset, the service fails closed with `HTTP 503` unless `ML_ALLOW_NO_AUTH=true` is explicitly configured for local development.
 
 ### Core Endpoints
 - `GET /health` — Service readiness, endpoint registry, and model checkpoint presence.
@@ -39,9 +39,9 @@ All POST endpoints require the shared secret header `X-ML-Secret-Key` when `ML_S
 - `POST /api/ml/doctype` — Visual document type classification (Passport, Aadhaar, PAN, Voter ID, DL).
 - `POST /api/ml/doc_forgery` — SRM residual noise seam and tampering analysis.
 
-### Mixed-Media & In-Memory Processing Endpoints (Phase 4)
-- `POST /api/ml/media/process_pdf` — In-memory PDF digital signature inspection (`/ByteRange`, `/SubFilter /adbe.pkcs7.detached`, signer name, signing timestamp) and multi-tier vector/embedded page rasterization.
-- `POST /api/ml/media/process_live_photo` — Slices embedded MP4 burst from Google/Apple Motion Photos, normalizes the primary still image, and analyzes inter-frame micro-motion delta for physiological liveness.
+### Mixed-Media & In-Memory Processing Endpoints
+- `POST /api/ml/media/process_pdf` — In-memory PDF digital signature structural presence inspection (`/ByteRange`, `/SubFilter`, signer name, signing timestamp; note: does not verify cryptographic certificate chain) and multi-tier vector/embedded page rasterization.
+- `POST /api/ml/media/process_live_photo` — Slices embedded MP4 burst from Google/Apple Motion Photos, normalizes the primary still image, and analyzes inter-frame micro-motion delta for physiological liveness (experimental).
 
 ---
 
@@ -49,7 +49,8 @@ All POST endpoints require the shared secret header `X-ML-Secret-Key` when `ML_S
 
 | Variable | Default | Purpose |
 |:---|:---:|:---|
-| `ML_SECRET_KEY` | `""` | Shared authentication secret enforced via `X-ML-Secret-Key`. |
+| `ML_SECRET_KEY` | `""` | Shared authentication secret enforced via `X-ML-Secret-Key` (required for operation). |
+| `ML_ALLOW_NO_AUTH` | `false` | Explicit opt-in for unauthenticated local development. |
 | `ALLOWED_ORIGINS` | `https://vibe-check-point.vercel.app,...` | Comma-separated list of allowed CORS origins. |
 | `DETECTOR_BACKEND` | `yolov8` | Switchable detector backend: `"yolov8"` or `"rf_detr"` (Apache 2.0). |
 | `ENABLE_CARD_RECTIFICATION` | `false` | Enable homography perspective warp to canonical CR-80 card ratio (1000x630). |

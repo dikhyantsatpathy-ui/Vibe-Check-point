@@ -24,8 +24,10 @@ logger = logging.getLogger("ml_service.media_processor")
 # ---------------------------------------------------------------------------
 
 def inspect_pdf_signatures(pdf_bytes: bytes) -> List[Dict[str, Any]]:
-    """Scan and parse PDF byte stream for PKCS#7 / CAdES / X.509 digital signatures.
+    """Scan and parse PDF byte stream for presence and structure of digital signatures.
     Extracts signer identity, timestamp, signature subfilter, and byte range validation.
+    NOTE: This performs structural presence/format inspection only; it does NOT perform
+    cryptographic X.509 certificate chain validation or PKCS#7 signature verification.
     """
     signatures: List[Dict[str, Any]] = []
     if not pdf_bytes or not pdf_bytes.startswith(b"%PDF"):
@@ -94,6 +96,7 @@ def inspect_pdf_signatures(pdf_bytes: bytes) -> List[Dict[str, Any]]:
             "byte_range": [b0, b1, b2, b3],
             "is_range_valid": is_range_valid,
             "is_digitally_signed": True,
+            "cryptographically_verified": False,
         })
 
     # 2. PyPDF Form/Field validation fallback if installed
@@ -114,6 +117,7 @@ def inspect_pdf_signatures(pdf_bytes: bytes) -> List[Dict[str, Any]]:
                             "byte_range": fval.get("/V", {}).get("/ByteRange", []),
                             "is_range_valid": True,
                             "is_digitally_signed": True,
+                            "cryptographically_verified": False,
                         })
     except Exception:
         pass
@@ -341,6 +345,7 @@ def analyze_motion_liveness_frames(video_bytes: bytes, max_frames: int = 15) -> 
             "frames_analyzed": len(frames),
             "motion_score": 0.0,
             "liveness_detected": False,
+            "experimental": True,
             "reason": "Insufficient decoded frames for liveness correlation",
         }
 
@@ -376,6 +381,7 @@ def analyze_motion_liveness_frames(video_bytes: bytes, max_frames: int = 15) -> 
         "mean_motion_delta": round(mean_diff, 3),
         "motion_variance": round(diff_variance, 3),
         "liveness_detected": is_live,
+        "experimental": True,
         "explanation": explanation,
     }
 
@@ -406,6 +412,7 @@ def process_live_photo(media_bytes: bytes, filename: str = "") -> Dict[str, Any]
     liveness_res = analyze_motion_liveness_frames(video_bytes) if is_motion_photo else {
         "has_video": False,
         "liveness_detected": False,
+        "experimental": True,
         "explanation": "Static single-frame capture (no embedded motion burst).",
     }
 
