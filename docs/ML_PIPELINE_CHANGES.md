@@ -137,4 +137,37 @@ Evaluated on held-out test datasets:
 ### Key Takeaway for Detector Bake-Off & Rectification:
 `aadhaar_fields.onnx` achieves **98–100% mAP50** on real test images following our Phase 1 letterbox and per-class NMS fixes. In contrast, `card.onnx` is the system bottleneck with low recall on arbitrary backgrounds (0.083 recall at IoU 0.50), confirming the necessity of Phase 3 (Perspective Rectification with quad corner detection) and Phase 5 (RF-DETR bake-off).
 
+---
+
+## 6. Phase 3: Perspective Rectification & Homography Normalization
+
+### Overview & Architecture:
+Mobile camera captures at border posts frequently introduce perspective skew, rotation, and non-planar distortion. Traditional axis-aligned bounding box crops crop skewed cards with trapezoidal margins, degrading downstream OCR and ELA analysis.
+
+In Phase 3, we built a zero-heavy-dependency perspective rectification module:
+- `app/rectification.py`: Runs in both Vercel FastAPI (pure Pillow / NumPy fallback) and remote environments.
+- `ml_service/rectification.py`: Available in the GPU / container ML microservice.
+
+### Technical Implementation:
+1. **Canonical Quad Ordering (`_order_quad_points`):**
+   - Given four arbitrary 2D corner vertices, canonicalizes ordering to `[top-left, top-right, bottom-right, bottom-left]` using `(x + y)` extrema and `(y - x)` difference extrema.
+2. **Direct Linear Transformation Homography (`find_homography_matrix`):**
+   - Implemented standard 3x3 planar projective homography mapping using pure NumPy Singular Value Decomposition (`np.linalg.svd`).
+   - Projects source quadrilateral coordinates to canonical CR-80 card dimensions: **1000 x 630 pixels (~1.587:1 ratio)**.
+3. **Pure-Pillow Backward Perspective Warping (`warp_perspective_pillow`):**
+   - Computes the inverse transform matrix $H^{-1}$ and leverages Pillow's built-in `Image.transform(..., Image.Transform.PERSPECTIVE, coeffs)` with bilinear resampling.
+   - Operates completely without OpenCV or binary packages, preserving Vercel zero-binary constraints.
+4. **Adaptive Card Boundary Quad Detection (`detect_card_quad`):**
+   - Employs multi-scale gradient filtering, morphological closing, and contour convex polygon approximation (`cv2.approxPolyDP` with 4-vertex convexity check) when OpenCV is present.
+   - Gracefully falls back to a 5% inset card boundary quadrilateral if OpenCV is absent or unsegmented.
+5. **Feature Flag Gating (`ENABLE_CARD_RECTIFICATION`):**
+   - Controlled via `ENABLE_CARD_RECTIFICATION` env var (default: `false`).
+   - Integrated into `isolate_document_card()` in both `app/yolo_roi.py` and `ml_service/yolo_roi.py`.
+   - When active, outputs normalized lossless PNG bytes and adds `"rectified": True` and `"rectification": {...}` metadata to the crop payload.
+
+### Test Results:
+- `tests/test_rectification.py`: 5/5 unit & integration tests passing (ordering, homography projection, Pillow warp, flag gating, and `isolate_document_card` integration).
+- Full regression suite: **232 passed, 3 skipped, 0 failed**.
+
+
 

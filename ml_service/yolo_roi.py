@@ -586,6 +586,15 @@ def crop_region_to_bytes(
 def isolate_document_card(image_bytes: bytes) -> Tuple[bytes, Optional[Dict[str, Any]]]:
     if not image_bytes:
         return image_bytes, None
+
+    try:
+        from rectification import rectify_card_image
+    except ImportError:
+        try:
+            from app.rectification import rectify_card_image
+        except ImportError:
+            rectify_card_image = None
+
     try:
         boxes = extract_roi_boxes(image_bytes)
         doc_box = next((b for b in boxes if b.get("label") in ("document", "card")), None)
@@ -596,7 +605,7 @@ def isolate_document_card(image_bytes: bytes) -> Tuple[bytes, Optional[Dict[str,
             if 0.12 <= area_ratio <= 0.94 and (bw < 0.96 or bh < 0.96):
                 cropped = crop_region_to_bytes(image_bytes, doc_box, padding=0.03, fmt="PNG")
                 if cropped and len(cropped) > 2048:
-                    return cropped, {
+                    meta = {
                         "cropped": True,
                         "box": doc_box,
                         "area_ratio": round(area_ratio, 3),
@@ -604,6 +613,25 @@ def isolate_document_card(image_bytes: bytes) -> Tuple[bytes, Optional[Dict[str,
                         "source": doc_box.get("source", "model"),
                         "is_fallback": doc_box.get("source") == "heuristic" or doc_box.get("is_fallback", False),
                     }
+                    if rectify_card_image is not None:
+                        rect_bytes, was_rect, rect_meta = rectify_card_image(cropped)
+                        if was_rect:
+                            meta["rectified"] = True
+                            meta["rectification"] = rect_meta
+                            return rect_bytes, meta
+                    return cropped, meta
+
+        if rectify_card_image is not None:
+            rect_bytes, was_rect, rect_meta = rectify_card_image(image_bytes)
+            if was_rect:
+                return rect_bytes, {
+                    "cropped": False,
+                    "rectified": True,
+                    "rectification": rect_meta,
+                    "confidence": None,
+                    "source": "homography_rectification",
+                    "is_fallback": False,
+                }
     except Exception as exc:
         logger.debug(f"isolate_document_card fallback: {exc}")
     return image_bytes, None
