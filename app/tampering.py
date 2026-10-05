@@ -131,14 +131,30 @@ def tamper_analysis(image_bytes: bytes | None, ai_detection: dict | None = None,
 
     if isolate_document_card:
         c_bytes, meta = isolate_document_card(image_bytes)
-        if meta and meta.get("cropped") and c_bytes:
+        if meta and c_bytes:
             active_bytes = c_bytes
             crop_meta = meta
-            checks.append({
-                "label": "card-localization",
-                "ok": True,
-                "detail": f"Card localized & background isolated ({round(meta['area_ratio'] * 100)}% frame coverage).",
-            })
+            if meta.get("cropped"):
+                if meta.get("is_fallback"):
+                    checks.append({
+                        "label": "card-localization",
+                        "ok": True,
+                        "detail": f"Card localized via heuristic fallback ({round(meta.get('area_ratio', 0) * 100)}% frame coverage).",
+                    })
+                else:
+                    conf_str = f"conf: {meta.get('confidence'):.2f}, " if meta.get("confidence") is not None else ""
+                    checks.append({
+                        "label": "card-localization",
+                        "ok": True,
+                        "detail": f"Card localized & background isolated ({conf_str}{round(meta['area_ratio'] * 100)}% coverage, source: {meta.get('source', 'model')}).",
+                    })
+            if meta.get("rectified"):
+                rect = meta.get("rectification") or {}
+                checks.append({
+                    "label": "perspective-rectification",
+                    "ok": True,
+                    "detail": f"Perspective distortion rectified to canonical CR-80 ratio ({rect.get('canonical_width', 1000)}x{rect.get('canonical_height', 630)}).",
+                })
 
     # Resolution gating: skip texture-heavy checks on low-res images where
     # they produce noise-on-noise rather than meaningful signal. Gated on the

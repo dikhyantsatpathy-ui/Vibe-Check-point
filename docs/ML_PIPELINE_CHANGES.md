@@ -231,6 +231,31 @@ In Phase 5, we engineered a runtime-switchable detector backend abstraction supp
 - `tests/test_detector_backend.py`: 5/5 unit tests passing (default resolution, `DETECTOR_BACKEND` aliases, path resolution, `clear_session_cache()`, box backend tagging).
 - CLI Bake-Off Benchmark: `python eval/evaluate.py --bakeoff` executed on held-out test datasets; outputs structured decision report `eval/bakeoff_report.json`.
 
+---
+
+## 9. Phase 6 & 7: Decision Hardening, Observability & Final Handoff
+
+### Decision Hardening & Explainability:
+1. **Explainable Degradation & Fallback Tagging:**
+   - Every detected bounding box carries immutable provenance: `source: "model" | "heuristic"`, `confidence: float | None`, and `backend: "yolov8" | "rf_detr"`.
+   - When card localization operates via heuristics (e.g. cold-start remote ML outage), `app/screening.py` strictly sets `can_clear = False`, forcing manual officer `REVIEW` with an advisory rationale.
+   - Low-confidence or unlocalized crops are clearly tagged in `app/tampering.py` (`checks: [{"label": "card-localization", ...}]`) and `crop_meta`.
+2. **Perspective Rectification Visibility:**
+   - When homography perspective warping is triggered, `app/tampering.py` surfaces a dedicated check:
+     `{"label": "perspective-rectification", "ok": True, "detail": "Perspective distortion rectified to canonical CR-80 ratio (1000x630)."}`.
+3. **Synchronized Dual-Stream Forgery Detector:**
+   - `ml_service/doc_forgery.py` and `app/doc_forgery.py` now share identical schemas including `dead_block_ratio`, `largest_component`, `void_kind`, and `seam_anomaly`.
+
+### Observability & Documentation Upgrades:
+- **`ml_service/README.md`**: Fully updated with all neural models, Apache 2.0 / MIT licenses, endpoint signatures, authentication header (`X-ML-Secret-Key`), configuration flags, and ZeroGPU / Docker setup instructions.
+- **`SIH26188_ENGINEERING_BLUEPRINT.md`**: Synchronized Section 15 (Module 1 detection upgrades) and Section 31 (Definition of Done) to reflect all Phase 1–5 architectural improvements.
+- **Supply-Chain Integrity**: Pinned SHA-256 digests for all neural checkpoints (`model.onnx`, `w600k_r50.onnx`, `aadhaar_fields.onnx`, `card.onnx`).
+
+### Final Regression Test Summary:
+- **Total Tests Passing**: **243 passed, 3 skipped, 0 failed** ($100\%$ pass rate across 246 test items).
+- All unit, integration, crypto-ledger, zero-storage, and CV detection suites verified.
+
+
 
 
 

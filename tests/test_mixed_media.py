@@ -7,10 +7,17 @@ import io
 import os
 import sys
 import pytest
+import importlib.util
 from PIL import Image
 from fastapi.testclient import TestClient
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ml_service"))
+_ML_MAIN_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ml_service", "main.py")
+_ml_spec = importlib.util.spec_from_file_location("ml_service_main", _ML_MAIN_PATH)
+_ml_mod = importlib.util.module_from_spec(_ml_spec)
+if os.path.dirname(_ML_MAIN_PATH) not in sys.path:
+    sys.path.insert(0, os.path.dirname(_ML_MAIN_PATH))
+_ml_spec.loader.exec_module(_ml_mod)
+ml_app = _ml_mod.app
 
 from media_processor import (
     inspect_pdf_signatures,
@@ -19,7 +26,7 @@ from media_processor import (
     extract_motion_photo_streams,
     process_live_photo,
 )
-from main import app
+
 
 
 def _create_minimal_pdf(with_text: str = "Test Identity Document") -> bytes:
@@ -122,7 +129,7 @@ def test_process_live_photo_static_image():
 
 def test_api_media_endpoints_via_testclient(monkeypatch):
     """Verify /api/ml/media/process_pdf and /api/ml/media/process_live_photo via FastAPI client."""
-    client = TestClient(app)
+    client = TestClient(ml_app)
 
     # 1. PDF processing endpoint
     pdf_bytes = _create_signed_pdf_specimen()

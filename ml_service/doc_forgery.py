@@ -21,7 +21,12 @@ def _open_rgb(data: bytes) -> np.ndarray | None:
         img = Image.open(io.BytesIO(data))
         img = ImageOps.exif_transpose(img)
         img.load()
-        return np.asarray(img.convert("RGB"), dtype=np.uint8)
+        img = img.convert("RGB")
+        max_dim = 1280
+        if max(img.size) > max_dim:
+            scale = max_dim / max(img.size)
+            img = img.resize((int(img.width * scale), int(img.height * scale)), Image.Resampling.BILINEAR)
+        return np.asarray(img, dtype=np.uint8)
     except Exception:
         return None
 
@@ -79,8 +84,44 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
     non_margin_count = int(np.sum(non_margin))
 
     if non_margin_count > 16:
-        dead_blocks = int(np.sum(non_margin & (block_vars < 0.05)))
-        inpaint_void = bool(dead_blocks > (non_margin_count * 0.15) and non_margin_count > 40)
+        dead_mask = non_margin & (block_vars < 0.015)
+        dead_blocks = int(np.sum(dead_mask))
+        dead_block_ratio_preview = dead_blocks / non_margin_count
+
+        def _largest_connected_component(mask: np.ndarray) -> int:
+            if mask.size == 0 or not mask.any():
+                return 0
+            labeled = np.zeros(mask.shape, dtype=np.int32)
+            label_id = 0
+            sizes: list[int] = []
+            rows, cols = mask.shape
+            for r in range(rows):
+                for c in range(cols):
+                    if mask[r, c] and labeled[r, c] == 0:
+                        label_id += 1
+                        count = 0
+                        stack = [(r, c)]
+                        while stack:
+                            cr, cc = stack.pop()
+                            if cr < 0 or cr >= rows or cc < 0 or cc >= cols:
+                                continue
+                            if not mask[cr, cc] or labeled[cr, cc] != 0:
+                                continue
+                            labeled[cr, cc] = label_id
+                            count += 1
+                            stack.extend([(cr - 1, cc), (cr + 1, cc), (cr, cc - 1), (cr, cc + 1)])
+                        sizes.append(count)
+            return max(sizes) if sizes else 0
+
+        largest_component = _largest_connected_component(dead_mask)
+        near_total_flatness = dead_block_ratio_preview > 0.85
+        localized_void = largest_component >= max(8, non_margin_count * 0.005)
+        inpaint_void = bool(near_total_flatness or localized_void)
+        void_kind = (
+            "near_total_flatness"
+            if near_total_flatness
+            else ("localized_void" if localized_void else None)
+        )
         active_vars = block_vars[non_margin & (block_vars > 1.0)]
         if active_vars.size > 8:
             med_noise = float(np.median(active_vars))
@@ -91,7 +132,12 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
             uniformity = 0.90
     else:
         inpaint_void = False
+        void_kind = None
         uniformity = 0.95
+        dead_blocks = 0
+        largest_component = 0
+
+    dead_block_ratio = (dead_blocks / non_margin_count) if non_margin_count > 0 else 0.0
 
     dx = np.abs(gray[:, 1:] - gray[:, :-1])
     dy = np.abs(gray[1:, :] - gray[:-1, :])
@@ -115,6 +161,10 @@ def analyze_doc_forgery(image_bytes: bytes) -> dict:
         "tamper_score": tamper_score,
         "confidence": 0.92 if is_tampered else 0.88,
         "substrate_uniformity": round(float(uniformity), 3),
+        "dead_block_ratio": round(float(dead_block_ratio), 4),
+        "largest_component": int(largest_component),
+        "void_kind": void_kind if inpaint_void else None,
+        "seam_anomaly": bool(seam_anomaly),
         "detail": detail,
         "latency_ms": latency_ms,
     }
