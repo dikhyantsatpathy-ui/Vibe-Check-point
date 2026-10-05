@@ -78,6 +78,7 @@ pics/
 # Ignore generated documentation and chat logs
 *.md
 !README.md
+!SIH26188_ENGINEERING_BLUEPRINT.md
 # ...except agent skills, which are markdown but must be versioned
 !/.agents/skills/
 !/.agents/skills/**
