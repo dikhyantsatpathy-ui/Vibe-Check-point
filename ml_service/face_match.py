@@ -93,6 +93,7 @@ def _hamming(a: int, b: int) -> int:
 
 
 DEFAULT_FACE_URL = "https://huggingface.co/maze/faceX/resolve/main/w600k_r50.onnx"
+DEFAULT_FACE_SHA256 = "4c06341c33c2a6f3b79361ad22872322307fe959a7a9cb52de9ae3a246835a09"
 
 
 def _resolve_face_model_path() -> str | None:
@@ -116,6 +117,7 @@ def _resolve_face_model_path() -> str | None:
         try:
             os.makedirs(local_dir, exist_ok=True)
             print(f"[face_match] downloading ArcFace model -> {local_model} ({DEFAULT_FACE_URL})")
+            import hashlib
             import shutil
             import urllib.request
 
@@ -124,8 +126,18 @@ def _resolve_face_model_path() -> str | None:
                 DEFAULT_FACE_URL,
                 headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
             )
+            hasher = hashlib.sha256()
             with urllib.request.urlopen(req) as resp, open(tmp, "wb") as out:
-                shutil.copyfileobj(resp, out)
+                while chunk := resp.read(65536):
+                    hasher.update(chunk)
+                    out.write(chunk)
+            digest = hasher.hexdigest()
+            expected_sha = os.getenv("FACE_MODEL_SHA256", DEFAULT_FACE_SHA256).strip().lower()
+            if expected_sha and digest.lower() != expected_sha:
+                if os.path.exists(tmp):
+                    os.remove(tmp)
+                raise ValueError(f"Supply-chain check failed: ArcFace SHA-256 {digest} != expected {expected_sha}")
+
             os.replace(tmp, local_model)
             return local_model
         except Exception as exc:

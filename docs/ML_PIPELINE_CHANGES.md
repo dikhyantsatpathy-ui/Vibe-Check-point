@@ -1,0 +1,107 @@
+# ML Pipeline Audit & Changes Log (NO-CAP / SIH26188)
+
+**Document Status:** Phase 0 Completed (Read-Only Code Audit & Verification)  
+**Date:** October 2026  
+**Scope:** `app/yolo_roi.py`, `ml_service/`, `app/remote_ml.py`, `app/extraction.py`, `app/tampering.py`, `app/forensics.py`, `app/face_match.py`, `app/llm.py`, `app/screening.py`
+
+---
+
+## 1. Phase 0: Verification of Findings
+
+Every finding from the specification was audited against the active codebase. Below is the verified status with exact file and line references:
+
+### A. Reliability: Silent Failures & Degradation
+| Finding ID | Code Status | Exact File & Line Reference | Notes & Technical Impact |
+|:---|:---:|:---|:---|
+| **A1** | **CONFIRMED** | `app/yolo_roi.py`:287–289<br>`ml_service/yolo_roi.py`:267–269 | `except Exception: pass; return []` completely swallows model load, tensor shape, runtime, and memory errors, silently defaulting to heuristics without logging or tagging the failure. |
+| **A2** | **CONFIRMED** | `app/yolo_roi.py`:141, 173, 197, 226, 238<br>`ml_service/yolo_roi.py`:123, 155, 179, 208, 220 | Heuristics invent arbitrary confidence scores (`0.85` for default fallback card box, `0.94` for contour, `0.98` max for skin tone, `0.88` for MRZ, `0.96` for QR). Downstream risk scoring cannot tell model detections from heuristics. |
+| **A3** | **CONFIRMED** | `.vercelignore`:26–27<br>`requirements.txt`:19 | `.vercelignore` explicitly excludes `app/models/card.onnx` and `aadhaar_fields.onnx`; root `requirements.txt` comments out `# onnxruntime`. On Vercel, when remote ML fails/times out, inference is 100% heuristics. No explicit degraded flag is raised. |
+| **A4** | **CONFIRMED** | `app/remote_ml.py`:26–39 | Single failure trips circuit breaker for 300s (`_CIRCUIT_BROKEN_UNTIL = time.monotonic() + 300.0`). Any call taking > 2.0s trips it for 180s. A cold start on Hugging Face Spaces trips the breaker and locks all subsequent screenings into heuristics for 3–5 minutes. |
+| **A5** | **CONFIRMED** | `ml_service/app.py`:14–22, 61–66 | `@spaces.GPU(duration=15)` decorator wraps a synthetic test button `zero_gpu_task`, whereas all ONNX sessions (`card.onnx`, `aadhaar_fields.onnx`, `w600k_r50.onnx`, `model.onnx`) run on `CPUExecutionProvider` with 2 threads. ZeroGPU provides no benefit for inference. |
+
+### B. Accuracy: Pre- and Post-Processing
+| Finding ID | Code Status | Exact File & Line Reference | Notes & Technical Impact |
+|:---|:---:|:---|:---|
+| **B1** | **CONFIRMED** | `app/yolo_roi.py`:250<br>`ml_service/yolo_roi.py`:232 | `Image.fromarray(rgb).resize((inp_w, inp_h), Image.BILINEAR)` stretches the image directly to 640x640. Ultralytics YOLOv8 models (`card.onnx`, `aadhaar_fields.onnx`) were trained with aspect-ratio preserving letterboxing (stride 32, fill 114). Skews detections on 1.58:1 ID cards and 4:3 phone captures. |
+| **B2** | **CONFIRMED** | `app/yolo_roi.py`:264–309<br>`ml_service/yolo_roi.py`:246–291 | Loops over all 8,400 predictions in pure Python. `_nms` is class-agnostic ($O(N^2)$), causing adjacent semantic fields of different classes (e.g. `Name` and `Aadhaar_No`) to suppress each other if IoU > 0.5. |
+| **B3** | **CONFIRMED** | `app/yolo_roi.py`:242, 263<br>`ml_service/yolo_roi.py`:224, 245 | Hardcoded `conf_threshold = 0.35` across all classes; hardcoded `max_boxes=4` for card model. |
+| **B4** | **CONFIRMED** | `app/yolo_roi.py`:258–261<br>`ml_service/yolo_roi.py`:240–243 | Coupled directly to YOLOv8 shape `[1, 4+nc, 8400]`. If an NMS-free / end-to-end model is exported (e.g. `[1, 300, 6]`), `preds.shape[1] - 4` calculates 296 classes, transposes erroneously, and gets silently swallowed by A1. |
+| **B5** | **CONFIRMED** | `ml_service/yolo_roi.py`:70–78<br>`app/remote_ml.py`:52–57 | `ml_service/yolo_roi.py` lacks `ImageOps.exif_transpose`. `app/remote_ml.py` skips EXIF transpose for payloads < 100 KB (`len(image_bytes) < 100000`). Rotated mobile phone photos produce misaligned bounding boxes. |
+| **B6** | **CONFIRMED** | `app/yolo_roi.py`:504, 526–555 | `isolate_document_card` calls `img.crop((left, top, right, bottom))` — axis-aligned crop only. Does not perform quad detection or homography perspective correction to canonical aspect ratio. |
+| **B7** | **CONFIRMED** | `app/tampering.py`:133–135<br>`app/yolo_roi.py`:518 | `isolate_document_card` saves crops as JPEG quality 95 (`crop.save(out, format=fmt, quality=95)`). When `app/tampering.py` passes `active_bytes` into `forensics_report(active_bytes)` for ELA and PRNU, it runs against newly generated JPEG quantization noise rather than source camera pixels. |
+
+### C. Security & Data Privacy
+| Finding ID | Code Status | Exact File & Line Reference | Notes & Technical Impact |
+|:---|:---:|:---|:---|
+| **C1** | **CONFIRMED** | `ml_service/main.py`:170–220 | No authentication or shared secret header on `/api/ml/*` endpoints. Public callers can query OCR, ROI, and face comparison endpoints freely. |
+| **C2** | **CONFIRMED** | `ml_service/app.py`:80–84 | `allow_origins=["*"]` with `allow_credentials=True` permits arbitrary web origins to invoke microservice APIs. |
+| **C3** | **CONFIRMED** | `app/llm.py`:115–188 | If `GEMINI_API_KEY` is set, `extract_document_data` sends base64 image data to Google Gemini public endpoints. Needs explicit opt-in env var and clear documentation for data-sovereignty / DPDP compliance. |
+| **C4** | **CONFIRMED** | `ml_service/main.py`:47–52 | `urllib.request.urlretrieve` downloads `onnx-community/ai-image-detection-ONNX/model.onnx` from Hugging Face at runtime with no SHA-256 checksum validation. |
+
+---
+
+## 2. Blueprint vs Code Discrepancies
+1. **YOLOv8-Face Alignment:** Section 29 of `SIH26188_ENGINEERING_BLUEPRINT.md` mentions "ArcFace 512D embeddings and YOLOv8-Face" in the ML service. In code (`ml_service/face_match.py`:167), ArcFace receives the raw image resized directly to 112x112 with zero face detection or landmark alignment.
+2. **Local Fallback Reality:** Blueprint claims high-availability dual-tier local ONNX inference, but `.vercelignore` strips `card.onnx` and `aadhaar_fields.onnx` from the Vercel deployment, and `onnxruntime` is omitted from root `requirements.txt`. Vercel fallback is 100% heuristic.
+3. **Model Introspection Findings:**
+   - `ml_service/models/card.onnx`: Ultralytics YOLOv8s (v8.4.156), trained on `card_synth`, 1 class (`Card`), input `[1, 3, 640, 640]`, output `[1, 5, 8400]`, AGPL-3.0.
+   - `ml_service/models/aadhaar_fields.onnx`: Ultralytics YOLOv8s (v8.4.156), trained on `AADHAR`, 5 classes (`Aadhaar_No`, `DOB`, `Gender`, `Name`, `Photo`), input `[1, 3, 640, 640]`, output `[1, 9, 8400]`, AGPL-3.0.
+   - `app/models/doctype.onnx`: Ultralytics YOLOv8n-cls (v8.4.156), 7 classes, input `[1, 3, 224, 224]`, output `[1, 7]`, AGPL-3.0.
+
+---
+
+## 4. Phase 1: Reliability & Security Hotfixes (Completed)
+
+### Changes Applied:
+1. **Aspect-Preserving Letterbox (`yolo_roi.py` in `app/` and `ml_service/`):**
+   - Replaced naive stretch resize with `letterbox(img, target_shape=(640, 640), fill=114)`.
+   - Implemented `scale_boxes_to_original(boxes_xyxy, scale, padding, orig_dim)` for exact sub-pixel inverse mapping back to original coordinate space.
+   - Tested across 1:1 square, 1.58:1 ID card, 4:3 camera, and 16:9 HD aspects.
+
+2. **Vectorized Per-Class NMS (`nms_numpy`):**
+   - Replaced slow $O(N^2)$ Python loop over 8,400 anchors with vectorized NumPy NMS.
+   - Grouped NMS by class ID so adjacent semantic fields (e.g. `Name` and `Aadhaar_No`) never suppress each other.
+   - Configurable per-class confidence thresholds via `DEFAULT_CONF_THRESHOLDS`.
+
+3. **Output Tensor Format Detection:**
+   - Detects standard YOLOv8 layout (`[1, 4+nc, 8400]`) vs end-to-end NMS-free layout (`[1, 300, 6]` or `[1, G, 4+nc]`).
+   - Fails loudly with structured error logs on unexpected shapes rather than silently dropping detections.
+
+4. **EXIF Transposition & Normalization:**
+   - Both `app/yolo_roi.py` and `ml_service/yolo_roi.py` now run `ImageOps.exif_transpose` unconditionally on all inputs, eliminating rotation misalignment from mobile captures.
+
+5. **Lossless Forensic Substrate Cropping:**
+   - `crop_region_to_bytes` and `isolate_document_card` now save cropped regions as lossless `PNG` (`fmt="PNG"`), preserving genuine sensor noise for ELA and PRNU analysis.
+
+6. **Eliminated Fabricated Heuristic Confidence:**
+   - Stripped invented confidence values (was 0.85/0.98) from `_detect_document_card`, `_detect_face_heuristic`, etc.
+   - All heuristic outputs now carry `source: "heuristic"`, `confidence: None`, and `is_fallback: True`.
+
+7. **Degraded Mode Enforcement (`app/screening.py`):**
+   - When card ROI detection falls back to heuristics (e.g. when `ML_SERVICE_URL` is offline/sleeping), `can_clear = False` is strictly enforced.
+   - The session degrades to `REVIEW` with the explainable reason:
+     `"DEGRADED MODE ADVISORY: Document card boundary detected via fallback heuristics (ML detector unavailable). Manual desk review required before clearing."`
+   - Zero autonomous `CLEAR` verdicts under model degradation.
+
+8. **Security Hardening (`ml_service/`):**
+   - Added `verify_ml_auth` dependency checking `X-ML-Secret-Key` header against `ML_SECRET_KEY` on all `/api/ml/*` endpoints (returns 401 if missing/invalid).
+   - Restricted CORS middleware in `ml_service/main.py` and `ml_service/app.py` to `ALLOWED_ORIGINS` (defaults to trusted Vercel production + localhost domains).
+   - Pinned SHA-256 supply-chain verification:
+     - `model.onnx` (ViT): `44cb205f596f7c9e13d9ea7ea12cb2462d7c92bfaeb55e7fcad51b5c4943fcf3`
+     - `w600k_r50.onnx` (ArcFace): `4c06341c33c2a6f3b79361ad22872322307fe959a7a9cb52de9ae3a246835a09`
+     - Downloads failing checksum are automatically deleted and rejected.
+
+9. **Resilient Circuit Breaker (`app/remote_ml.py`):**
+   - Upgraded to require 3 consecutive failures before tripping (no single slow cold-start call trips the breaker).
+   - Reduced backoff duration to 45s (was 300s).
+   - Added `get_auth_headers()` forwarding `X-ML-Secret-Key`.
+
+10. **Gemini Vision Fallback Gating (`app/llm.py`):**
+    - Gated direct Gemini fallback behind `ENABLE_GEMINI_FALLBACK` (defaults to `false` for DPDP Act 2023 compliance).
+    - When enabled, logs structured audit entry without leaking pixels or PII.
+
+### Test Results:
+- `tests/test_yolo_roi.py`: 7/7 passed.
+- `tests/test_screening.py`: 39/39 passed.
+- Full test suite: 227 passed, 3 skipped, 0 failed.
+

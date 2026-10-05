@@ -112,9 +112,20 @@ def extract_document_data(image_bytes: bytes, doc_type: str = "") -> dict:
             return {"ran": False, "reason": str(e)}
 
     global _GEMINI_CIRCUIT_BROKEN_UNTIL
+    enable_gemini = os.getenv("ENABLE_GEMINI_FALLBACK", "false").strip().lower() in ("true", "1", "yes")
     gemini_key = (os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_KEY") or "").strip()
     import time
+    if not enable_gemini:
+        # Finding C3: Gemini vision fallback disabled by default for data-sovereignty & DPDP Act 2023 compliance.
+        return {"ran": False, "reason": "Gemini multimodal fallback disabled by policy (ENABLE_GEMINI_FALLBACK=false)"}
+
     if gemini_key and time.monotonic() >= _GEMINI_CIRCUIT_BROKEN_UNTIL:
+        import logging
+        logging.getLogger("nocap.llm").info(
+            "AUDIT: Gemini multimodal fallback invoked for doc_type=%s (payload=%d bytes). No raw pixels logged.",
+            doc_type or "unknown",
+            len(image_bytes),
+        )
         try:
             import requests
             for model in ("gemini-2.5-flash", "gemini-1.5-flash"):

@@ -5,7 +5,9 @@ import time
 import urllib.request
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, Security, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from typing import Optional
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -17,10 +19,49 @@ from face_match import compare_faces
 
 app = FastAPI(title="ML Microservice")
 
+# --- Security: Shared-Secret Authentication (Finding C1) ---
+_API_KEY_HEADER = APIKeyHeader(name="X-ML-Secret-Key", auto_error=False)
+
+
+def verify_ml_auth(x_ml_secret_key: Optional[str] = Security(_API_KEY_HEADER)):
+    expected = (os.getenv("ML_SECRET_KEY") or "").strip()
+    if not expected:
+        # Development / local mode: no key enforced
+        return True
+    if not x_ml_secret_key or x_ml_secret_key.strip() != expected:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized: invalid or missing X-ML-Secret-Key",
+        )
+    return True
+
+
+# --- Security: CORS Origin Restriction (Finding C2) ---
+_allowed_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+if not _allowed_origins:
+    _allowed_origins = [
+        "https://vibe-check-point.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
+
 # --- ONNX AI Image Detection Code (from core app) ---
 MODEL_REPO = "onnx-community/ai-image-detection-ONNX"
 MODEL_FILE = "model.onnx"
 DEFAULT_URL = f"https://huggingface.co/{MODEL_REPO}/resolve/main/onnx/model.onnx"
+DEFAULT_AI_DETECTOR_SHA256 = "44cb205f596f7c9e13d9ea7ea12cb2462d7c92bfaeb55e7fcad51b5c4943fcf3"
 _IMG_SIZE = 224
 
 _engine = None
@@ -47,7 +88,19 @@ def _ensure_model() -> str:
     url = os.getenv("AI_DETECTOR_MODEL_URL") or DEFAULT_URL
     print(f"[detector] downloading AI model -> {path}  ({url})")
     tmp = path + ".download"
-    urllib.request.urlretrieve(url, tmp)
+    import hashlib
+    hasher = hashlib.sha256()
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req) as resp, open(tmp, "wb") as out:
+        while chunk := resp.read(65536):
+            hasher.update(chunk)
+            out.write(chunk)
+    digest = hasher.hexdigest()
+    expected = os.getenv("AI_DETECTOR_MODEL_SHA256", DEFAULT_AI_DETECTOR_SHA256).strip().lower()
+    if expected and digest.lower() != expected:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise ValueError(f"Supply-chain check failed: AI detector SHA-256 {digest} != expected {expected}")
     os.replace(tmp, path)
     return path
 
@@ -167,7 +220,7 @@ def startup_prewarm():
             print(f"[ml_service] Pre-warm note: {exc}")
 
 
-@app.post("/api/ml/yolo_roi")
+@app.post("/api/ml/yolo_roi", dependencies=[Depends(verify_ml_auth)])
 async def api_yolo_roi(file: UploadFile = File(...)):
     data = await file.read()
     boxes = extract_roi_boxes(data)
@@ -175,14 +228,14 @@ async def api_yolo_roi(file: UploadFile = File(...)):
 
 
 from yolo_roi import extract_aadhaar_fields
-@app.post("/api/ml/aadhaar_fields")
+@app.post("/api/ml/aadhaar_fields", dependencies=[Depends(verify_ml_auth)])
 async def api_aadhaar_fields(file: UploadFile = File(...)):
     data = await file.read()
     boxes = extract_aadhaar_fields(data)
     return boxes
 
 
-@app.post("/api/ml/face_match")
+@app.post("/api/ml/face_match", dependencies=[Depends(verify_ml_auth)])
 async def api_face_match(
     doc_face_b64: str = Form(...),
     live_frame: UploadFile = File(...),
@@ -194,7 +247,7 @@ async def api_face_match(
     return result
 
 
-@app.post("/api/ml/detect_image")
+@app.post("/api/ml/detect_image", dependencies=[Depends(verify_ml_auth)])
 async def api_detect_image(file: UploadFile = File(...)):
     data = await file.read()
     result = onnx_detect(data)
@@ -202,7 +255,7 @@ async def api_detect_image(file: UploadFile = File(...)):
 
 
 from doctype_cls import classify_document
-@app.post("/api/ml/doctype")
+@app.post("/api/ml/doctype", dependencies=[Depends(verify_ml_auth)])
 async def api_doctype(file: UploadFile = File(...)):
     data = await file.read()
     result = classify_document(data)
@@ -210,7 +263,7 @@ async def api_doctype(file: UploadFile = File(...)):
 
 
 from doc_forgery import analyze_doc_forgery
-@app.post("/api/ml/doc_forgery")
+@app.post("/api/ml/doc_forgery", dependencies=[Depends(verify_ml_auth)])
 async def api_doc_forgery(file: UploadFile = File(...)):
     data = await file.read()
     result = analyze_doc_forgery(data)

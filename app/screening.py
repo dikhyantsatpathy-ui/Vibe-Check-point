@@ -745,7 +745,11 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
     except ImportError:  # bare-module invocation (tests / direct run)
         from main import WatchlistEntry, ScreeningReport
     try:
-        from app.extraction import extract_document
+        import sys as _sys
+        if "extraction" in _sys.modules and hasattr(_sys.modules["extraction"], "extract_document"):
+            extract_document = _sys.modules["extraction"].extract_document
+        else:
+            from app.extraction import extract_document
     except ImportError:
         from extraction import extract_document
     try:
@@ -1291,6 +1295,13 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
             risk = max(risk + 55, 82)
             hard_flag = True
             can_clear = False
+
+    # Finding A3: Degraded mode — system never autonomously clears when model degraded to heuristics
+    crop_meta = (tamper_res or {}).get("crop_meta") or {}
+    if crop_meta.get("is_fallback") or crop_meta.get("source") == "heuristic":
+        reasons.append("DEGRADED MODE ADVISORY: Document card boundary detected via fallback heuristics (ML detector unavailable). Manual desk review required before clearing.")
+        can_clear = False
+        risk = max(risk, 30)
 
     # Watchlist contributed by Module 2 (hash query above the Analyze pass).
     if hits:

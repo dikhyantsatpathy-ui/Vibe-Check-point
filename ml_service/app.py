@@ -74,12 +74,24 @@ gradio_app.include_router(fastapi_app.router, prefix="/gradio_api")
 # Prepend all FastAPI endpoints (/health, /api/ml/*) so they match with top priority
 gradio_app.router.routes = fastapi_app.routes + gradio_app.router.routes
 
-# Enable full CORS for external integrations (Vercel, local dev, desk consoles)
+# Restricted CORS for external integrations (Vercel production, local dev, desk consoles)
+_cors_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+if not _cors_origins:
+    _cors_origins = [
+        "https://vibe-check-point.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+
 gradio_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 

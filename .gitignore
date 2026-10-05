@@ -82,6 +82,7 @@ pics/
 *.md
 !README.md
 !ml_service/README.md
+!docs/ML_PIPELINE_CHANGES.md
 CHAT_EXPORT.html
 chat_transcripts/
 clean up for hackathon/
