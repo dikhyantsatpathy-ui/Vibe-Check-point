@@ -64,10 +64,10 @@ def compute_breakdown_metrics(
     return breakdown
 
 
-def run_full_evaluation(num_samples: int = 35) -> dict:
+def run_full_evaluation(num_samples: int = 35, test_dir: str = None) -> dict:
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     aadhar_test_dir = os.path.join(repo_root, "data", "AADHAR", "test")
-    coco_card_test_dir = os.path.join(repo_root, "data", "coco_card", "test")
+    coco_card_test_dir = os.path.abspath(test_dir) if test_dir else os.path.join(repo_root, "data", "coco_card", "test")
     idcard_test_dir = os.path.join(repo_root, "data", "IDcard", "test")
 
     has_card_coco = os.path.exists(os.path.join(coco_card_test_dir, "_annotations.coco.json"))
@@ -147,6 +147,19 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
                 if not os.path.exists(img_path):
                     continue
                 c_files.append(img_info["file_name"])
+
+            if "indian" in str(coco_card_test_dir).lower():
+                print(f"INDIAN SPECIMEN TEST n={len(c_files)}")
+                if len(c_files) < 100:
+                    print("SAMPLE TOO SMALL")
+
+            for img_info in coco_data.get("images", []):
+                img_id = img_info["file_name"].rsplit(".", 1)[0]
+                img_path = os.path.join(coco_card_test_dir, "images", img_info["file_name"])
+                if not os.path.exists(img_path):
+                    img_path = os.path.join(coco_card_test_dir, img_info["file_name"])
+                if not os.path.exists(img_path):
+                    continue
 
                 w, h = img_info["width"], img_info["height"]
                 doc_type = img_info.get("doc_type", "unknown")
@@ -427,8 +440,12 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
     print(f"[eval] Report exported to {report_path}")
 
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    folder_suffix = "rfdetr_card_eval" if backend == "rf_detr" else "baseline_yolo_card"
-    run_dir = os.path.join(repo_root, "eval", "runs", f"{ts}_{folder_suffix}")
+    custom_run_dir = os.getenv("EVAL_RUN_DIR")
+    if custom_run_dir:
+        run_dir = os.path.abspath(custom_run_dir)
+    else:
+        folder_suffix = "rfdetr_card_eval" if backend == "rf_detr" else "baseline_yolo_card"
+        run_dir = os.path.join(repo_root, "eval", "runs", f"{ts}_{folder_suffix}")
     os.makedirs(run_dir, exist_ok=True)
     run_report_path = os.path.join(run_dir, "report.json")
     with open(run_report_path, "w", encoding="utf-8") as f:
@@ -520,8 +537,15 @@ def run_detector_bakeoff() -> dict:
 
 
 if __name__ == "__main__":
-    if "--bakeoff" in sys.argv:
+    import argparse
+    parser = argparse.ArgumentParser(description="NO-CAP Model Evaluation Harness")
+    parser.add_argument("--test-dir", type=str, default=None, help="Custom card test directory (e.g. data/coco_card_indian/test)")
+    parser.add_argument("--bakeoff", action="store_true", help="Run detector bake-off comparison")
+    parser.add_argument("--num-samples", type=int, default=35, help="Number of synthetic samples if using synthetic fallback")
+    args, unknown = parser.parse_known_args()
+
+    if args.bakeoff:
         run_detector_bakeoff()
     else:
-        run_full_evaluation()
+        run_full_evaluation(num_samples=args.num_samples, test_dir=args.test_dir)
 

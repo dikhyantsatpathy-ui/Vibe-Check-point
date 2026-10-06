@@ -55,20 +55,64 @@ def get_detector_backend() -> str:
     return "yolov8"
 
 
+def get_card_detector_backend() -> str:
+    """Return active backend for card stage: 'yolov8' or 'rf_detr'. Defaults to DETECTOR_BACKEND."""
+    val = os.getenv("CARD_DETECTOR_BACKEND")
+    if val:
+        val = val.strip().lower()
+        if val in ("rf_detr", "rf-detr"):
+            return "rf_detr"
+        if val in ("rtdetr", "rt-detr"):
+            raise ValueError(
+                f"Unsupported CARD_DETECTOR_BACKEND='{val}'. RT-DETR and RF-DETR are distinct models. Use 'rf_detr' or 'yolov8'."
+            )
+        if val == "yolov8":
+            return "yolov8"
+        raise ValueError(f"Unsupported CARD_DETECTOR_BACKEND='{val}'. Use 'rf_detr' or 'yolov8'.")
+    return get_detector_backend()
+
+
+def get_field_detector_backend() -> str:
+    """Return active backend for field stage: 'yolov8' or 'rf_detr'. Defaults to DETECTOR_BACKEND."""
+    val = os.getenv("FIELD_DETECTOR_BACKEND")
+    if val:
+        val = val.strip().lower()
+        if val in ("rf_detr", "rf-detr"):
+            return "rf_detr"
+        if val in ("rtdetr", "rt-detr"):
+            raise ValueError(
+                f"Unsupported FIELD_DETECTOR_BACKEND='{val}'. RT-DETR and RF-DETR are distinct models. Use 'rf_detr' or 'yolov8'."
+            )
+        if val == "yolov8":
+            return "yolov8"
+        raise ValueError(f"Unsupported FIELD_DETECTOR_BACKEND='{val}'. Use 'rf_detr' or 'yolov8'.")
+    return get_detector_backend()
+
+
 def _default_model_path() -> str:
-    """Resolve active model path based on DETECTOR_BACKEND and environment variables.
+    """Resolve active model path based on CARD_DETECTOR_BACKEND and environment variables.
     Fails loudly with empty string if RF-DETR weights are absent (never silently loads YOLO)."""
-    backend = get_detector_backend()
+    backend = get_card_detector_backend()
+    model_dirs = [_MODEL_DIR]
+    default_ml_models = os.path.abspath(os.path.join(os.path.dirname(__file__), "models"))
+    default_app_models = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app", "models"))
+    default_ml_sibling = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_service", "models"))
+    cur_abs = os.path.abspath(_MODEL_DIR)
+    if cur_abs in (default_ml_models, default_app_models, default_ml_sibling):
+        for candidate_dir in (default_ml_models, default_app_models, default_ml_sibling):
+            if candidate_dir not in [os.path.abspath(d) for d in model_dirs]:
+                model_dirs.append(candidate_dir)
     if backend == "rf_detr":
         env = os.getenv("RF_DETR_ONNX_PATH")
         if env and os.path.exists(env):
             return env
-        for name in ("rfdetr_card.onnx", "rf_detr.onnx", "rf_detr_card.onnx"):
-            candidate = os.path.join(_MODEL_DIR, name)
-            if os.path.exists(candidate):
-                return candidate
+        for mdir in model_dirs:
+            for name in ("rfdetr_card_int8.onnx", "rfdetr_card.onnx", "rf_detr.onnx", "rf_detr_card.onnx"):
+                candidate = os.path.join(mdir, name)
+                if os.path.exists(candidate):
+                    return candidate
         logger.warning(
-            "[detector] DETECTOR_BACKEND='rf_detr' configured but no RF-DETR weights found. "
+            "[detector] CARD_DETECTOR_BACKEND='rf_detr' configured but no RF-DETR weights found. "
             "Failing loudly without fallback to YOLO."
         )
         return ""
@@ -76,10 +120,11 @@ def _default_model_path() -> str:
     env = os.getenv("YOLO_ROI_ONNX_PATH")
     if env:
         return env
-    for name in ("card.onnx", "yolov8n.onnx"):
-        candidate = os.path.join(_MODEL_DIR, name)
-        if os.path.exists(candidate):
-            return candidate
+    for mdir in model_dirs:
+        for name in ("card.onnx", "yolov8n.onnx"):
+            candidate = os.path.join(mdir, name)
+            if os.path.exists(candidate):
+                return candidate
     return os.path.join(_MODEL_DIR, "yolov8n.onnx")
 
 
@@ -100,6 +145,7 @@ def clear_session_cache() -> None:
 
 
 def _get_onnx_session():
+    """Lazily load ONNX runtime session for card detector."""
     global _session, _session_attempted
     if _session_attempted:
         return _session
@@ -108,7 +154,7 @@ def _get_onnx_session():
     if not model_path or not os.path.exists(model_path):
         return None
     try:
-        backend = get_detector_backend()
+        backend = get_card_detector_backend()
         if backend == "rf_detr":
             _load_model_metadata(model_path, expected_num_classes=1)
         import onnxruntime as ort
@@ -117,23 +163,26 @@ def _get_onnx_session():
         opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
         _session = ort.InferenceSession(model_path, sess_options=opts, providers=['CPUExecutionProvider'])
         return _session
+    except ValueError:
+        raise
     except Exception as exc:
         logger.warning(f"Failed to load ONNX card model at {model_path}: {exc}")
         return None
 
 
 def _get_aadhaar_session():
+    """Lazily load the 5-class Aadhaar-field ONNX detector (nc=5, 640x640)."""
     global _aadhaar_session, _aadhaar_session_attempted
     if _aadhaar_session_attempted:
         return _aadhaar_session
     _aadhaar_session_attempted = True
-    backend = get_detector_backend()
+    backend = get_field_detector_backend()
     if backend == "rf_detr":
         path = os.getenv("RF_DETR_FIELDS_ONNX_PATH")
         if not path:
             path = os.path.join(_MODEL_DIR, "rfdetr_fields.onnx")
         if not os.path.exists(path):
-            logger.warning("[detector] DETECTOR_BACKEND='rf_detr' configured but no RF-DETR fields model found. Failing loudly.")
+            logger.warning("[detector] FIELD_DETECTOR_BACKEND='rf_detr' configured but no RF-DETR fields model found. Failing loudly.")
             return None
     else:
         path = os.getenv("AADHAAR_FIELDS_ONNX_PATH")
@@ -150,6 +199,8 @@ def _get_aadhaar_session():
         opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
         _aadhaar_session = ort.InferenceSession(path, sess_options=opts, providers=["CPUExecutionProvider"])
         return _aadhaar_session
+    except ValueError:
+        raise
     except Exception as exc:
         logger.warning(f"Failed to load ONNX aadhaar_fields model at {path}: {exc}")
         return None
@@ -429,33 +480,46 @@ def _postprocess_yolo_predictions(
 # ---------------------------------------------------------------------------
 
 def _load_model_metadata(model_path: str, expected_num_classes: Optional[int] = None) -> Dict[str, Any]:
-    """Load and validate model metadata sidecar (*.meta.json).
+    """Load and validate model metadata canonical sidecar (<model>.meta.json).
+    
+    Verifies SHA-256 checksum against sidecar (fail-closed) and expected class count.
     
     Raises:
-        ValueError: If metadata exists and class count does not match expected_num_classes.
+        ValueError: If SHA-256 mismatches or classes count mismatch.
     """
     if not model_path:
         return {}
     p = Path(model_path)
-    candidates = [
-        p.with_suffix(p.suffix + ".meta.json"),
-        p.with_name(f"{p.stem}.meta.json"),
-    ]
-    for c in candidates:
-        if c.exists():
-            try:
-                data = json.loads(c.read_text(encoding="utf-8"))
-                classes = data.get("classes", [])
-                if expected_num_classes is not None and len(classes) != expected_num_classes:
-                    raise ValueError(
-                        f"Model metadata classes count mismatch: expected {expected_num_classes}, got {len(classes)} in {c}"
-                    )
-                return data
-            except ValueError:
-                raise
-            except Exception as exc:
-                logger.warning(f"Failed to read model metadata from {c}: {exc}")
-    return {}
+    canonical = p.with_name(f"{p.stem}.meta.json")
+    if not canonical.exists():
+        logger.warning(f"Canonical metadata sidecar {canonical} not found for {model_path}")
+        return {}
+    try:
+        data = json.loads(canonical.read_text(encoding="utf-8"))
+        expected_sha = data.get("sha256")
+        if expected_sha:
+            import hashlib
+            hasher = hashlib.sha256()
+            with open(p, "rb") as f:
+                while chunk := f.read(1024 * 1024):
+                    hasher.update(chunk)
+            actual_sha = hasher.hexdigest().lower()
+            if actual_sha != str(expected_sha).strip().lower():
+                raise ValueError(
+                    f"Supply-chain SHA-256 check failed for {model_path}: "
+                    f"digest {actual_sha} != expected {expected_sha} in {canonical}"
+                )
+        classes = data.get("classes", [])
+        if expected_num_classes is not None and len(classes) != expected_num_classes:
+            raise ValueError(
+                f"Model metadata classes count mismatch: expected {expected_num_classes}, got {len(classes)} in {canonical}"
+            )
+        return data
+    except ValueError:
+        raise
+    except Exception as exc:
+        logger.warning(f"Failed to read model metadata from {canonical}: {exc}")
+        return {}
 
 
 def preprocess_rfdetr(
@@ -778,14 +842,27 @@ def extract_roi_boxes(image_bytes: bytes) -> List[Dict[str, Any]]:
     if rgb is None:
         return []
 
-    session = _get_onnx_session()
+    card_backend = get_card_detector_backend()
+    if card_backend == "rf_detr":
+        session = _get_onnx_session()
+        if session is None:
+            raise FileNotFoundError(
+                "CARD_DETECTOR_BACKEND='rf_detr' configured but weights could not be loaded. Failing loudly without fallback."
+            )
+    else:
+        session = _get_onnx_session()
+
     if session is not None:
-        backend = get_detector_backend()
-        if backend == "rf_detr":
+        if card_backend == "rf_detr":
             boxes = _run_rfdetr_onnx(rgb, session, max_boxes=2, class_names=["Card"])
         else:
             boxes = _run_yolo_onnx(rgb, session, max_boxes=2, class_names=["document"])
         if boxes:
+            for b in boxes:
+                b["stage"] = "card"
+                b["backend"] = card_backend
+                b["card_backend"] = card_backend
+                b["effective_backend"] = card_backend
             return boxes
 
     boxes = []
@@ -805,6 +882,12 @@ def extract_roi_boxes(image_bytes: bytes) -> List[Dict[str, Any]]:
     if mrz_box:
         boxes.append(mrz_box)
 
+    for b in boxes:
+        b["stage"] = "card"
+        b["backend"] = card_backend
+        b["card_backend"] = card_backend
+        b["effective_backend"] = card_backend
+
     return boxes
 
 
@@ -813,12 +896,20 @@ def extract_aadhaar_fields(image_bytes: bytes) -> List[Dict[str, Any]]:
         return []
 
     rgb = _open_rgb(image_bytes)
-    session = _get_aadhaar_session()
+    field_backend = get_field_detector_backend()
+    if field_backend == "rf_detr":
+        session = _get_aadhaar_session()
+        if session is None:
+            raise FileNotFoundError(
+                "FIELD_DETECTOR_BACKEND='rf_detr' configured but weights could not be loaded. Failing loudly without fallback."
+            )
+    else:
+        session = _get_aadhaar_session()
+
     if rgb is None or session is None:
         return []
 
-    backend = get_detector_backend()
-    if backend == "rf_detr":
+    if field_backend == "rf_detr":
         boxes = _run_rfdetr_onnx(
             rgb,
             session,
@@ -840,7 +931,14 @@ def extract_aadhaar_fields(image_bytes: bytes) -> List[Dict[str, Any]]:
         if lbl not in class_best or (b.get("confidence") or 0.0) > (class_best[lbl].get("confidence") or 0.0):
             class_best[lbl] = b
 
-    return list(class_best.values())
+    result_boxes = list(class_best.values())
+    for b in result_boxes:
+        b["stage"] = "field"
+        b["backend"] = field_backend
+        b["field_backend"] = field_backend
+        b["effective_backend"] = field_backend
+
+    return result_boxes
 
 
 def crop_region_to_bytes(

@@ -86,7 +86,10 @@ eval/data/
 !ml_service/README.md
 !docs/ML_PIPELINE_CHANGES.md
 !docs/TRAINING_PROGRESS.md
+!training/indian_specimens/CAPTURE_PROTOCOL.md
 CHAT_EXPORT.html
 chat_transcripts/
 clean up for hackathon/
 Vibe-Check-point-main/
+training/indian_specimens/out/
+data/coco_card_indian/

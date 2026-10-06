@@ -113,8 +113,11 @@ def test_postprocess_rfdetr_multiclass_aadhaar():
 
 def test_metadata_sidecar_validation(tmp_path: Path):
     """Verify sidecar metadata loading and class count mismatch validation."""
+    import hashlib
     model_file = tmp_path / "rfdetr_card.onnx"
-    model_file.write_bytes(b"dummy onnx bytes")
+    content = b"dummy onnx bytes"
+    model_file.write_bytes(content)
+    real_sha = hashlib.sha256(content).hexdigest()
 
     sidecar = tmp_path / "rfdetr_card.meta.json"
     sidecar_data = {
@@ -125,7 +128,7 @@ def test_metadata_sidecar_validation(tmp_path: Path):
         "resize_mode": "square_bilinear",
         "output_names": ["pred_boxes", "pred_logits"],
         "rfdetr_version": "0.1.0",
-        "sha256": "abcdef123456",
+        "sha256": real_sha,
     }
     sidecar.write_text(json.dumps(sidecar_data), encoding="utf-8")
 

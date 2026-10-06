@@ -1,4 +1,8 @@
 {
+  "model_name": "rfdetr_card",
+  "architecture": "RF-DETR Small (FP32)",
+  "license": "Apache-2.0",
+  "num_classes": 1,
   "classes": [
     "Card"
   ],
@@ -16,13 +20,26 @@
     0.224,
     0.225
   ],
-  "resize_mode": "square_bilinear",
+  "resize_mode": "square_resize",
   "output_names": [
     "dets",
     "labels"
   ],
   "rfdetr_version": "1.11.2",
-  "trained_on": "midv2020_real_and_composites",
-  "trained_at": "2026-10-06T02:44:33",
-  "sha256": "65f81e834888c459066ea6f3251fbe18b2c585a1555274e170f36b520b92575f"
+  "sha256": "65f81e834888c459066ea6f3251fbe18b2c585a1555274e170f36b520b92575f",
+  "size_bytes": 123212318,
+  "size_mb": 117.5,
+  "dataset_counts": {
+    "sources": {
+      "midv2020_train_photos": 500,
+      "idcard_train": 39,
+      "card_synth_sampled": 300,
+      "composites": 1000
+    },
+    "total_images": 1839,
+    "total_annotations": 1882,
+    "seed": 42,
+    "no_flips": true
+  },
+  "trained_on": "MIDV-2020 train types (500) + IDcard (39) + card_synth (300) + composites (1000)"
 }

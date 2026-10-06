@@ -206,26 +206,74 @@ Handling these heavy binary formats in root Vercel would exceed serverless bundl
 
 ---
 
-## 8. Phase 5: Detector Backend Abstraction (Apache 2.0 RF-DETR vs YOLOv8) & Runtime Switch
+## 8. Phase 5: Detector Backend Abstraction, Hybrid Architecture & Measured Bake-Off
 
 ### Overview & Architecture:
 Ultralytics YOLOv8 is distributed under **AGPL-3.0**, which imposes copyleft requirements for cloud-hosted backend systems or requires purchasing proprietary enterprise licensing.
 
-In Phase 5, we engineered a runtime-switchable detector backend abstraction supporting **Apache 2.0 Real-Time Detection Transformers (RF-DETR)** alongside the existing YOLOv8 CNN model.
-- **Zero Downtime / Instant Toggle**: Switchable via `DETECTOR_BACKEND="yolov8"|"rf_detr"` in both `app/yolo_roi.py` and `ml_service/yolo_roi.py`.
-- **Runtime Cache Eviction**: `clear_session_cache()` allows dynamic backend migration within 1–2 seconds without restarting the FastAPI or container process.
-- **Fail-Loud Security**: With `DETECTOR_BACKEND=rf_detr`, if dedicated RF-DETR weights are absent, the system fails loudly (`_default_model_path()` returns empty string, triggering explainable heuristic fallback and routing to `REVIEW`). It never silently substitutes YOLO weights.
-- **Backwards-Compatible Schema**: Both models output identical structured bounding box dictionaries with an added `"backend": "..."` audit tag:
-  `{"label": ..., "class_id": ..., "x": ..., "y": ..., "w": ..., "h": ..., "confidence": ..., "source": "model", "backend": "yolov8"|"rf_detr"}`.
+In Phase 5, we engineered a runtime-switchable detector backend abstraction supporting **Apache 2.0 Real-Time Detection Transformers (RF-DETR)** alongside the existing YOLOv8 CNN model, with independent per-stage switching.
+- **Per-Stage Independent Controls**:
+  - `CARD_DETECTOR_BACKEND` (`"yolov8"` or `"rf_detr"`): Controls Stage 1 document boundary localization.
+  - `FIELD_DETECTOR_BACKEND` (`"yolov8"` or `"rf_detr"`): Controls Stage 2 semantic field zone extraction.
+  - `DETECTOR_BACKEND` (`"yolov8"` by default): Acts as global default when per-stage variables are unset.
+- **Hybrid Deployment Support**:
+  - Supports hybrid configuration (`CARD_DETECTOR_BACKEND=rf_detr`, `FIELD_DETECTOR_BACKEND=yolov8`).
+  - *Licensing Notice*: Fields on YOLO remain AGPL-3.0. Hybrid mode does **NOT** eliminate AGPL-3.0 copyleft obligations for the field detector. Model B (fields) is frozen/untrained in this phase.
+- **Provenance & Auditability**:
+  - Every bounding box dictionary includes additive provenance tags: `stage`, `card_backend`, `field_backend`, `effective_backend`, and `backend`.
+- **Runtime Cache Eviction**: `clear_session_cache()` allows dynamic backend switching within 1–2 seconds without process restart.
+- **Fail-Loud Security**: Unsupported backend values or missing weights fail loudly (`RuntimeError` / `FileNotFoundError`), never silently substituting fallback models.
+- **SHA-256 Pinning**: The loader verifies candidate ONNX weights against `<model>.meta.json` sidecars, refusing execution on checksum mismatch (fail-closed).
+- **Instant Rollback**: Set `DETECTOR_BACKEND=yolov8` (or `CARD_DETECTOR_BACKEND=yolov8`) to immediately revert to baseline.
 
-### Detector Bake-Off Status:
-- **Backend Infrastructure:** Operational. Both `app/` and `ml_service/` support RF-DETR format, per-class threshold sweeps, and session management.
-- **Trained Weights:** Pending. Dedicated RF-DETR checkpoints must be trained and exported to `ml_service/models/rfdetr_card.onnx` and `rfdetr_fields.onnx`.
-- **Comparative Metrics:** No empirical comparative result is reported until RF-DETR weights are trained and evaluated on real held-out datasets. `eval/evaluate.py:run_detector_bakeoff` aborts with `FileNotFoundError` if weights are missing, preventing unverified comparisons.
+### Measured Empirical Evaluation Results:
 
-### Test & Benchmark Verification:
-- `tests/test_detector_backend.py`: 6/6 unit tests passing (default resolution, `DETECTOR_BACKEND` strict values and RT-DETR rejection, fail-loud missing weights handling, `clear_session_cache()`, box backend tagging, and bakeoff weight validation).
-- Automated drift protection verified across `app/yolo_roi.py` and `ml_service/yolo_roi.py`.
+1. **Unified Test Set Evaluation (`eval/evaluate.py`)**:
+   - **Test Set**: 300 held-out MIDV-2020 photos across 8 physical capture conditions (100 Albanian ID, 100 Slovakian ID, 100 Greek Passport).
+   - **RF-DETR Small INT8** (`eval/runs/20261006_094311_audit_rfdetr_int8/eval_report.json`):
+     - mAP50: **1.000**, mAP50-95: **0.995**, Recall: **1.000**, Precision: **1.000**
+     - INT8 vs FP32 Parity at IoU $\ge 0.95$: **20/20 passed** (minimum observed IoU: 0.9684).
+   - **RF-DETR Small FP32** (`eval/runs/20261006_094311_audit_rfdetr_fp32/eval_report.json`):
+     - mAP50: **1.000**, mAP50-95: **0.995**, Recall: **1.000**, Precision: **1.000**
+   - **YOLOv8s Baseline** (`eval/runs/20261006_094311_audit_yolo/eval_report.json`):
+     - mAP50: **0.000**, Recall: **0.000**, Precision: **0.000**
+     - *Root Cause Analysis*: Audited coordinate frames, EXIF orientations, letterboxing, and model metadata. Found that `card.onnx` was trained exclusively on 1,557 flat 2D synthetic card mockups (`card_synth`). When evaluated on real camera captures with complex physical tables, hands, glare, and shadows, zero proposals fire above confidence threshold (severe synthetic-to-real domain gap).
+
+2. **Negative & Clutter Evaluation (`eval/runs/20261006_095642_task2/report.json`)**:
+   - Evaluated on 160 non-card negative images (50 background crops from test photos outside card boundary, 50 receipt-like gray paper, 60 colored synthetic rectangles).
+   - Overall false positive rate: **18.12%** (Background crops: 6.00% FP; Non-card rectangles: 100% FP).
+   - *Result*: Fails provisional $\le 5\%$ false-positive gate on non-card paper objects. High-contrast rectangular paper proposals fire readily.
+
+3. **Scale Stress Diagnostic (`eval/runs/20261006_095642_task2/report.json`)**:
+   - Evaluated with reflection-padded canvases simulating distant/small document captures:
+     - 2× Canvas Padding: Recall = **65.33%** (196/300)
+     - 3× Canvas Padding: Recall = **20.67%** (62/300)
+
+4. **Deployment CPU Latency (`eval/runs/20261006_100236_task3_latency/latency_report.json`)**:
+   - Measured with ONNX Runtime `CPUExecutionProvider` on 2 vCPU budget (5 warm-up + 30 timed iterations):
+     - **RF-DETR Small INT8 (2 Threads)**: p50 = **335.8 ms** (infer = 322.2 ms, pre = 0.5 ms, post = 0.8 ms, RAM = 12.04 MB) $\rightarrow$ **Target $\le 400\text{ ms}$ PASSED**.
+     - **RF-DETR Small INT8 (1 Thread)**: p50 = **567.8 ms** (infer = 554.4 ms).
+     - **RF-DETR Small FP32 (2 Threads)**: p50 = **556.7 ms** (infer = 542.4 ms).
+     - **YOLOv8s Baseline (2 Threads)**: p50 = **13.9 ms** (infer = 13.0 ms).
+
+5. **Indian Layout Performance**:
+   - **Real Physical Captures**: **NOT MEASURED** pending physical photography of printed specimen sheets. Test kit generated in `training/indian_specimens/out/indian_specimen_sheets_300dpi.pdf` with field capture protocol in `training/indian_specimens/CAPTURE_PROTOCOL.md`.
+   - **Synthetic Diagnostic (Not a Gate)** (`eval/runs/20261006_102938_task7_synthetic_indian/report.json`):
+     - Evaluated on 150 synthetic perspective/glare composites of Indian specimen cards (Aadhaar PVC, Aadhaar letter, PAN, Voter ID, DL) pasted on real background patches:
+     - RF-DETR Recall@0.5: **93.33%** (140/150) | Precision: **82.84%**
+       - Aadhaar PVC: 96.7% (29/30)
+       - Aadhaar Letter Strip: 96.7% (29/30)
+       - PAN Card: 100.0% (30/30)
+       - Voter ID: 86.7% (26/30)
+       - Driving Licence: 86.7% (26/30)
+     - YOLOv8 Baseline: **0.00%** recall (0/150).
+
+6. **Test Set Scope & Honest Limitations**:
+   - The test split consists of 300 mock documents from European passports and identity cards.
+   - Each photo contains exactly one prominent card occupying the primary foreground.
+   - There are zero native non-card photos in the primary test split.
+   - Captured across identical smartphone cameras, lighting setups, and desk backgrounds as the training split.
+   - Therefore, perfect precision/recall scores on this specific test set reflect task simplicity within a constrained domain; general-world precision on arbitrary clutter requires non-card negative filtering.
 
 ---
 
@@ -242,14 +290,14 @@ In Phase 5, we engineered a runtime-switchable detector backend abstraction supp
 3. **Synchronized Dual-Stream Forgery Detector:**
    - `ml_service/doc_forgery.py` and `app/doc_forgery.py` share identical schemas including `dead_block_ratio`, `largest_component`, `void_kind`, and `seam_anomaly`.
 
-### Observability & Documentation Upgrades:
-- **`ml_service/README.md`**: Updated with all neural models, Apache 2.0 / MIT licenses, endpoint signatures, authentication header (`X-ML-Secret-Key`, fail-closed unless `ML_ALLOW_NO_AUTH=true`), configuration flags, and ZeroGPU / Docker setup instructions.
-- **`SIH26188_ENGINEERING_BLUEPRINT.md`**: Synchronized Section 15 (Module 1 detection upgrades) and Section 31 (Definition of Done) to reflect all architectural improvements honestly.
-- **Supply-Chain Integrity**: Pinned SHA-256 digests for all neural checkpoints (`model.onnx`, `w600k_r50.onnx`, `aadhaar_fields.onnx`, `card.onnx`).
+### Supply-Chain Integrity & Checksums:
+- `rfdetr_card_int8.onnx`: `2f6269fba9b9deb74ec81c6cae3f5856812c18d39a09e9d0571ef4f0624e008a`
+- `rfdetr_card.onnx`: `65f81e834888c459066ea6f3251fbe18b2c585a1555274e170f36b520b92575f`
+- `model.onnx` (ViT): `44cb205f596f7c9e13d9ea7ea12cb2462d7c92bfaeb55e7fcad51b5c4943fcf3`
+- `w600k_r50.onnx` (ArcFace): `4c06341c33c2a6f3b79361ad22872322307fe959a7a9cb52de9ae3a246835a09`
+- `card.onnx` (YOLO): `c1c9c8e1e79ee883e0e7a2b9e6443a9d949437a3c3c78a101fce0d86b9eaeb79`
+- `aadhaar_fields.onnx`: `295a7065963f25c78673a968600118eb13c41551a141a5dffca3428d0111ef6c`
 
-### Test Suite Status:
-- **Automated Tests**: **245 passed, 3 skipped, 0 failed** ($100\%$ pass rate across 248 test items).
-- All unit, integration, crypto-ledger, zero-storage, dual-implementation drift, and CV detection suites verified.
 
 
 
