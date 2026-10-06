@@ -199,6 +199,8 @@ def run_training(
     batch_size: int = 4,
     grad_accum_steps: int = 4,
     lr: float = 1e-4,
+    lr_encoder: float = 1.5e-4,
+    early_stopping_patience: int = 7,
     smoke_test: bool = False,
     num_workers: int = 0,
     seed: int = 42,
@@ -218,10 +220,12 @@ def run_training(
     output_dir.mkdir(parents=True, exist_ok=True)
     actual_epochs = 1 if smoke_test else epochs
     logger.info(
-        "Starting RF-DETR Small training (epochs=%d, batch_size=%d, grad_accum=%d, smoke_test=%s)",
+        "Starting RF-DETR Small training (epochs=%d, batch_size=%d, grad_accum=%d, lr=%.1e, lr_encoder=%.1e, smoke_test=%s)",
         actual_epochs,
         batch_size,
         grad_accum_steps,
+        lr,
+        lr_encoder,
         smoke_test,
     )
 
@@ -235,6 +239,10 @@ def run_training(
         "batch_size": batch_size,
         "grad_accum_steps": grad_accum_steps,
         "lr": lr,
+        "lr_encoder": lr_encoder,
+        "ema": True,
+        "early_stopping": not smoke_test,
+        "early_stopping_patience": early_stopping_patience,
         "output_dir": str(output_dir),
         "num_workers": num_workers,
         "seed": seed,
@@ -249,13 +257,21 @@ def run_training(
     logger.info("Found %d checkpoint files in %s", len(ckpt_files), output_dir)
     assert len(ckpt_files) > 0 or hasattr(model, "export"), "Training failed to produce a model checkpoint!"
 
-    # 2. Export ONNX model (FP32 for standard CPU execution)
+    # 2. Export ONNX model from best checkpoint (FP32 for standard CPU execution)
     export_dir = Path("ml_service/models")
     export_dir.mkdir(parents=True, exist_ok=True)
     onnx_dest = export_dir / "rfdetr_card.onnx"
 
+    best_ckpts = list(output_dir.glob("checkpoint_best_total.pth")) + list(output_dir.glob("checkpoint_best_ema.pth"))
+    if best_ckpts:
+        best_ckpt = best_ckpts[0]
+        logger.info("Instantiating export model from best checkpoint: %s", best_ckpt)
+        export_model = RFDETRSmall(pretrain_weights=str(best_ckpt))
+    else:
+        export_model = model
+
     logger.info("Exporting trained model to ONNX at %s (FP32)...", onnx_dest)
-    model.export(output_dir=str(export_dir), output_name="rfdetr_card.onnx", fp16=False)
+    export_model.export(output_dir=str(export_dir), output_name="rfdetr_card.onnx", fp16=False)
 
     if not onnx_dest.exists():
         # Check if exported with default name inside export_dir
@@ -279,6 +295,8 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--grad-accum", type=int, default=4)
     parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr-encoder", type=float, default=1.5e-4)
+    parser.add_argument("--patience", type=int, default=7)
     parser.add_argument("--smoke-test", action="store_true", help="Run 1-epoch smoke test on small subset")
     parser.add_argument("--num-workers", type=int, default=0, help="DataLoader workers (default 0 on Windows)")
 
@@ -294,6 +312,8 @@ def main() -> None:
         batch_size=args.batch_size,
         grad_accum_steps=args.grad_accum,
         lr=args.lr,
+        lr_encoder=args.lr_encoder,
+        early_stopping_patience=args.patience,
         smoke_test=args.smoke_test,
         num_workers=args.num_workers,
     )

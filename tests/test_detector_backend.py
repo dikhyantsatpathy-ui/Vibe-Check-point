@@ -41,6 +41,7 @@ def test_detector_backend_model_path_resolution(monkeypatch, tmp_path):
     # 1. No silent fallback to YOLO when rf_detr weights do not exist
     monkeypatch.setenv("DETECTOR_BACKEND", "rf_detr")
     monkeypatch.delenv("RF_DETR_ONNX_PATH", raising=False)
+    monkeypatch.setattr("yolo_roi._MODEL_DIR", str(tmp_path))
     path = _default_model_path()
     assert path == "", "Must return empty string and fail loud rather than loading YOLO card.onnx"
 
@@ -51,10 +52,10 @@ def test_detector_backend_model_path_resolution(monkeypatch, tmp_path):
     assert _default_model_path() == str(dummy_rf)
 
 
-def test_bakeoff_aborts_without_rf_detr_weights(monkeypatch):
+def test_bakeoff_aborts_without_rf_detr_weights(monkeypatch, tmp_path):
     """Verify bakeoff function strictly fails if RF-DETR weights are not mounted."""
     from eval.evaluate import run_detector_bakeoff
-    monkeypatch.delenv("RF_DETR_ONNX_PATH", raising=False)
+    monkeypatch.setenv("RF_DETR_ONNX_PATH", str(tmp_path / "nonexistent.onnx"))
     with pytest.raises(FileNotFoundError, match="RF-DETR weights not found"):
         run_detector_bakeoff()
 

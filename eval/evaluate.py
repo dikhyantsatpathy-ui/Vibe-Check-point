@@ -17,7 +17,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dataset import create_eval_dataset, CARD_CLASSES, AADHAAR_CLASSES
 from metrics import evaluate_dataset_map, optimize_confidence_thresholds
 from benchmark import benchmark_model_latency
-from yolo_roi import _get_onnx_session, _get_aadhaar_session, _run_yolo_onnx
+from yolo_roi import (
+    _get_onnx_session,
+    _get_aadhaar_session,
+    _run_yolo_onnx,
+    _run_rfdetr_onnx,
+    get_detector_backend,
+)
 
 
 def compute_breakdown_metrics(
@@ -163,7 +169,10 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
                 pil_img = Image.open(img_path).convert("RGB")
                 rgb = np.asarray(pil_img, dtype=np.uint8)
                 if card_session is not None:
-                    boxes = _run_yolo_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES)
+                    if get_detector_backend() == "rf_detr":
+                        boxes = _run_rfdetr_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES, conf_threshold=0.05)
+                    else:
+                        boxes = _run_yolo_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES)
                     for b in boxes:
                         card_dets.append({
                             "img_id": img_id,
@@ -206,7 +215,10 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
                                 })
 
                 if card_session is not None:
-                    boxes = _run_yolo_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES)
+                    if get_detector_backend() == "rf_detr":
+                        boxes = _run_rfdetr_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES, conf_threshold=0.05)
+                    else:
+                        boxes = _run_yolo_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES)
                     for b in boxes:
                         card_dets.append({
                             "img_id": img_id,
@@ -262,7 +274,10 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
                                 aadhaar_gts.append(gt_obj)
 
             if card_session is not None:
-                boxes = _run_yolo_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES)
+                if get_detector_backend() == "rf_detr":
+                    boxes = _run_rfdetr_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES, conf_threshold=0.05)
+                else:
+                    boxes = _run_yolo_onnx(rgb, card_session, max_boxes=4, class_names=CARD_CLASSES)
                 for b in boxes:
                     card_dets.append({
                         "img_id": img_id,
@@ -308,8 +323,23 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
         aadhaar_latency["cpu_model"] = os.environ.get("PROCESSOR_IDENTIFIER", platform.processor() or platform.machine())
         aadhaar_latency["thread_count"] = os.cpu_count()
 
-    per_doc_type_recall = compute_breakdown_metrics(card_dets, card_gts, key="doc_type")
-    per_condition_recall = compute_breakdown_metrics(card_dets, card_gts, key="condition")
+    backend = get_detector_backend()
+    opt_card_t = 0.35
+    thresh_file = os.path.join(repo_root, "ml_service", "models", "thresholds.json")
+    if os.path.exists(thresh_file):
+        try:
+            with open(thresh_file, "r", encoding="utf-8") as tf:
+                saved_th = json.load(tf)
+                opt_card_t = saved_th.get("Card", 0.35)
+        except Exception:
+            pass
+
+    per_doc_type_recall = compute_breakdown_metrics(card_dets, card_gts, key="doc_type", conf_thresh=opt_card_t)
+    per_condition_recall = compute_breakdown_metrics(card_dets, card_gts, key="condition", conf_thresh=opt_card_t)
+
+    card_model_title = "RF-DETR Small (rfdetr_card.onnx)" if backend == "rf_detr" else "YOLOv8s-Card (card.onnx)"
+    card_model_file = os.path.join(repo_root, "ml_service", "models", "rfdetr_card.onnx" if backend == "rf_detr" else "card.onnx")
+    model_size_mb = round(os.path.getsize(card_model_file) / (1024 * 1024), 2) if os.path.exists(card_model_file) else None
 
     report = {
         "dataset": {
@@ -318,7 +348,10 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
             "aadhaar_ground_truths": len(aadhaar_gts),
         },
         "card_detector": {
-            "model": "YOLOv8s-Card (card.onnx)",
+            "model": card_model_title,
+            "backend": backend,
+            "model_size_mb": model_size_mb,
+            "operating_threshold": opt_card_t,
             "test_source": "data/coco_card/test (MIDV-2020 300 photos)" if has_card_coco else "data/IDcard/test",
             "metrics": card_metrics,
             "optimal_thresholds": opt_card_thresh,
@@ -344,6 +377,8 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
     # Print summary table
     print("\n" + "=" * 78)
     print(" [EVAL] NO-CAP (SIH26188) DETECTION PIPELINE EVALUATION REPORT")
+    if has_card_coco:
+        print(" TEST SET n=300 real photos of 3 unseen document types")
     print("=" * 78)
     print(f"Dataset: {report['dataset']['samples']} images | Total Ground Truths: {len(card_gts) + len(aadhaar_gts)}")
     print("-" * 78)
@@ -362,7 +397,7 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
 
     if per_doc_type_recall:
         print("\n" + "-" * 78)
-        print(" [BREAKDOWN] CARD RECALL BY DOCUMENT TYPE (IoU >= 0.50, Conf >= 0.35)")
+        print(f" [BREAKDOWN] CARD RECALL BY DOCUMENT TYPE (IoU >= 0.50, Conf >= {opt_card_t:.2f})")
         print("-" * 78)
         print(f"{'Document Type':<25} | {'GT':<6} | {'Det':<6} | {'TP':<6} | {'Recall':<8} | {'Precision':<9}")
         print("-" * 78)
@@ -371,7 +406,7 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
 
     if per_condition_recall:
         print("\n" + "-" * 78)
-        print(" [BREAKDOWN] CARD RECALL BY CAPTURE CONDITION (IoU >= 0.50, Conf >= 0.35)")
+        print(f" [BREAKDOWN] CARD RECALL BY CAPTURE CONDITION (IoU >= 0.50, Conf >= {opt_card_t:.2f})")
         print("-" * 78)
         print(f"{'Capture Condition':<25} | {'GT':<6} | {'Det':<6} | {'TP':<6} | {'Recall':<8} | {'Precision':<9}")
         print("-" * 78)
@@ -392,12 +427,13 @@ def run_full_evaluation(num_samples: int = 35) -> dict:
     print(f"[eval] Report exported to {report_path}")
 
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = os.path.join(repo_root, "eval", "runs", f"{ts}_baseline_yolo_card")
+    folder_suffix = "rfdetr_card_eval" if backend == "rf_detr" else "baseline_yolo_card"
+    run_dir = os.path.join(repo_root, "eval", "runs", f"{ts}_{folder_suffix}")
     os.makedirs(run_dir, exist_ok=True)
-    baseline_run_report_path = os.path.join(run_dir, "report.json")
-    with open(baseline_run_report_path, "w", encoding="utf-8") as f:
+    run_report_path = os.path.join(run_dir, "report.json")
+    with open(run_report_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
-    print(f"[eval] Baseline run report saved to {baseline_run_report_path}")
+    print(f"[eval] Run report saved to {run_report_path}")
 
     return report
 
@@ -407,7 +443,7 @@ def run_detector_bakeoff() -> dict:
     # Defect D1: Fail loudly if RF-DETR weights are missing
     rf_path = os.getenv("RF_DETR_ONNX_PATH")
     if not rf_path:
-        for name in ("rf_detr.onnx", "rf_detr_card.onnx"):
+        for name in ("rf_detr.onnx", "rf_detr_card.onnx", "rfdetr_card.onnx"):
             cand = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ml_service", "models", name)
             if os.path.exists(cand):
                 rf_path = cand

@@ -1,0 +1,35 @@
+{
+  "model_name": "rfdetr_card_int8",
+  "architecture": "RF-DETR Small (INT8 dynamic quantization)",
+  "license": "Apache-2.0",
+  "num_classes": 1,
+  "classes": [
+    "Card"
+  ],
+  "input_size": [
+    512,
+    512
+  ],
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "resize_mode": "square_resize",
+  "output_names": [
+    "dets",
+    "labels"
+  ],
+  "rfdetr_version": "1.3.1",
+  "trained_on": "MIDV-2020 train types (500) + IDcard (39) + card_synth (300) + composites (1000)",
+  "trained_at": "2026-10-06T09:13:56.652377",
+  "sha256": "2f6269fba9b9deb74ec81c6cae3f5856812c18d39a09e9d0571ef4f0624e008a",
+  "size_bytes": 39031280,
+  "size_mb": 37.22,
+  "quantization": "dynamic_uint8"
+}

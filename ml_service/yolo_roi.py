@@ -63,7 +63,7 @@ def _default_model_path() -> str:
         env = os.getenv("RF_DETR_ONNX_PATH")
         if env and os.path.exists(env):
             return env
-        for name in ("rf_detr.onnx", "rf_detr_card.onnx"):
+        for name in ("rfdetr_card.onnx", "rf_detr.onnx", "rf_detr_card.onnx"):
             candidate = os.path.join(_MODEL_DIR, name)
             if os.path.exists(candidate):
                 return candidate
@@ -499,15 +499,8 @@ def _postprocess_rfdetr_predictions(
     clipped_logits = np.clip(logits, -88.0, 88.0)
     probs = 1.0 / (1.0 + np.exp(-clipped_logits))
 
-    # In COCO / RF-DETR exported models with 1-indexed categories, logits.shape[1] is num_classes + 1
-    # where index 0 represents the background / unused class.
-    if class_names and probs.ndim > 1 and probs.shape[1] == len(class_names) + 1:
-        fg_probs = probs[:, 1:]
-    else:
-        fg_probs = probs
-
-    num_queries = min(boxes.shape[0], fg_probs.shape[0])
-    num_classes = len(class_names) if class_names else (fg_probs.shape[1] if fg_probs.ndim > 1 else 1)
+    num_queries = min(boxes.shape[0], probs.shape[0])
+    num_classes = len(class_names) if class_names else (probs.shape[1] if probs.ndim > 1 else 1)
 
     results: List[Dict[str, Any]] = []
 
@@ -520,11 +513,11 @@ def _postprocess_rfdetr_predictions(
         effective_format = box_format
 
     for i in range(num_queries):
-        if num_classes == 1 or fg_probs.shape[1] == 1:
+        if num_classes == 1 or probs.shape[1] == 1:
             cid = 0
-            score = float(fg_probs[i, 0]) if fg_probs.ndim > 1 else float(fg_probs[i])
+            score = float(probs[i, 0]) if probs.ndim > 1 else float(probs[i])
         else:
-            avail_probs = fg_probs[i, :num_classes]
+            avail_probs = probs[i, :num_classes]
             cid = int(np.argmax(avail_probs))
             score = float(avail_probs[cid])
 

@@ -1,0 +1,9 @@
+{
+  "Card": 0.4,
+  "selected_from": "val_pr_sweep_200_images",
+  "metric": "max_f1_score",
+  "val_precision": 1.0,
+  "val_recall": 1.0,
+  "val_f1": 1.0,
+  "calibrated_at": "2026-10-06T02:49:17.000000"
+}
