@@ -35,20 +35,36 @@ chat_transcripts/
 # ---- Data & Training corpora (local GPU runs, datasets, fallback sqlite) ----
 data/
 runs/
+training/runs/
 weights/
+*.parquet
+*.tar*
+*.zip
+data/indian_specimens_photos/
+*specimen*photos*/
 
 # ---- Downloaded / trained model weights (never committed; 128MB Vercel cap) ----
 /models/
 !ml_service/models/
 *.pt
+*.pth
 *.onnx
 !ml_service/models/card.onnx
 !ml_service/models/aadhaar_fields.onnx
 !app/models/doctype.onnx
 
-# ---- Study scripts & local helper tools (kept local, not on GitHub) ----
+# ---- Evaluated images & contact sheets (never committed to git) ----
+eval/runs/**/*.jpg
+eval/runs/**/*.jpeg
+eval/runs/**/*.png
+eval/runs/**/*.webp
+eval/runs/**/*.tif
+eval/runs/**/*.tiff
+
+# ---- Study scripts & local helper tools ----
 scripts/*
 !scripts/anchor_ledger.py
+!scripts/check_repo_hygiene.py
 
 # ---- Rollback snapshots (local only, never pushed) ----
 _backup/
