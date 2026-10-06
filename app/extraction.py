@@ -160,7 +160,16 @@ def _pdf_text_or_image(data: bytes) -> tuple[str, bytes | None]:
         import io
         from pypdf import PdfReader
         reader = PdfReader(io.BytesIO(data))
-        text = "\n".join((pg.extract_text() or "") for pg in reader.pages)
+        text = ""
+        for pg in reader.pages:
+            t = ""
+            try:
+                t = pg.extract_text(extraction_mode="layout") or ""
+            except Exception:
+                t = ""
+            if not t or len(t.strip()) < 10:
+                t = pg.extract_text() or ""
+            text += t + "\n"
         if text.strip():
             return text, None
         if reader.pages:
