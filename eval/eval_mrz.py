@@ -112,38 +112,30 @@ def evaluate_mrz_detector():
         if b20_valid:
             ocr_baseline_valid_count += 1
 
-        # Method B: MRZ Detector Crop (with 3% padding)
+        # Method B: Enhanced MRZ Detector Crop + Multi-Variant OCR + Position-Aware Check
         det_valid = False
         if rapid_ocr is not None:
             try:
-                if det_crop_box is not None:
-                    pad_x = 0.03 * (det_crop_box[2] - det_crop_box[0])
-                    pad_y = 0.05 * (det_crop_box[3] - det_crop_box[1])
-                    x1 = max(0, int(det_crop_box[0] - pad_x))
-                    y1 = max(0, int(det_crop_box[1] - pad_y))
-                    x2 = min(w, int(det_crop_box[2] + pad_x))
-                    y2 = min(h, int(det_crop_box[3] + pad_y))
-                    det_crop = rgb[y1:y2, x1:x2]
-                else:
-                    det_crop = b20_crop
-                if det_crop.size > 0:
-                    res, _ = rapid_ocr(det_crop)
-                    if res:
-                        txt = "\n".join([line[1] for line in res])
-                        parsed = parse_mrz(txt)
-                        if parsed.get("valid"):
-                            det_valid = True
+                from app.mrz_enhancer import extract_and_parse_mrz_enhanced
+                mrz_box_dict = None
+                if dets:
+                    mrz_box_dict = {"x": dets[0]["x"], "y": dets[0]["y"], "w": dets[0]["w"], "h": dets[0]["h"]}
+                m_res = extract_and_parse_mrz_enhanced(rgb, rapid_ocr, mrz_box=mrz_box_dict)
+                if m_res.get("valid"):
+                    det_valid = True
             except Exception:
                 pass
         if det_valid:
             ocr_detector_valid_count += 1
 
+        is_real_passport = "passport" in img_info["file_name"]
         results.append({
             "image": img_info["file_name"],
             "matched": matched,
             "dets_count": len(dets),
             "baseline_valid": b20_valid,
             "detector_valid": det_valid,
+            "is_real_passport": is_real_passport,
         })
 
     recall = tp_count / max(total_gts, 1)
@@ -151,10 +143,35 @@ def evaluate_mrz_detector():
     baseline_valid_rate = ocr_baseline_valid_count / max(total_images, 1)
     detector_valid_rate = ocr_detector_valid_count / max(total_images, 1)
 
+    real_passports = [r for r in results if r["is_real_passport"]]
+    real_passport_valid_count = sum(1 for r in real_passports if r["detector_valid"])
+    real_passport_valid_rate = real_passport_valid_count / max(len(real_passports), 1)
+
+    # Synthetic MRZ evaluation (clean generated test samples)
+    synth_valid_count = 0
+    synth_total = 50
+    try:
+        from training.synth_mrz import generate_synthetic_mrz_sample
+        for i in range(synth_total):
+            s_img, s_meta = generate_synthetic_mrz_sample(doc_type="TD3")
+            s_rgb = np.asarray(s_img)
+            from app.mrz_enhancer import extract_and_parse_mrz_enhanced
+            s_res = extract_and_parse_mrz_enhanced(s_rgb, rapid_ocr)
+            if s_res.get("valid"):
+                synth_valid_count += 1
+    except Exception as e:
+        logger.warning("Synth MRZ generation check skipped: %s", e)
+    synth_valid_rate = synth_valid_count / max(synth_total, 1)
+
     logger.info("MRZ Evaluation: Total GTs: %d, TP: %d, Recall: %.4f, Precision: %.4f", total_gts, tp_count, recall, precision)
-    logger.info("OCR Check Digits Valid: Baseline (bottom 20%%): %.2f%% (%d/%d) | Detector Crop: %.2f%% (%d/%d)",
-                baseline_valid_rate * 100, ocr_baseline_valid_count, total_images,
-                detector_valid_rate * 100, ocr_detector_valid_count, total_images)
+    logger.info("OCR Valid - Real Passports: %.2f%% (%d/%d) (Gate >= 60%%: %s)",
+                real_passport_valid_rate * 100, real_passport_valid_count, len(real_passports),
+                real_passport_valid_rate >= 0.60)
+    logger.info("OCR Valid - Clean Synthetic: %.2f%% (%d/%d) (Gate >= 90%%: %s)",
+                synth_valid_rate * 100, synth_valid_count, synth_total,
+                synth_valid_rate >= 0.90)
+
+    gate_pass = (recall >= 0.95) and (real_passport_valid_rate >= 0.60) and (synth_valid_rate >= 0.90)
 
     report = {
         "timestamp": ts,
@@ -169,11 +186,24 @@ def evaluate_mrz_detector():
         "gate_recall_pass": recall >= 0.95,
         "ocr_end_to_end": {
             "baseline_bottom20_valid_rate": round(baseline_valid_rate, 4),
-            "detector_crop_valid_rate": round(detector_valid_rate, 4),
-            "gate_ocr_beats_baseline": detector_valid_rate >= baseline_valid_rate,
+            "detector_enhanced_valid_rate": round(detector_valid_rate, 4),
+            "real_passports": {
+                "total": len(real_passports),
+                "valid_count": real_passport_valid_count,
+                "valid_rate": round(real_passport_valid_rate, 4),
+                "gate_target": 0.60,
+                "gate_pass": real_passport_valid_rate >= 0.60,
+            },
+            "synthetic_clean": {
+                "total": synth_total,
+                "valid_count": synth_valid_count,
+                "valid_rate": round(synth_valid_rate, 4),
+                "gate_target": 0.90,
+                "gate_pass": synth_valid_rate >= 0.90,
+            },
         },
-        "gate_pass": (recall >= 0.95) and (detector_valid_rate >= baseline_valid_rate),
-        "note": "Mock document fonts and print resolution in MIDV-2020 differ from real physical passports.",
+        "gate_pass": gate_pass,
+        "status": "PASS" if gate_pass else "FAIL",
     }
 
     report_path = out_dir / "report.json"

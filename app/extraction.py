@@ -253,29 +253,36 @@ def _extract_image(data: bytes, doc_type: str = "") -> dict:
     if not out.get("mrz"):
         try:
             try:
-                from app.yolo_roi import extract_mrz_zone, crop_region_to_bytes, get_mrz_detector_backend
+                from app.yolo_roi import extract_mrz_zone, get_mrz_detector_backend
+                from app.mrz_enhancer import extract_and_parse_mrz_enhanced
+                from app.identity import _get_rapid_ocr
             except ImportError:
-                from yolo_roi import extract_mrz_zone, crop_region_to_bytes, get_mrz_detector_backend
+                from yolo_roi import extract_mrz_zone, get_mrz_detector_backend
+                from mrz_enhancer import extract_and_parse_mrz_enhanced
+                from identity import _get_rapid_ocr
+
             mrz_box = extract_mrz_zone(data)
-            if mrz_box:
-                mrz_crop = crop_region_to_bytes(data, mrz_box, padding=0.04)
-                if mrz_crop:
-                    mrz_text, _ = ocr_extract(mrz_crop)
-                    if mrz_text:
-                        m_res = parse_mrz(mrz_text)
-                        if m_res.get("valid"):
-                            out["mrz"] = _mrz_public(m_res)
-                            out["mrz"]["effective_backend"] = mrz_box.get("mrz_backend", get_mrz_detector_backend())
-                            if m_res.get("passport_number") and not out["fields"].get("passport"):
-                                out["fields"]["passport"] = m_res["passport_number"]
-                            if m_res.get("dob") and not out["fields"].get("dob"):
-                                out["fields"]["dob"] = m_res["dob"]
-                            if m_res.get("expiry") and not out["fields"].get("expiry"):
-                                out["fields"]["expiry"] = m_res["expiry"]
-                            mrz_full_name = f"{m_res.get('surname', '')} {m_res.get('given_names', '')}".strip()
-                            if mrz_full_name and not out["fields"].get("mrz_name"):
-                                out["fields"]["mrz_name"] = mrz_full_name
-                            out["fields"]["mrz_valid"] = True
+            rapid_ocr = _get_rapid_ocr()
+            if rapid_ocr is not None:
+                import io
+                import numpy as np
+                from PIL import Image
+                with Image.open(io.BytesIO(data)) as im:
+                    rgb_mat = np.asarray(im.convert("RGB"), dtype=np.uint8)
+                m_res = extract_and_parse_mrz_enhanced(rgb_mat, rapid_ocr, mrz_box=mrz_box)
+                if m_res.get("valid"):
+                    out["mrz"] = _mrz_public(m_res)
+                    out["mrz"]["effective_backend"] = (mrz_box or {}).get("mrz_backend", get_mrz_detector_backend())
+                    if m_res.get("passport_number") and not out["fields"].get("passport"):
+                        out["fields"]["passport"] = m_res["passport_number"]
+                    if m_res.get("dob") and not out["fields"].get("dob"):
+                        out["fields"]["dob"] = m_res["dob"]
+                    if m_res.get("expiry") and not out["fields"].get("expiry"):
+                        out["fields"]["expiry"] = m_res["expiry"]
+                    mrz_full_name = f"{m_res.get('surname', '')} {m_res.get('given_names', '')}".strip()
+                    if mrz_full_name and not out["fields"].get("mrz_name"):
+                        out["fields"]["mrz_name"] = mrz_full_name
+                    out["fields"]["mrz_valid"] = True
         except Exception:
             pass
 

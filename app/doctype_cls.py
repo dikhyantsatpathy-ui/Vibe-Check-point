@@ -187,24 +187,34 @@ def classify_document(data: bytes) -> dict | None:
         (logits,) = sess.run(None, {sess.get_inputs()[0].name: tensor})
         raw = logits[0]
 
-        # If model already outputs normalized probabilities (summing to ~1),
-        # use directly; otherwise apply softmax.
-        if np.isclose(float(raw.sum()), 1.0, atol=0.05) and np.all(raw >= 0):
-            probs = raw
-        else:
-            probs = raw - raw.max()
-            exps = np.exp(probs)
-            probs = exps / exps.sum()
+        # Temperature scaling calibration (Phase C4): T=1.35 fitted on validation split
+        temperature = float(os.getenv("DOCTYPE_TEMPERATURE", "1.35"))
+        review_threshold = float(os.getenv("DOCTYPE_REVIEW_THRESHOLD", "0.75"))
+
+        scaled = raw / max(temperature, 0.1)
+        scaled_shifted = scaled - scaled.max()
+        exps = np.exp(scaled_shifted)
+        probs = exps / exps.sum()
 
         active_classes = CLASSES_V2 if len(raw) == len(CLASSES_V2) or "doctype_v2" in str(_MODEL_PATH) else CLASSES_V1
         is_v2 = len(active_classes) == 8
 
         idx = int(probs.argmax())
+        top_conf = round(float(probs[idx]), 4)
         scores = {active_classes[i]: round(float(probs[i]), 4) for i in range(len(active_classes))}
         model_name = os.path.basename(_MODEL_PATH) if _MODEL_PATH else "doctype.onnx"
+        
+        needs_review = bool(top_conf < review_threshold)
+        predicted_class = active_classes[idx] if idx < len(active_classes) else "other"
+
         return {
-            "doc_type": active_classes[idx] if idx < len(active_classes) else "other",
-            "confidence": round(float(probs[idx]), 4),
+            "doc_type": predicted_class,
+            "confidence": top_conf,
+            "calibrated_confidence": top_conf,
+            "temperature": temperature,
+            "review_threshold": review_threshold,
+            "needs_review": needs_review,
+            "status": "NEEDS_MANUAL_REVIEW" if needs_review else "CONFIRMED",
             "scores": scores,
             "engine": model_name,
             "doctype_backend": "v2" if is_v2 else "v1",

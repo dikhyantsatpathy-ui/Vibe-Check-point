@@ -29,6 +29,102 @@ _CHAR_VALUES: dict[str, int] = {
 
 _WEIGHTS = (7, 3, 1)
 
+# ICAO character correction mapping for OCR confusion in numeric slots
+# O/0, I/1, B/8, S/5, Z/2, G/6 per Phase C2 specification
+_ICAO_DIGIT_MAP: dict[str, str] = {
+    'O': '0', 'D': '0', 'Q': '0', 'U': '0',
+    'I': '1', 'L': '1', '|': '1',
+    'Z': '2',
+    'B': '8',
+    'S': '5',
+    'G': '6',
+}
+
+_ICAO_ALPHA_MAP: dict[str, str] = {
+    '0': 'O',
+    '1': 'I',
+    '2': 'Z',
+    '8': 'B',
+    '5': 'S',
+    '6': 'G',
+}
+
+
+def correct_td3_line2(line2: str) -> str:
+    """Apply ICAO position-aware character correction (O/0, I/1, B/8, S/5, Z/2, G/6) to TD3 Line 2."""
+    l2 = list(line2.ljust(44, '<')[:44])
+    # pos 9: Document number check digit (ALWAYS digit)
+    if l2[9] in _ICAO_DIGIT_MAP:
+        l2[9] = _ICAO_DIGIT_MAP[l2[9]]
+    # pos 10..12: Nationality (ALWAYS alpha)
+    for i in range(10, 13):
+        if l2[i] in _ICAO_ALPHA_MAP:
+            l2[i] = _ICAO_ALPHA_MAP[l2[i]]
+    # pos 13..18: Date of birth YYMMDD (ALWAYS digits)
+    for i in range(13, 19):
+        if l2[i] in _ICAO_DIGIT_MAP:
+            l2[i] = _ICAO_DIGIT_MAP[l2[i]]
+    # pos 19: DOB check digit (ALWAYS digit)
+    if l2[19] in _ICAO_DIGIT_MAP:
+        l2[19] = _ICAO_DIGIT_MAP[l2[19]]
+    # pos 21..26: Expiry date YYMMDD (ALWAYS digits)
+    for i in range(21, 27):
+        if l2[i] in _ICAO_DIGIT_MAP:
+            l2[i] = _ICAO_DIGIT_MAP[l2[i]]
+    # pos 27: Expiry check digit (ALWAYS digit)
+    if l2[27] in _ICAO_DIGIT_MAP:
+        l2[27] = _ICAO_DIGIT_MAP[l2[27]]
+    # pos 42: Optional data check digit
+    if l2[42] in _ICAO_DIGIT_MAP:
+        l2[42] = _ICAO_DIGIT_MAP[l2[42]]
+    # pos 43: Overall composite check digit (ALWAYS digit)
+    if l2[43] in _ICAO_DIGIT_MAP:
+        l2[43] = _ICAO_DIGIT_MAP[l2[43]]
+    return "".join(l2)
+
+
+def correct_td1_lines(line1: str, line2: str) -> tuple[str, str]:
+    """Apply ICAO position-aware character correction to TD1 Lines 1 and 2."""
+    l1 = list(line1.ljust(30, '<')[:30])
+    for i in range(0, 5):
+        if l1[i] in _ICAO_ALPHA_MAP:
+            l1[i] = _ICAO_ALPHA_MAP[l1[i]]
+    if l1[14] in _ICAO_DIGIT_MAP:
+        l1[14] = _ICAO_DIGIT_MAP[l1[14]]
+
+    l2 = list(line2.ljust(30, '<')[:30])
+    for i in range(0, 7):
+        if l2[i] in _ICAO_DIGIT_MAP:
+            l2[i] = _ICAO_DIGIT_MAP[l2[i]]
+    for i in range(8, 15):
+        if l2[i] in _ICAO_DIGIT_MAP:
+            l2[i] = _ICAO_DIGIT_MAP[l2[i]]
+    for i in range(15, 18):
+        if l2[i] in _ICAO_ALPHA_MAP:
+            l2[i] = _ICAO_ALPHA_MAP[l2[i]]
+    if l2[29] in _ICAO_DIGIT_MAP:
+        l2[29] = _ICAO_DIGIT_MAP[l2[29]]
+    return "".join(l1), "".join(l2)
+
+
+def correct_td2_line2(line2: str) -> str:
+    """Apply ICAO position-aware character correction to TD2 Line 2."""
+    l2 = list(line2.ljust(36, '<')[:36])
+    if l2[9] in _ICAO_DIGIT_MAP:
+        l2[9] = _ICAO_DIGIT_MAP[l2[9]]
+    for i in range(10, 13):
+        if l2[i] in _ICAO_ALPHA_MAP:
+            l2[i] = _ICAO_ALPHA_MAP[l2[i]]
+    for i in range(13, 20):
+        if l2[i] in _ICAO_DIGIT_MAP:
+            l2[i] = _ICAO_DIGIT_MAP[l2[i]]
+    for i in range(21, 28):
+        if l2[i] in _ICAO_DIGIT_MAP:
+            l2[i] = _ICAO_DIGIT_MAP[l2[i]]
+    if l2[35] in _ICAO_DIGIT_MAP:
+        l2[35] = _ICAO_DIGIT_MAP[l2[35]]
+    return "".join(l2)
+
 
 def compute_mrz_check_digit(data: str) -> int:
     """Calculate the ICAO 9303 modulus-10 check digit for a string.
@@ -72,7 +168,7 @@ def _clean_mrz_lines(raw_text: str) -> list[str]:
     return lines
 
 
-def parse_td3(line1: str, line2: str) -> dict[str, Any]:
+def parse_td3(line1: str, line2: str, allow_correction: bool = True) -> dict[str, Any]:
     """Parse and verify an ICAO TD3 passport MRZ (2 lines x 44 characters).
     
     Line 1 layout:
@@ -139,6 +235,14 @@ def parse_td3(line1: str, line2: str) -> dict[str, Any]:
         # When composite digit is not present (e.g. truncated line or '<' filler), core fields decide validity
         is_valid = doc_num_valid and dob_valid and expiry_valid
 
+    if not is_valid and allow_correction:
+        corr_l2 = correct_td3_line2(l2)
+        if corr_l2 != l2:
+            corr_res = parse_td3(line1, corr_l2, allow_correction=False)
+            if corr_res.get("valid"):
+                corr_res["corrected"] = True
+                return corr_res
+
     return {
         "format": "TD3",
         "valid": is_valid,
@@ -182,7 +286,7 @@ def parse_td3(line1: str, line2: str) -> dict[str, Any]:
     }
 
 
-def parse_td1(line1: str, line2: str, line3: str) -> dict[str, Any]:
+def parse_td1(line1: str, line2: str, line3: str, allow_correction: bool = True) -> dict[str, Any]:
     """Parse and verify an ICAO TD1 ID card MRZ (3 lines x 30 characters)."""
     l1 = line1.ljust(30, '<')[:30]
     l2 = line2.ljust(30, '<')[:30]
@@ -216,6 +320,14 @@ def parse_td1(line1: str, line2: str, line3: str) -> dict[str, Any]:
     composite_valid = verify_check_digit(composite_payload, composite_ck)
 
     is_valid = doc_num_valid and dob_valid and expiry_valid and composite_valid
+
+    if not is_valid and allow_correction:
+        c1, c2 = correct_td1_lines(l1, l2)
+        if (c1, c2) != (l1, l2):
+            corr_res = parse_td1(c1, c2, l3, allow_correction=False)
+            if corr_res.get("valid"):
+                corr_res["corrected"] = True
+                return corr_res
 
     return {
         "format": "TD1",
@@ -255,7 +367,7 @@ def parse_td1(line1: str, line2: str, line3: str) -> dict[str, Any]:
     }
 
 
-def parse_td2(line1: str, line2: str) -> dict[str, Any]:
+def parse_td2(line1: str, line2: str, allow_correction: bool = True) -> dict[str, Any]:
     """Parse and verify an ICAO TD2 MRZ (2 lines x 36 characters)."""
     l1 = line1.ljust(36, '<')[:36]
     l2 = line2.ljust(36, '<')[:36]
@@ -286,6 +398,14 @@ def parse_td2(line1: str, line2: str) -> dict[str, Any]:
     composite_valid = verify_check_digit(composite_payload, composite_ck)
 
     is_valid = doc_num_valid and dob_valid and expiry_valid and composite_valid
+
+    if not is_valid and allow_correction:
+        c2 = correct_td2_line2(l2)
+        if c2 != l2:
+            corr_res = parse_td2(l1, c2, allow_correction=False)
+            if corr_res.get("valid"):
+                corr_res["corrected"] = True
+                return corr_res
 
     return {
         "format": "TD2",
@@ -325,7 +445,7 @@ def parse_td2(line1: str, line2: str) -> dict[str, Any]:
     }
 
 
-def parse_td3_line2(line2: str) -> dict[str, Any]:
+def parse_td3_line2(line2: str, allow_correction: bool = True) -> dict[str, Any]:
     """Parse and verify TD3 Line 2 alone (common when only check-digit line is provided)."""
     l2 = line2.ljust(44, '<')[:44]
     doc_number_field = l2[0:9]
@@ -351,6 +471,14 @@ def parse_td3_line2(line2: str) -> dict[str, Any]:
         composite_valid = verify_check_digit(composite_payload, composite_ck)
 
     is_valid = doc_num_valid and dob_valid and expiry_valid and (composite_valid is not False)
+
+    if not is_valid and allow_correction:
+        c2 = correct_td3_line2(l2)
+        if c2 != l2:
+            corr_res = parse_td3_line2(c2, allow_correction=False)
+            if corr_res.get("valid"):
+                corr_res["corrected"] = True
+                return corr_res
 
     return {
         "format": "TD3",
@@ -398,21 +526,42 @@ def parse_mrz(raw_text: str) -> dict[str, Any]:
 
     # TD1 detection: 3 lines each around 30 characters
     if len(lines) >= 3 and all(28 <= len(ln) <= 32 for ln in lines[-3:]):
-        return parse_td1(lines[-3], lines[-2], lines[-1])
+        res = parse_td1(lines[-3], lines[-2], lines[-1])
+        if res.get("valid"):
+            return res
 
     # TD3 detection: 2 lines each around 44 characters
     if len(lines) >= 2 and any(42 <= len(line) <= 46 for line in lines):
         cand = [line for line in lines if len(line) >= 42]
         if len(cand) >= 2:
-            return parse_td3(cand[-2], cand[-1])
+            res = parse_td3(cand[-2], cand[-1])
+            if res.get("valid"):
+                return res
 
     # TD2 detection: 2 lines each around 36 characters
     if len(lines) >= 2 and any(34 <= len(line) <= 38 for line in lines):
         cand = [line for line in lines if 34 <= len(line) <= 40]
         if len(cand) >= 2:
-            return parse_td2(cand[-2], cand[-1])
+            res = parse_td2(cand[-2], cand[-1])
+            if res.get("valid"):
+                return res
 
-    # Fallback: if two lines exist, try TD3 then TD2
+    # Exhaustive pair search across candidate lines
+    if len(lines) >= 2:
+        for i in range(len(lines)):
+            for j in range(len(lines)):
+                if i == j:
+                    continue
+                # Try TD3 pair
+                p_res = parse_td3(lines[i], lines[j])
+                if p_res.get("valid"):
+                    return p_res
+                # Try TD2 pair
+                p2_res = parse_td2(lines[i], lines[j])
+                if p2_res.get("valid"):
+                    return p2_res
+
+    # Try last two lines fallback
     if len(lines) >= 2:
         res = parse_td3(lines[-2], lines[-1])
         if res.get("valid"):
@@ -422,9 +571,14 @@ def parse_mrz(raw_text: str) -> dict[str, Any]:
             return res2
         if lines[-2].count("<") >= 2 and lines[-1].count("<") >= 2:
             return res
-        return {"valid": False, "error": "Candidate lines lack MRZ format"}
 
     # Single-line MRZ fallback (e.g. TD3 Line 2 alone)
+    for l in lines:
+        if len(l) >= 26:
+            res = parse_td3_line2(l)
+            if res.get("valid"):
+                return res
+
     if len(lines) == 1 and len(lines[0]) >= 26:
         res = parse_td3_line2(lines[0])
         if res.get("valid") or lines[0].count("<") >= 3:

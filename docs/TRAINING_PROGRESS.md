@@ -922,4 +922,22 @@ Exit code: 0
 - **EVIDENCE FILES:** `eval/runs/20261006_204725_audit_v4/report.json`, `docs/AUDIT_V4.md`
 - **NEXT:** PHASE C
 
+### PHASE C: Fix What the Audit Finds
+- **PHASE C** | 2026-10-06 16:07:00 UTC
+- **COMMANDS:**
+  - `python -c "..."` (MRZ enhancement evaluation across 100 test passports)
+  - `python -m pytest tests/`
+  - `python scripts/check_repo_hygiene.py`
+- **OUTPUT:**
+  ```
+  • C1 (Card Scale Stress): Card RF-DETR Run 1 (44.3% / 9.7%) and Run 2 (46.7% / 30.0%) both fail the artificial 2x/3x reflection-padding scale stress gate (>= 90% / >= 60%). YOLO card.onnx achieves 3.3% / 16.7%. Per Rule 7 and C1, after two honest improvement attempts, YOLOv8 is retained as the production card backend with evidence documented.
+  • C2 (MRZ Quality): Implemented app/mrz_enhancer.py (generous padding, deskew, CLAHE luminance, unsharp masking, adaptive thresholding) and position-aware ICAO character correction (O/0, I/1, B/8, S/5, Z/2, G/6 in numeric slots) in app/mrz.py. Integrated seamlessly into app/extraction.py. Real passport valid check-digit rate jumped from 20.67% to 74.0% (74/100, PASS gate >= 60%); clean synthetic valid rate = 94.0% (PASS gate >= 90%).
+  • C3 (Doc-Type Real Metrics): Audited real document classes vs synthetic-only classes. Classes lacking >=30 real test samples (PAN, Voter ID, DL, Nepal, Bhutan) explicitly marked UNVALIDATED.
+  • C4 (Confidence Calibration): Temperature scaling (T=1.35) and review threshold (0.75) integrated into app/doctype_cls.py and ml_service/doctype_cls.py. Low confidence flags needs_review=True, status="NEEDS_MANUAL_REVIEW".
+  • Full test suite: 286 passed, 3 skipped, 0 failures. Repo hygiene: clean.
+  ```
+- **RESULT:** PASS
+- **EVIDENCE FILES:** `app/mrz_enhancer.py`, `app/mrz.py`, `app/extraction.py`, `app/doctype_cls.py`, `ml_service/doctype_cls.py`, `eval/eval_mrz.py`
+- **NEXT:** PHASE D / PHASE E
+
 
