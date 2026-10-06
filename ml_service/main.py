@@ -27,7 +27,7 @@ _API_KEY_HEADER = APIKeyHeader(name="X-ML-Secret-Key", auto_error=False)
 
 
 def verify_ml_auth(x_ml_secret_key: Optional[str] = Security(_API_KEY_HEADER)):
-    expected = (os.getenv("ML_SECRET_KEY") or "").strip()
+    expected = (os.getenv("ML_SERVICE_SECRET") or os.getenv("ML_SECRET_KEY") or "").strip()
     if not expected:
         if os.getenv("ML_ALLOW_NO_AUTH", "").strip().lower() == "true":
             logger.warning(

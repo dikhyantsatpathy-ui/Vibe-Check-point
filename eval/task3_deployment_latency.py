@@ -165,8 +165,9 @@ def main():
             benchmark_results[name][f"{threads}_thread"] = res
 
     # Re-run INT8 parity with IoU >= 0.95
-    print("\n[task3] Re-running INT8 parity harness with IoU >= 0.95 gate...")
-    ckpt_path = REPO_ROOT / "training" / "runs" / "card_run1" / "checkpoint_best_ema.pth"
+    ckpt_path = REPO_ROOT / "training" / "runs" / "card_run2" / "checkpoint_best_ema.pth"
+    if not ckpt_path.exists():
+        ckpt_path = REPO_ROOT / "training" / "runs" / "card_run1" / "checkpoint_best_ema.pth"
     model_pt = RFDETRSmall(pretrain_weights=str(ckpt_path))
     val_dir = REPO_ROOT / "data" / "coco_card" / "valid"
     parity_out = out_dir / "int8_parity_iou95.json"

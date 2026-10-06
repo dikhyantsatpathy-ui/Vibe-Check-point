@@ -1,5 +1,5 @@
 {
-  "model_name": "rfdetr_card",
+  "model_name": "rfdetr_aadhaar",
   "architecture": "RF-DETR Small (FP32)",
   "license": "Apache-2.0",
   "num_classes": 1,
@@ -26,9 +26,9 @@
     "labels"
   ],
   "rfdetr_version": "1.11.2",
-  "sha256": "3c0209185d095e8dee05b122536dbe565f675f3f05dee1c056245177ac4190a3",
-  "size_bytes": 123138878,
-  "size_mb": 117.43,
+  "sha256": "6bd1f1af82f7ab65cc85ddd16f1fe4c4ec5e4f8abe5d2320eec53baacbe00508",
+  "size_bytes": 123248082,
+  "size_mb": 117.54,
   "dataset_counts": {
     "total_train_images": 3039,
     "total_train_annotations": 2482,

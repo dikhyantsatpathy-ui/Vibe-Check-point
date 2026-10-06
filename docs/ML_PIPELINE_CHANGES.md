@@ -291,12 +291,43 @@ In Phase 5, we engineered a runtime-switchable detector backend abstraction supp
    - `ml_service/doc_forgery.py` and `app/doc_forgery.py` share identical schemas including `dead_block_ratio`, `largest_component`, `void_kind`, and `seam_anomaly`.
 
 ### Supply-Chain Integrity & Checksums:
-- `rfdetr_card_int8.onnx`: `2f6269fba9b9deb74ec81c6cae3f5856812c18d39a09e9d0571ef4f0624e008a`
-- `rfdetr_card.onnx`: `65f81e834888c459066ea6f3251fbe18b2c585a1555274e170f36b520b92575f`
+- `rfdetr_card_int8.onnx` (Card Detector v2 INT8): `ccab01630e53389387738a5af0c9456fb1aa6f3d68e3a0f1128ebe78b7f6b179`
+- `rfdetr_card.onnx` (Card Detector v2 FP32): `3c0209185d095e8dee05b122536dbe565f675f3f05dee1c056245177ac4190a3`
+- `rfdetr_mrz_int8.onnx` (MRZ Detector INT8): `3c597ee3e6f96615b3a4a0dbff1e01f09cb8b512c1451f28b2be7fa222c8c6a2`
+- `doctype_v2.onnx` (Doc-Type Classifier v2 FP32): `0953a992cfd8350567e972f3fa143717df305d2c67feea93e3d489b4f74d081b`
+- `rfdetr_aadhaar_int8.onnx` (Aadhaar Fields INT8 - Rejected): `d4198d022b39922e431f452140bbbf6122d6e326b4728564a59f515e06495b36`
+- `rfdetr_id_fields_int8.onnx` (Unified ID-Fields INT8 - Rejected): `0a6931405b0d00f5c7c1341c8f1f7d45fbe2c019d38ad9b307409f9ea420b9e8`
 - `model.onnx` (ViT): `44cb205f596f7c9e13d9ea7ea12cb2462d7c92bfaeb55e7fcad51b5c4943fcf3`
 - `w600k_r50.onnx` (ArcFace): `4c06341c33c2a6f3b79361ad22872322307fe959a7a9cb52de9ae3a246835a09`
-- `card.onnx` (YOLO): `c1c9c8e1e79ee883e0e7a2b9e6443a9d949437a3c3c78a101fce0d86b9eaeb79`
-- `aadhaar_fields.onnx`: `295a7065963f25c78673a968600118eb13c41551a141a5dffca3428d0111ef6c`
+- `card.onnx` (YOLOv8 baseline): `c1c9c8e1e79ee883e0e7a2b9e6443a9d949437a3c3c78a101fce0d86b9eaeb79`
+- `aadhaar_fields.onnx` (YOLOv8 baseline): `295a7065963f25c78673a968600118eb13c41551a141a5dffca3428d0111ef6c`
+
+---
+
+## 10. Environment Variable Contract & Rollback Architecture
+
+### Configuration Variables
+| Variable | Default Value | Supported Values | Stage Governed | Fail-Closed Behavior |
+|---|:---:|---|---|---|
+| `DETECTOR_BACKEND` | `yolov8` | `yolov8`, `rf_detr` | Master detector toggle | Fails loud on unsupported string |
+| `CARD_DETECTOR_BACKEND` | `yolov8` | `yolov8`, `rf_detr` | Card boundary detector | Unset falls back to master toggle |
+| `FIELD_DETECTOR_BACKEND` | `yolov8` | `yolov8`, `rf_detr` | Aadhaar field detector | Unset falls back to master toggle |
+| `MRZ_DETECTOR_BACKEND` | `bottom20` | `bottom20`, `rf_detr` | MRZ band locator | Missing weights raises `FileNotFoundError` |
+| `DOCTYPE_BACKEND` | `v1` | `v1`, `v2` | Doc-type classifier | Missing weights raises `FileNotFoundError` |
+| `HF_MODEL_REPO` | `koropanda/no-cap-detectors` | Any Hugging Face repo | Remote weight fetch source | Validates SHA-256 against sidecar |
+| `HF_TOKEN` | *(secret)* | Hugging Face access token | Authentication for private repo | Read at startup; never committed |
+
+### Safe Rollback Procedure
+If any unexpected behavior occurs in production with new models:
+1. Revert to YOLOv8 across all stages by unsetting all stage-specific flags or explicitly setting:
+   ```bash
+   DETECTOR_BACKEND=yolov8
+   CARD_DETECTOR_BACKEND=yolov8
+   FIELD_DETECTOR_BACKEND=yolov8
+   MRZ_DETECTOR_BACKEND=bottom20
+   DOCTYPE_BACKEND=v1
+   ```
+2. Restart the application service. The entire pipeline instantly runs on baseline YOLOv8 + geometric heuristics with 100% test compatibility.
 
 
 

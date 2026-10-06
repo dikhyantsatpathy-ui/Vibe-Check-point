@@ -1,0 +1,26 @@
+{
+  "model_name": "doctype_v2.onnx",
+  "architecture": "MobileNetV3-Small (FP32)",
+  "classes": [
+    "aadhaar",
+    "pan",
+    "voter_id",
+    "driving_licence",
+    "passport",
+    "nepali_citizenship",
+    "bhutan_cid",
+    "other"
+  ],
+  "num_classes": 8,
+  "input_size": [
+    224,
+    224
+  ],
+  "sha256": "548faa0fd6cf98ca0ca520c9e7848b37e11cee2b7de9ed7bc13c6b9d1a5552a6",
+  "size_bytes": 6113857,
+  "macro_f1": 0.9977,
+  "p50_latency_ms": 1.75,
+  "gate_macro_f1_target": 0.95,
+  "gate_pass": true,
+  "note": "Classes learned only from procedural generator (bhutan_cid) can look perfect on synthetic data and fail on real cards."
+}

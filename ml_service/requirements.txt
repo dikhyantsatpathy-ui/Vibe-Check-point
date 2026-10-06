@@ -11,3 +11,4 @@ requests
 gradio
 pypdf
 pypdfium2
+huggingface_hub

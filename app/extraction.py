@@ -249,6 +249,36 @@ def _extract_image(data: bytes, doc_type: str = "") -> dict:
         except Exception:
             out["mrz"] = None
 
+    # Dedicated MRZ zone detector pass if whole-page OCR did not yield a valid MRZ
+    if not out.get("mrz"):
+        try:
+            try:
+                from app.yolo_roi import extract_mrz_zone, crop_region_to_bytes, get_mrz_detector_backend
+            except ImportError:
+                from yolo_roi import extract_mrz_zone, crop_region_to_bytes, get_mrz_detector_backend
+            mrz_box = extract_mrz_zone(data)
+            if mrz_box:
+                mrz_crop = crop_region_to_bytes(data, mrz_box, padding=0.04)
+                if mrz_crop:
+                    mrz_text, _ = ocr_extract(mrz_crop)
+                    if mrz_text:
+                        m_res = parse_mrz(mrz_text)
+                        if m_res.get("valid"):
+                            out["mrz"] = _mrz_public(m_res)
+                            out["mrz"]["effective_backend"] = mrz_box.get("mrz_backend", get_mrz_detector_backend())
+                            if m_res.get("passport_number") and not out["fields"].get("passport"):
+                                out["fields"]["passport"] = m_res["passport_number"]
+                            if m_res.get("dob") and not out["fields"].get("dob"):
+                                out["fields"]["dob"] = m_res["dob"]
+                            if m_res.get("expiry") and not out["fields"].get("expiry"):
+                                out["fields"]["expiry"] = m_res["expiry"]
+                            mrz_full_name = f"{m_res.get('surname', '')} {m_res.get('given_names', '')}".strip()
+                            if mrz_full_name and not out["fields"].get("mrz_name"):
+                                out["fields"]["mrz_name"] = mrz_full_name
+                            out["fields"]["mrz_valid"] = True
+        except Exception:
+            pass
+
     # Multi-crop enhancement pass: If key identity numbers are missing, crop the center card area
     # to significantly boost OCR resolution and eliminate glare around outer borders
     if not (out["fields"].get("pan") or out["fields"].get("aadhaar") or out["fields"].get("passport") or out["fields"].get("driving_licence") or out["fields"].get("voter_id")):

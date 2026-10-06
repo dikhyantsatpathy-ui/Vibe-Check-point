@@ -26,21 +26,25 @@
     "labels"
   ],
   "rfdetr_version": "1.11.2",
-  "sha256": "2f6269fba9b9deb74ec81c6cae3f5856812c18d39a09e9d0571ef4f0624e008a",
-  "size_bytes": 39031280,
-  "size_mb": 37.22,
+  "sha256": "ccab01630e53389387738a5af0c9456fb1aa6f3d68e3a0f1128ebe78b7f6b179",
+  "size_bytes": 38963695,
+  "size_mb": 37.16,
   "quantization": "dynamic_uint8",
   "dataset_counts": {
-    "sources": {
-      "midv2020_train_photos": 500,
-      "idcard_train": 39,
-      "card_synth_sampled": 300,
-      "composites": 1000
+    "total_train_images": 3039,
+    "total_train_annotations": 2482,
+    "breakdown": {
+      "base_positives": 1839,
+      "multiscale_positives": 600,
+      "negatives_background": 300,
+      "negatives_non_id_rectangles": 300,
+      "total_negatives": 600
     },
-    "total_images": 1839,
-    "total_annotations": 1882,
-    "seed": 42,
-    "no_flips": true
+    "contact_sheets": {
+      "negatives": "eval\\runs\\20261006_105022_card_v2_prep\\negatives_contact_sheet.jpg",
+      "small_cards": "eval\\runs\\20261006_105022_card_v2_prep\\small_card_contact_sheet.jpg"
+    },
+    "output_dataset_dir": "data\\coco_card_v2"
   },
   "trained_on": "MIDV-2020 train types (500) + IDcard (39) + card_synth (300) + composites (1000)"
 }

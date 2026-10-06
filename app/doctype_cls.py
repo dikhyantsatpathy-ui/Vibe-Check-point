@@ -23,21 +23,60 @@ from PIL import Image
 logger = logging.getLogger("doctype_cls")
 
 # ultralytics classify export uses alphabetical class order — matches model metadata
-CLASSES = [
+CLASSES_V1 = [
     "aadhaar", "driving_licence", "nepali_citizenship", "other",
     "pan", "passport", "voter_id",
 ]
+
+# Appendix D exact order for v2 classifier (8 classes)
+CLASSES_V2 = [
+    "aadhaar", "pan", "voter_id", "driving_licence",
+    "passport", "nepali_citizenship", "bhutan_cid", "other",
+]
+
+CLASSES = CLASSES_V1
 
 _MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
 _IMG_SIZE = 224
 
 
+def get_doctype_backend() -> str:
+    """Return active doctype classifier backend: 'v1' (default) or 'v2'."""
+    val = os.getenv("DOCTYPE_BACKEND")
+    if val is None or not val.strip():
+        return "v1"
+    v = val.strip().lower()
+    if v in ("v1", "baseline"):
+        return "v1"
+    if v in ("v2", "mobilenet", "mobilenetv3"):
+        return "v2"
+    raise ValueError(f"Unsupported DOCTYPE_BACKEND='{val}'. Use 'v1' or 'v2'.")
+
+
 def _default_model_path() -> str:
     env = os.getenv("DOCTYPE_ONNX_PATH")
-    if env:
+    if env and os.path.exists(env):
         return env
-    candidate = os.path.join(_MODEL_DIR, "doctype.onnx")
-    return candidate if os.path.exists(candidate) else ""
+    backend = get_doctype_backend()
+    model_dirs = [_MODEL_DIR]
+    ml_models = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_service", "models"))
+    if ml_models not in [os.path.abspath(d) for d in model_dirs]:
+        model_dirs.append(ml_models)
+
+    if backend == "v2":
+        for mdir in model_dirs:
+            for name in ("doctype_v2.onnx", "doctype_v2_int8.onnx"):
+                cand = os.path.join(mdir, name)
+                if os.path.exists(cand):
+                    return cand
+        logger.warning("DOCTYPE_BACKEND='v2' configured but doctype_v2.onnx not found. Failing loudly without fallback.")
+        return ""
+
+    for mdir in model_dirs:
+        cand = os.path.join(mdir, "doctype.onnx")
+        if os.path.exists(cand):
+            return cand
+    return ""
 
 
 _MODEL_PATH = _default_model_path()
@@ -157,13 +196,19 @@ def classify_document(data: bytes) -> dict | None:
             exps = np.exp(probs)
             probs = exps / exps.sum()
 
+        active_classes = CLASSES_V2 if len(raw) == len(CLASSES_V2) or "doctype_v2" in str(_MODEL_PATH) else CLASSES_V1
+        is_v2 = len(active_classes) == 8
+
         idx = int(probs.argmax())
-        scores = {CLASSES[i]: round(float(probs[i]), 4) for i in range(len(CLASSES))}
+        scores = {active_classes[i]: round(float(probs[i]), 4) for i in range(len(active_classes))}
+        model_name = os.path.basename(_MODEL_PATH) if _MODEL_PATH else "doctype.onnx"
         return {
-            "doc_type": CLASSES[idx] if idx < len(CLASSES) else "other",
+            "doc_type": active_classes[idx] if idx < len(active_classes) else "other",
             "confidence": round(float(probs[idx]), 4),
             "scores": scores,
-            "engine": "doctype.onnx",
+            "engine": model_name,
+            "doctype_backend": "v2" if is_v2 else "v1",
+            "effective_backend": "v2" if is_v2 else "v1",
         }
     except Exception as exc:
         logger.warning("doctype classify failed: %s", exc)

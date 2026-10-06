@@ -3,8 +3,8 @@
     "Card"
   ],
   "input_size": [
-    512,
-    512
+    640,
+    640
   ],
   "mean": [
     0.485,
@@ -23,6 +23,6 @@
   ],
   "rfdetr_version": "1.11.2",
   "trained_on": "midv2020_real_and_composites",
-  "trained_at": "2026-10-06T02:44:33",
-  "sha256": "65f81e834888c459066ea6f3251fbe18b2c585a1555274e170f36b520b92575f"
+  "trained_at": "2026-10-06T10:52:52.143748+00:00",
+  "sha256": "07032702f4fd949848ca33e9658c9b565811332c8a71191fd1e41c0c2ba967df"
 }

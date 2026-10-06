@@ -89,6 +89,32 @@ def get_field_detector_backend() -> str:
     return get_detector_backend()
 
 
+def get_mrz_detector_backend() -> str:
+    """Return active backend for MRZ stage: 'bottom20' (default) or 'rf_detr'."""
+    val = os.getenv("MRZ_DETECTOR_BACKEND")
+    if val:
+        val = val.strip().lower()
+        if val in ("rf_detr", "rf-detr"):
+            return "rf_detr"
+        if val in ("bottom20", "baseline"):
+            return "bottom20"
+        raise ValueError(f"Unsupported MRZ_DETECTOR_BACKEND='{val}'. Use 'rf_detr' or 'bottom20'.")
+    return "bottom20"
+
+
+def get_id_field_detector_backend() -> str:
+    """Return active backend for ID fields stage: 'heuristics' (default) or 'rf_detr'."""
+    val = os.getenv("ID_FIELD_DETECTOR_BACKEND")
+    if val:
+        val = val.strip().lower()
+        if val in ("rf_detr", "rf-detr"):
+            return "rf_detr"
+        if val in ("heuristics", "ocr"):
+            return "heuristics"
+        raise ValueError(f"Unsupported ID_FIELD_DETECTOR_BACKEND='{val}'. Use 'rf_detr' or 'heuristics'.")
+    return "heuristics"
+
+
 def _default_model_path() -> str:
     """Resolve active model path based on CARD_DETECTOR_BACKEND and environment variables.
     Fails loudly with empty string if RF-DETR weights are absent (never silently loads YOLO)."""
@@ -128,20 +154,67 @@ def _default_model_path() -> str:
     return os.path.join(_MODEL_DIR, "yolov8n.onnx")
 
 
+def _default_mrz_model_path() -> str:
+    env = os.getenv("MRZ_ONNX_PATH")
+    if env and os.path.exists(env):
+        return env
+    model_dirs = [_MODEL_DIR]
+    default_ml_models = os.path.abspath(os.path.join(os.path.dirname(__file__), "models"))
+    default_app_models = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app", "models"))
+    default_ml_sibling = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_service", "models"))
+    cur_abs = os.path.abspath(_MODEL_DIR)
+    if cur_abs in (default_ml_models, default_app_models, default_ml_sibling):
+        for candidate_dir in (default_ml_models, default_app_models, default_ml_sibling):
+            if candidate_dir not in [os.path.abspath(d) for d in model_dirs]:
+                model_dirs.append(candidate_dir)
+    for mdir in model_dirs:
+        for name in ("rfdetr_mrz_int8.onnx", "rfdetr_mrz.onnx"):
+            candidate = os.path.join(mdir, name)
+            if os.path.exists(candidate):
+                return candidate
+    return ""
+
+
 _session = None
 _session_attempted = False
 
 _aadhaar_session = None
 _aadhaar_session_attempted = False
 
+_mrz_session = None
+_mrz_session_attempted = False
+
 
 def clear_session_cache() -> None:
     """Clear cached ONNX sessions so backend or model path switches take immediate effect."""
-    global _session, _session_attempted, _aadhaar_session, _aadhaar_session_attempted
+    global _session, _session_attempted, _aadhaar_session, _aadhaar_session_attempted, _mrz_session, _mrz_session_attempted
     _session = None
     _session_attempted = False
     _aadhaar_session = None
     _aadhaar_session_attempted = False
+    _mrz_session = None
+    _mrz_session_attempted = False
+
+
+def _get_mrz_session():
+    """Lazily load ONNX runtime session for MRZ detector."""
+    global _mrz_session, _mrz_session_attempted
+    if _mrz_session_attempted:
+        return _mrz_session
+    _mrz_session_attempted = True
+    path = _default_mrz_model_path()
+    if not path or not os.path.exists(path):
+        return None
+    try:
+        import onnxruntime as ort
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = 2
+        opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+        _mrz_session = ort.InferenceSession(path, sess_options=opts, providers=["CPUExecutionProvider"])
+        return _mrz_session
+    except Exception as exc:
+        logger.warning(f"Failed to load MRZ session from {path}: {exc}")
+        return None
 
 
 def _get_onnx_session():

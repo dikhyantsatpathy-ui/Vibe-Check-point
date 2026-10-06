@@ -299,24 +299,50 @@ def main() -> None:
     parser.add_argument("--patience", type=int, default=7)
     parser.add_argument("--smoke-test", action="store_true", help="Run 1-epoch smoke test on small subset")
     parser.add_argument("--num-workers", type=int, default=0, help="DataLoader workers (default 0 on Windows)")
+    parser.add_argument("--task-id", type=str, default="card_run2", help="Task ID for job markers")
 
     args = parser.parse_args()
 
     data_dir = Path("data/coco_card_smoke") if args.smoke_test else Path(args.data_dir)
     output_dir = Path("training/runs/card_smoke") if args.smoke_test else Path(args.output_dir)
 
-    onnx_path = run_training(
-        dataset_dir=data_dir,
-        output_dir=output_dir,
-        epochs=args.epochs,
-        batch_size=args.batch_size,
-        grad_accum_steps=args.grad_accum,
-        lr=args.lr,
-        lr_encoder=args.lr_encoder,
-        early_stopping_patience=args.patience,
-        smoke_test=args.smoke_test,
-        num_workers=args.num_workers,
-    )
+    try:
+        onnx_path = run_training(
+            dataset_dir=data_dir,
+            output_dir=output_dir,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            grad_accum_steps=args.grad_accum,
+            lr=args.lr,
+            lr_encoder=args.lr_encoder,
+            early_stopping_patience=args.patience,
+            smoke_test=args.smoke_test,
+            num_workers=args.num_workers,
+        )
+
+        from training.job_markers import write_done_marker
+        output_files = [onnx_path]
+        sidecar = onnx_path.with_suffix(onnx_path.suffix + ".meta.json")
+        if sidecar.exists():
+            output_files.append(sidecar)
+
+        write_done_marker(
+            run_dir=output_dir,
+            task_id=args.task_id,
+            output_files=output_files,
+            metrics={"status": "training_completed", "smoke_test": args.smoke_test},
+            command=" ".join(sys.argv),
+        )
+    except Exception as exc:
+        from training.job_markers import write_failed_marker
+        import traceback
+        write_failed_marker(
+            run_dir=output_dir,
+            command=" ".join(sys.argv),
+            exit_code=1,
+            stderr_text=traceback.format_exc(),
+        )
+        raise
 
     if args.smoke_test:
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -331,7 +357,9 @@ def main() -> None:
 
         # Parity test on val set
         from rfdetr import RFDETRSmall
-        eval_model = RFDETRSmall()
+        best_ckpts = list(output_dir.glob("checkpoint_best_total.pth")) + list(output_dir.glob("checkpoint_best_ema.pth"))
+        best_ckpt_path = str(best_ckpts[0]) if best_ckpts else None
+        eval_model = RFDETRSmall(pretrain_weights=best_ckpt_path) if best_ckpt_path else RFDETRSmall()
         parity = run_parity_harness(
             model=eval_model,
             onnx_path=onnx_path,
@@ -344,3 +372,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

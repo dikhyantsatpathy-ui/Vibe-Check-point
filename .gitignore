@@ -25,6 +25,7 @@ Thumbs.db
 # ---- Local artifacts & scratch ----
 temp/
 tmp/
+scratch/
 *.log
 *.db
 *.zip
@@ -86,6 +87,8 @@ eval/data/
 !ml_service/README.md
 !docs/ML_PIPELINE_CHANGES.md
 !docs/TRAINING_PROGRESS.md
+!docs/SWITCH_READINESS.md
+!docs/RESUME_AFTER_SPECIMENS.md
 !training/indian_specimens/CAPTURE_PROTOCOL.md
 CHAT_EXPORT.html
 chat_transcripts/
