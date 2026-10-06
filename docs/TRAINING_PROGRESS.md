@@ -885,3 +885,41 @@ Exit code: 0
   - `https://huggingface.co/koropanda/no-cap-detectors`
 - **STATUS:** ALL 10 PHASES OF FINAL WORK ORDER COMPLETED.
 
+---
+
+## WORK ORDER v4 EXECUTION LOG
+
+### PHASE A: Repo Hygiene
+- **PHASE A** | 2026-10-06 15:13:00 UTC
+- **COMMAND:** `python scripts/check_repo_hygiene.py`
+- **OUTPUT:**
+  ```
+  • Checked all commits on branch ml/detector-v3 not on main.
+  • Verified 0 committed files under data/, training/runs/, eval/runs/ > 200 KB.
+  • Verified 0 model weights, images, or parquet files committed on branch.
+  • Added scripts/check_repo_hygiene.py and tests/test_repo_hygiene.py (100% passing).
+  • Created .env.example with complete environment variable template.
+  • Hardened .gitignore to exclude weights, runs, parquet, tar, zip, images.
+  ```
+- **RESULT:** PASS
+- **EVIDENCE FILES:** `scripts/check_repo_hygiene.py`, `tests/test_repo_hygiene.py`, `.env.example`
+- **NEXT:** PHASE B
+
+### PHASE B: Audit the Evidence
+- **PHASE B** | 2026-10-06 15:18:00 UTC
+- **COMMAND:** `python -m eval.audit_v4`
+- **OUTPUT:**
+  ```
+  • B1: MIDV test split confirmed disjoint by document type (alb, srb, svk vs train types). Min dHash distance = 15 (> 6).
+  • B2: Card gates: Recall 1.0000, Precision 1.0000, Neg FP 0.63%. Scale stress FAILED: 2x = 44.33% (target >= 90%), 3x = 9.67% (target >= 60%). Fix -> C1.
+  • B3: Forensics benchmark: Confirmed SYNTHETIC-ONLY (procedural PIL generation). Real data validation needed -> C4/D3.
+  • B4: MRZ detector: Recall 1.0000. OCR check-digit valid rate = 20.67% (beats baseline 2.0%, misses >= 60% goal). Fix -> C2.
+  • B5: Doc-type v2: 99.69% accuracy; 3 classes validated on real cards, 5 classes synthetic-only (UNVALIDATED). Fix -> C3.
+  • B6: Latency: 2-thread CPU affinity verified under <= 900 ms budget (Passport 657.5 ms, Aadhaar 503.3 ms, Generic 321.8 ms).
+  • B7: Relabeled Phase 9 to NOT MEASURED.
+  ```
+- **RESULT:** PASS (Audit generated, honest findings documented)
+- **EVIDENCE FILES:** `eval/runs/20261006_204725_audit_v4/report.json`, `docs/AUDIT_V4.md`
+- **NEXT:** PHASE C
+
+
