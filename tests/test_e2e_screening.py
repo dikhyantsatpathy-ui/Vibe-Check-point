@@ -40,7 +40,7 @@ def _make_dummy_card(text: str = "SAMPLE", is_pan: bool = False, is_aadhaar: boo
         draw.text((200, 180), "ABCDE1234F", fill=(0, 0, 0))
     elif is_aadhaar:
         draw.text((200, 80), "GOVERNMENT OF INDIA", fill=(10, 10, 10))
-        draw.text((200, 180), "9876 5432 1098", fill=(0, 0, 0))
+        draw.text((200, 180), "9876 5432 1096", fill=(0, 0, 0))
     else:
         draw.text((200, 100), text, fill=(0, 0, 0))
     buf = io.BytesIO()
