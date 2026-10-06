@@ -187,37 +187,148 @@ def onnx_detect(image_bytes: bytes) -> dict:
 
 # --- API Endpoints ---
 
+# --- Security & Hardening: Image Input Validation (Phase E3) ---
+Image.MAX_IMAGE_PIXELS = 50_000_000
+
+
+def harden_image_input(raw_data: bytes, max_mb: int = 15) -> tuple[bytes, Image.Image]:
+    """Validate, sanitize, and guard image inputs against decompression bombs and corrupted data."""
+    if not raw_data or len(raw_data) == 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty image data provided.")
+    if len(raw_data) > max_mb * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Image file size exceeds limit of {max_mb} MB.",
+        )
+    try:
+        from PIL import ImageOps
+        img = Image.open(io.BytesIO(raw_data))
+        img.verify()
+        # Reload after verify()
+        img = Image.open(io.BytesIO(raw_data))
+        img = ImageOps.exif_transpose(img)
+        img = img.convert("RGB")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid or corrupted image format: {exc}",
+        )
+
+    # Empty / pitch black image quality gate
+    arr = np.asarray(img, dtype=np.float32)
+    mean_lum = float(np.mean(arr))
+    if mean_lum < 3.0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Quality Gate Rejected: Image is pitch black (mean luminance < 3.0).",
+        )
+
+    return raw_data, img
+
+
+# --- API Endpoints ---
+
 @app.get("/")
 @app.get("/health")
-def health_check():
+@app.get("/ml/health")
+def ml_health_check():
+    """Detailed health check reporting per-stage requested vs effective backends and load status (Phase E1)."""
     models_dir = _model_dir()
-    face_model = (
-        os.path.exists(os.path.join(models_dir, "w600k_r50.onnx"))
-        or os.path.exists(os.path.abspath(os.path.join(models_dir, "..", "..", "data", "models", "w600k_r50.onnx")))
-        or bool(os.getenv("FACE_EMBED_MODEL"))
-    )
-    return {
-        "status": "online",
-        "service": "no-cap-ml-service",
-        "endpoints": [
-            "/health",
-            "/api/ml/yolo_roi",
-            "/api/ml/aadhaar_fields",
-            "/api/ml/face_match",
-            "/api/ml/detect_image",
-            "/api/ml/doctype",
-            "/api/ml/doc_forgery",
-            "/api/ml/media/process_pdf",
-            "/api/ml/media/process_live_photo",
-        ],
-        "models": {
-            "yolo_card": os.path.exists(os.path.join(models_dir, "card.onnx")),
-            "aadhaar_fields": os.path.exists(os.path.join(models_dir, "aadhaar_fields.onnx")),
-            "doctype": os.path.exists(os.path.join(models_dir, "doctype.onnx")),
-            "face_embed": face_model,
-            "ai_detector": os.path.exists(_model_path()),
+    try:
+        from yolo_roi import get_card_detector_backend, get_field_detector_backend, get_mrz_detector_backend
+        from doctype_cls import get_doctype_backend
+    except ImportError:
+        get_card_detector_backend = lambda: "yolov8"
+        get_field_detector_backend = lambda: "yolov8"
+        get_mrz_detector_backend = lambda: "bottom20"
+        get_doctype_backend = lambda: "v1"
+
+    req_card = os.getenv("CARD_DETECTOR_BACKEND", os.getenv("DETECTOR_BACKEND", "yolov8"))
+    eff_card = get_card_detector_backend()
+    card_file = "rfdetr_card_int8.onnx" if eff_card == "rf_detr" else "card.onnx"
+    card_path = os.path.join(models_dir, card_file)
+    card_loaded = os.path.exists(card_path)
+
+    req_field = os.getenv("FIELD_DETECTOR_BACKEND", "yolov8")
+    eff_field = get_field_detector_backend()
+    field_file = "rfdetr_aadhaar_int8.onnx" if eff_field == "rf_detr" else "aadhaar_fields.onnx"
+    field_path = os.path.join(models_dir, field_file)
+    field_loaded = os.path.exists(field_path)
+
+    req_mrz = os.getenv("MRZ_DETECTOR_BACKEND", "bottom20")
+    eff_mrz = get_mrz_detector_backend()
+    mrz_file = "rfdetr_mrz_int8.onnx" if eff_mrz == "rf_detr" else "bottom20"
+    mrz_path = os.path.join(models_dir, mrz_file) if eff_mrz == "rf_detr" else None
+    mrz_loaded = True if eff_mrz == "bottom20" else (mrz_path is not None and os.path.exists(mrz_path))
+
+    req_doctype = os.getenv("DOCTYPE_BACKEND", "v1")
+    eff_doctype = get_doctype_backend()
+    doctype_file = "doctype_v2.onnx" if eff_doctype == "v2" else "doctype.onnx"
+    doctype_path = os.path.join(models_dir, doctype_file)
+    doctype_loaded = os.path.exists(doctype_path)
+
+    req_tamper = os.getenv("TAMPER_MODEL_BACKEND", "heuristic")
+
+    stages = {
+        "card": {
+            "requested_backend": req_card,
+            "effective_backend": eff_card,
+            "model_file": card_file,
+            "loaded": card_loaded,
+        },
+        "field": {
+            "requested_backend": req_field,
+            "effective_backend": eff_field,
+            "model_file": field_file,
+            "loaded": field_loaded,
+        },
+        "mrz": {
+            "requested_backend": req_mrz,
+            "effective_backend": eff_mrz,
+            "model_file": mrz_file,
+            "loaded": mrz_loaded,
+        },
+        "doctype": {
+            "requested_backend": req_doctype,
+            "effective_backend": eff_doctype,
+            "model_file": doctype_file,
+            "loaded": doctype_loaded,
+        },
+        "tamper": {
+            "requested_backend": req_tamper,
+            "effective_backend": req_tamper,
+            "loaded": True,
         },
     }
+
+    # If any active stage failed to load, mark degraded
+    degraded = not (card_loaded and field_loaded and mrz_loaded and doctype_loaded)
+
+    response_payload = {
+        "status": "degraded" if degraded else "online",
+        "degraded": degraded,
+        "service": "no-cap-ml-service",
+        "stages": stages,
+        "env_contract": {
+            "DETECTOR_BACKEND": os.getenv("DETECTOR_BACKEND", "yolov8"),
+            "CARD_DETECTOR_BACKEND": req_card,
+            "FIELD_DETECTOR_BACKEND": req_field,
+            "MRZ_DETECTOR_BACKEND": req_mrz,
+            "DOCTYPE_BACKEND": req_doctype,
+            "TAMPER_MODEL_BACKEND": req_tamper,
+            "HF_MODEL_REPO": os.getenv("HF_MODEL_REPO", "koropanda/no-cap-detectors"),
+            "HF_MODEL_REVISION": os.getenv("HF_MODEL_REVISION", "main"),
+            "MODEL_CACHE_DIR": os.getenv("MODEL_CACHE_DIR", str(models_dir)),
+        },
+    }
+
+    if degraded and os.getenv("FAIL_CLOSED_ON_DEGRADED", "false").lower() == "true":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=response_payload,
+        )
+
+    return response_payload
 
 
 @app.on_event("startup")
@@ -234,16 +345,20 @@ def startup_prewarm():
 
 
 @app.post("/api/ml/yolo_roi", dependencies=[Depends(verify_ml_auth)])
+@app.post("/detect/card", dependencies=[Depends(verify_ml_auth)])
 async def api_yolo_roi(file: UploadFile = File(...)):
-    data = await file.read()
+    raw_data = await file.read()
+    data, _ = harden_image_input(raw_data)
     boxes = extract_roi_boxes(data)
     return boxes
 
 
 from yolo_roi import extract_aadhaar_fields
 @app.post("/api/ml/aadhaar_fields", dependencies=[Depends(verify_ml_auth)])
+@app.post("/detect/fields", dependencies=[Depends(verify_ml_auth)])
 async def api_aadhaar_fields(file: UploadFile = File(...)):
-    data = await file.read()
+    raw_data = await file.read()
+    data, _ = harden_image_input(raw_data)
     boxes = extract_aadhaar_fields(data)
     return boxes
 
@@ -262,15 +377,18 @@ async def api_face_match(
 
 @app.post("/api/ml/detect_image", dependencies=[Depends(verify_ml_auth)])
 async def api_detect_image(file: UploadFile = File(...)):
-    data = await file.read()
+    raw_data = await file.read()
+    data, _ = harden_image_input(raw_data)
     result = onnx_detect(data)
     return result
 
 
 from doctype_cls import classify_document
 @app.post("/api/ml/doctype", dependencies=[Depends(verify_ml_auth)])
+@app.post("/classify/doctype", dependencies=[Depends(verify_ml_auth)])
 async def api_doctype(file: UploadFile = File(...)):
-    data = await file.read()
+    raw_data = await file.read()
+    data, _ = harden_image_input(raw_data)
     result = classify_document(data)
     return result or {"doc_type": "other", "confidence": 0.0, "scores": {}, "engine": "none"}
 
@@ -278,7 +396,8 @@ async def api_doctype(file: UploadFile = File(...)):
 from doc_forgery import analyze_doc_forgery
 @app.post("/api/ml/doc_forgery", dependencies=[Depends(verify_ml_auth)])
 async def api_doc_forgery(file: UploadFile = File(...)):
-    data = await file.read()
+    raw_data = await file.read()
+    data, _ = harden_image_input(raw_data)
     result = analyze_doc_forgery(data)
     return result
 

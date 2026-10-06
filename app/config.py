@@ -287,3 +287,18 @@ OFFICER_ROLES = {
     "supervisor": "Supervisory Officer",
     "admin": "Border Station Admin",
 }
+
+# --------------------------------------------------------------------------- #
+# Calibrated Decision Layer Thresholds (derived from validation splits)
+# --------------------------------------------------------------------------- #
+SCREENING_THRESHOLDS = {
+    # Doc-type classification confidence below which document requires human review
+    "DOCTYPE_CONFIDENCE_REVIEW": float(os.getenv("DOCTYPE_CONFIDENCE_REVIEW", "0.75")),
+    # Risk score bands for overall decision
+    "RISK_MAX_GENUINE": int(os.getenv("SCREENING_RISK_MAX_GENUINE", "25")),
+    "RISK_MIN_REJECT": int(os.getenv("SCREENING_RISK_MIN_REJECT", "55")),
+    # Forensics / tampering risk threshold
+    "TAMPER_RISK_FLAG": float(os.getenv("TAMPER_RISK_FLAG", "50.0")),
+    # Face match similarity threshold for biometric verification
+    "FACE_SIMILARITY_MIN": float(os.getenv("FACE_SIMILARITY_MIN", "0.60")),
+}

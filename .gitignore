@@ -106,6 +106,10 @@ eval/data/
 !docs/SWITCH_READINESS.md
 !docs/RESUME_AFTER_SPECIMENS.md
 !docs/AUDIT_V4.md
+!docs/ML_PIPELINE.md
+!docs/LIMITATIONS.md
+!docs/OPERATIONS.md
+!docs/MODEL_CARD.md
 !training/indian_specimens/CAPTURE_PROTOCOL.md
 CHAT_EXPORT.html
 chat_transcripts/

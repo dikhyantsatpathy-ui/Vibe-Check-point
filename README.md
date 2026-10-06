@@ -78,28 +78,70 @@ of suspicious documents from one origin, or an individual flagged repeatedly.
 
 ## 4. Architecture
 
-```
- [ Officer console (React + Vite, single-file build) ]
-    ├─ Google single sign-in → session cookie (HttpOnly, HMAC-signed)
-    ├─ Screening desk: doc + doc-type + checkpoint + declared number + live frame
-    └─ Super-admin: adjudication queue, watchlist, role approvals, shift export
+## 4. Architecture
 
- [ Backend (FastAPI + SQLAlchemy / PostgreSQL) ]
-    /api/screen            4-module pipeline → ScreenReport
-    /api/screen/queue      pending/recent screening queue
-    /api/screen/adjudicate supervisor verdict (human-in-the-loop)
-    /api/screen/dossier    HMAC-sealed printable court dossier
-    /api/screen/syndicate  cross-checkpoint pattern alerts
-    /api/screen/watchlist  hash-only watchlist (add/remove/list)
-    /api/screen/shift-export signed CSV shift log
-    /api/chat              rule-based officer assistant (offline knowledge base)
-    /api/admin/*           login, logout, me, assign_role, signers
-
- [ Screening engine (app/) ]
-    screening.py  syndicate.py  forensics.py  identity.py  face.py
-    mrz.py        validation.py tampering.py  transliterate.py
-    extraction.py yolo_roi.py   face_match.py codebase.py
+```mermaid
+graph TD
+    Client[Officer Console / Web UI] -->|HTTPS / Multipart| API[FastAPI Backend - app/main.py]
+    API --> M1[Module 1: Extraction - OCR / MRZ / QR]
+    API --> M2[Module 2: Validation - Checksums / Formats]
+    API --> M3[Module 3: Forensics - ELA / 2D-FFT / PRNU / Replay]
+    API --> M4[Module 4: Face Match - Embedding / Perceptual]
+    
+    API -.->|Optional HTTP RPC| MLSvc[ML Microservice - ml_service/main.py]
+    MLSvc --> CardDet[Card Detector - YOLOv8 / RF-DETR]
+    MLSvc --> DocType[Doc-Type Classifier - MobileNetV3 v1/v2]
+    MLSvc --> FieldDet[Field Detector - Aadhaar YOLO / RF-DETR]
+    MLSvc --> ReplayDet[Replay / Screen Detector - 2D-FFT PAPR]
+    
+    M1 --> DecLayer[Decision Layer - app/screening.py]
+    M2 --> DecLayer
+    M3 --> DecLayer
+    M4 --> DecLayer
+    
+    DecLayer --> Decision[Verdict: GENUINE_LIKELY / REVIEW / REJECT_LIKELY]
+    Decision --> Ledger[(Immutable SHA-256 Hash Chain)]
 ```
+
+### Environment Variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DETECTOR_BACKEND` | `yolov8` | Global detector backend (`yolov8` or `rf_detr`). |
+| `CARD_DETECTOR_BACKEND` | `yolov8` | Card boundary detector (`yolov8` or `rf_detr`). |
+| `FIELD_DETECTOR_BACKEND` | `yolov8` | Aadhaar/ID field detector (`yolov8` or `rf_detr`). |
+| `MRZ_DETECTOR_BACKEND` | `bottom20` | MRZ crop strategy (`bottom20` or `rf_detr`). |
+| `DOCTYPE_BACKEND` | `v1` | Document type classifier (`v1` or `v2`). |
+| `TAMPER_MODEL_BACKEND` | `heuristic` | Tampering forensics backend (`heuristic` or `patch_cnn`). |
+| `ML_SERVICE_URL` | *empty* | Remote ML service URL (e.g. `http://localhost:8001`). If unset, runs in-process ONNX. |
+| `ML_SECRET_KEY` | *empty* | Shared secret header `X-ML-Secret-Key` for ML microservice authentication. |
+| `ML_ALLOW_NO_AUTH` | `false` | When `true`, permits unauthenticated ML calls during local development. |
+| `HF_MODEL_REPO` | `koropanda/no-cap-detectors` | Hugging Face repository for downloading model weights. |
+| `HF_MODEL_REVISION` | `main` | Git commit SHA or branch pinned on Hugging Face. |
+| `MODEL_CACHE_DIR` | `ml_service/models` | Local directory for cached model weights and SHA-256 sidecars. |
+| `DATABASE_URL` | `sqlite:///./nocap.db` | Database connection string (PostgreSQL or SQLite). |
+| `MASTER_VAULT_KEY` | *dev-key* | Secret key for signing session cookies and audit hashes. |
+
+### Quick Start
+
+```bash
+# 1. Clone & activate virtual environment
+git clone -b ml/detector-v3 https://github.com/dikhyantsatpathy-ui/Vibe-Check-point.git
+cd Vibe-Check-point
+python -m venv .venv
+source .venv/bin/activate  # Or on Windows: .venv\Scripts\Activate.ps1
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Run repo hygiene check & tests
+python scripts/check_repo_hygiene.py
+pytest -v -m "not slow"
+
+# 4. Start backend & UI
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
 
 **Zero-storage discipline:** document bytes and live captures are processed in memory and
 never written to disk; the audit trail and watchlist store only hashes and *masked*

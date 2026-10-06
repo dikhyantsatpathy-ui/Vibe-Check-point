@@ -461,8 +461,29 @@ def test_screening_mrz_checksum_failure_hard_flags():
     with patch("extraction.extract_document", return_value=extract_mock):
         res = run_screening(b"dummy passport", "passport.pdf", "passport", "CP-1", {})
         assert res["verdict"] == "FLAGGED"
+        assert res["screening_verdict"] == "REJECT_LIKELY"
         assert res["risk_score"] >= 70
         assert any("mrz" in r.lower() and "fail" in r.lower() for r in res["reasons"])
+
+
+def test_screening_verdict_decision_layer_outputs():
+    from unittest.mock import MagicMock, patch
+    from screening import run_screening
+    extract_mock = {
+        "medium": "image",
+        "fields": {"pan": "ABCDE1234F"},
+        "mrz": None,
+        "ocr": {"ran": True},
+        "pdf_no_text": False,
+    }
+    with patch("extraction.extract_document", return_value=extract_mock):
+        res = run_screening(b"dummy pan content", "pan.jpg", "pan", "CP-1", {"pan": "ABCDE1234F"})
+        assert "screening_verdict" in res
+        assert res["screening_verdict"] in ("GENUINE_LIKELY", "REVIEW", "REJECT_LIKELY")
+        assert "unmeasurable_signals" in res
+        assert "no MRZ on this document type" in res["unmeasurable_signals"]
+        assert "no live face capture provided for 1:1 biometric match" in res["unmeasurable_signals"]
+        assert "screening_reasons" in res
 
 
 if __name__ == "__main__":

@@ -958,10 +958,6 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
 
         qr = extract_res.get("qr_data") or {}
         qr_verified = bool(qr.get("qr_verified") or qr.get("signature_present"))
-        try:
-            from app.extraction import extract_fields
-        except ImportError:
-            from extraction import extract_fields
         typed_aadhaar = extract_fields(" ".join(str(v) for v in (declared or {}).values() if isinstance(v, str))).get("aadhaar")
         aadhaar_from_ocr = bool(aadhaar_no) and not qr_verified and (aadhaar_no != typed_aadhaar)
 
@@ -1408,6 +1404,51 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
     risk = max(0, min(100, risk))
     verdict = _grade(risk, hard_flag=hard_flag, can_clear=can_clear)
 
+    # Decision Layer (SIH26188 Work Order v4 Phase E4)
+    try:
+        from app.config import SCREENING_THRESHOLDS
+    except ImportError:
+        try:
+            from config import SCREENING_THRESHOLDS
+        except ImportError:
+            SCREENING_THRESHOLDS = {
+                "DOCTYPE_CONFIDENCE_REVIEW": 0.75,
+                "RISK_MAX_GENUINE": 25,
+                "RISK_MIN_REJECT": 55,
+                "TAMPER_RISK_FLAG": 50.0,
+            }
+
+    screening_reasons = list(reasons)
+    unmeasurable_signals = []
+
+    dt_lower = (doc_type or "").lower()
+    if dt_lower not in ("passport", "visa"):
+        unmeasurable_signals.append("no MRZ on this document type")
+    elif not (extract_res.get("mrz") or {}).get("lines"):
+        unmeasurable_signals.append("MRZ unreadable or not detected on travel document")
+
+    if not live_frame:
+        unmeasurable_signals.append("no live face capture provided for 1:1 biometric match")
+
+    if not data_back:
+        unmeasurable_signals.append("no back/reverse side image provided")
+
+    if not extract_res.get("qr"):
+        unmeasurable_signals.append("no digital QR code detected")
+
+    conf_thresh = SCREENING_THRESHOLDS.get("DOCTYPE_CONFIDENCE_REVIEW", 0.75)
+    risk_reject = SCREENING_THRESHOLDS.get("RISK_MIN_REJECT", 55)
+    risk_genuine = SCREENING_THRESHOLDS.get("RISK_MAX_GENUINE", 25)
+
+    if hard_flag or risk >= risk_reject or verdict == "FLAGGED":
+        screening_verdict = "REJECT_LIKELY"
+    elif not can_clear or risk > risk_genuine or (confidence is not None and confidence < conf_thresh) or verdict == "REVIEW":
+        screening_verdict = "REVIEW"
+        if confidence is not None and confidence < conf_thresh:
+            screening_reasons.append(f"Doc-type confidence ({confidence:.2f}) below review threshold ({conf_thresh:.2f})")
+    else:
+        screening_verdict = "GENUINE_LIKELY"
+
     # Cross-document fingerprints (session flow, SIH26188): per-field sha256 of
     # the normalized value, so a later session close can compare this document
     # against the others in the same session WITHOUT storing raw values.
@@ -1427,6 +1468,9 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         "doc_type": doc_type or "UNKNOWN",
         "checkpoint": checkpoint or "",
         "verdict": verdict,
+        "screening_verdict": screening_verdict,
+        "screening_reasons": screening_reasons,
+        "unmeasurable_signals": unmeasurable_signals,
         "travel_validity": travel_val,
         "syndicate_alerts": syndicate_alerts,
         "risk_score": risk,

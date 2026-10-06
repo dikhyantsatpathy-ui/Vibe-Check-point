@@ -705,18 +705,38 @@ def liveness_signals(data: bytes):
             "level": "warn",
             "note": "Frame is soft — blur can hide re-compression and pixel-borrowing artifacts.",
         })
-    if screen_prob > 22.0:
-        signals.append({
-            "signal": "moire",
-            "level": "warn",
-            "note": "High-frequency residual is consistent with a screen-recaptured image.",
-        })
-    elif screen_prob < 2.0:
-        signals.append({
-            "signal": "moire",
-            "level": "info",
-            "note": "Low high-frequency residual — consistent with an original capture.",
-        })
+    # Advanced 2D-FFT peak and chromatic moire analysis (Phase D4)
+    try:
+        from app.replay_detector import detect_screen_replay
+        replay_res = detect_screen_replay(rgb)
+        if replay_res.get("is_replay"):
+            signals.append({
+                "signal": "moire",
+                "level": "warn",
+                "note": f"Periodic subpixel grid or chromatic moire detected (replay score {replay_res.get('replay_score'):.2f}). Consistent with screen recapture.",
+                "details": replay_res,
+            })
+        else:
+            signals.append({
+                "signal": "moire",
+                "level": "info",
+                "note": "Fourier spectrum and chromatic residual consistent with an authentic physical print.",
+                "details": replay_res,
+            })
+    except Exception:
+        if screen_prob > 22.0:
+            signals.append({
+                "signal": "moire",
+                "level": "warn",
+                "note": "High-frequency residual is consistent with a screen-recaptured image.",
+            })
+        elif screen_prob < 2.0:
+            signals.append({
+                "signal": "moire",
+                "level": "info",
+                "note": "Low high-frequency residual — consistent with an original capture.",
+            })
+
     signals.append({
         "signal": "still-only",
         "level": "info",
