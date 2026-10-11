@@ -110,6 +110,12 @@ PROTECTED_ROUTES = [
     ("POST", "/api/sessions", {"checkpoint": "Raxaul"}),
     ("POST", "/api/sessions/{session_id}/documents/{report_id}/remove", None),
     ("POST", "/api/sessions/{session_id}/documents/{report_id}/restore", None),
+    ("GET", "/api/sessions/open", None),
+    ("GET", "/api/reports/{report_id}", None),
+    ("GET", "/api/ledger/blocks", None),
+    ("GET", "/api/ledger/verify", None),
+    ("POST", "/api/ledger/anchor", None),
+    ("GET", "/api/ledger/cert/65b/{session_id}", None),
 ] + _PROTECTED_EXTRA
 
 

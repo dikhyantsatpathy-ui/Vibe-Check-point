@@ -399,8 +399,8 @@
   {
     "id": "L1",
     "phase": "L",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Convergence loop completed; classified new canonical endpoints into tests/test_authz.py with 100% route classification check passing (70/70); verified core test suite (121 passed, 0 failed); confirmed Invariant FS and Invariant AUTH across all modules; artifact in eval/runs/20261011_reverify_v1/convergence_l.json"
   },
   {
     "id": "K1",

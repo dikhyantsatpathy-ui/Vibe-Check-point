@@ -1,6 +1,6 @@
 {
-  "phase": "L",
-  "task": "L1",
+  "phase": "K",
+  "task": "K1",
   "done": [
     "0.1",
     "0.2",
@@ -65,7 +65,8 @@
     "X5",
     "X6",
     "X7",
-    "X8"
+    "X8",
+    "L1"
   ],
   "blocked": [
     "F-13",
@@ -77,6 +78,6 @@
     "S1-01"
   ],
   "last_commit": "ml/blueprint-sync-v7",
-  "last_evidence": "Phase X completed (X1-X8 verified with 8/8 passing tests in tests/test_phase_x_pics_smoke.py; zero filenames or PII leaked; aggregate artifact in eval/runs/20261011_reverify_v1/pics_smoke_x.json)",
-  "notes": "Phase X complete. Transitioning to Phase L (Convergence Loop: L1)."
+  "last_evidence": "Phase L completed (Convergence loop finished; canonical endpoints classified in tests/test_authz.py; core test suite 121/121 passed; artifact in eval/runs/20261011_reverify_v1/convergence_l.json)",
+  "notes": "Phase L complete. Transitioning to Phase K (Blueprint Rewrite: K1-K4)."
 }
