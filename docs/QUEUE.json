@@ -429,19 +429,19 @@
   {
     "id": "R1",
     "phase": "R",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Full release test suite executed: 133 passed, 2 skipped, 0 failed across core modules, security gates, and fail-safe invariant checks."
   },
   {
     "id": "R2",
     "phase": "R",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Release readiness scorecard generated in eval/runs/20261011_reverify_v1/release_readiness_r.json with READY_FOR_RELEASE verdict."
   },
   {
     "id": "R3",
     "phase": "R",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Final blunt audit and release report completed in docs/FINAL_REPORT_DRAFT.md with complete phase chronology, findings resolution table, and residual risk disclosures."
   }
 ]

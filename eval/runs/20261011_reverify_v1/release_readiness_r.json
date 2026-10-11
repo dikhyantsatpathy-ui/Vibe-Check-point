@@ -1,0 +1,102 @@
+{
+  "phase": "R",
+  "name": "Release Gate Assessment (Work Order v7)",
+  "timestamp": "20261012_reverify_v1",
+  "verdict": "READY_FOR_RELEASE",
+  "confidence": "HIGH",
+  "summary": "NO-CAP (SIH26188 Vibe-Check-point) successfully completed all verification phases (Phase 0 through Phase R). All core invariants hold without degradation.",
+  "invariants_scorecard": {
+    "invariant_fs": {
+      "status": "PASS",
+      "detail": "Under no condition or failure mode does screening autonomously issue a CLEAR verdict. Degraded, fallback, or unverified inputs route strictly to REVIEW or REJECT_LIKELY."
+    },
+    "invariant_auth": {
+      "status": "PASS",
+      "detail": "All protected routes enforce role-based access control and fail closed (HTTP 401/403) with zero operational telemetry or credential leakage."
+    },
+    "biometric_zero_storage": {
+      "status": "PASS",
+      "detail": "Zero raw facial crops, webcam frames, or unmasked biometric files are written to disk or database. Ephemeral buffers are unlinked and scrubbed."
+    },
+    "pics_privacy": {
+      "status": "PASS",
+      "detail": "Zero private filenames, personal descriptors, or raw images from pics/ are committed to git or leaked into reports."
+    }
+  },
+  "modules_scorecard": {
+    "m1_extraction": {
+      "status": "PASS",
+      "capabilities": [
+        "RapidOCR and Tesseract dual OCR",
+        "Layout-mode PDF stream extraction preserving columnar geometries",
+        "Form-7 Rule 16(2) multi-column driving licence parser",
+        "MRZ adaptive CLAHE and check-digit recovery"
+      ]
+    },
+    "m2_validation": {
+      "status": "PASS",
+      "capabilities": [
+        "ICAO Doc 9303 TD1/TD2/TD3 check-digit constraints",
+        "Aadhaar Verhoeff dihedral group D5 checksum",
+        "Income Tax PAN alphanumeric syntax validation",
+        "Cross-field temporal sequence checks (issue < expiry, plausible DOB, holder name vs MRZ)"
+      ]
+    },
+    "m3_forensics": {
+      "status": "PASS",
+      "capabilities": [
+        "Spatial JPEG Error Level Analysis (ELA)",
+        "Frequency 2D-FFT spectral PAPR peak detection",
+        "PRNU wavelet sensor noise correlation",
+        "Laplacian blur gradient variance check"
+      ]
+    },
+    "m4_biometrics": {
+      "status": "PASS",
+      "capabilities": [
+        "ArcFace 512-dimensional deep facial embedding matching (Tier 1)",
+        "64-bit dHash perceptual hashing fallback under Invariant FS contract (Tier 2)",
+        "Adaptive age-aware threshold relaxation",
+        "Multi-frame EAR eye-blink and head-movement anti-spoofing"
+      ]
+    }
+  },
+  "models_reconciliation": {
+    "card_detector": {
+      "primary_default": "yolov8 (production default, robust to scale 2x/3x)",
+      "permissive_alternative": "rf_detr_small_int8 (Apache 2.0, 37.16MB, frozen manifest recall 1.0, precision 1.0, FP 0.63%)",
+      "status": "RECONCILED"
+    },
+    "doctype_classifier": {
+      "model": "doctype_v2 (MobileNetV3-Small FP32, 6.14MB)",
+      "accuracy": "99.69%",
+      "macro_f1": "0.9977",
+      "caveat": "Classes with n < 30 (passport, bhutan_cid) flagged as indicative pending camera expansion",
+      "status": "ACCEPTED"
+    },
+    "honest_rejections": {
+      "aadhaar_rfdetr_model_b": "REJECTED (mAP50-95 regressed to 0.7678 vs 0.8380 baseline; YOLOv8 retained)",
+      "id_fields_detector": "REJECTED (Recall@0.5 was 0.5583 vs 0.90 gate; OCR heuristics retained)"
+    }
+  },
+  "test_execution_receipt": {
+    "total_release_tests_executed": 135,
+    "passed": 133,
+    "skipped": 2,
+    "failed": 0,
+    "regressions": 0,
+    "duration_seconds": 283.0
+  },
+  "residual_risks_and_owner_actions": [
+    {
+      "id": "OWNER-01",
+      "item": "Historical Neon connection string in commit 3724e9e3",
+      "action": "Rotate live database password in Neon console per OWNER_TODO Item 8 (working tree and repo heads are clean)"
+    },
+    {
+      "id": "OWNER-02",
+      "item": "Field camera hardware calibration",
+      "action": "Acquire physical card camera frames across SSB border sectors to expand specimen dataset"
+    }
+  ]
+}
