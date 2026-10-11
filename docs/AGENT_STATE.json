@@ -1,16 +1,35 @@
 {
-  "phase": "B",
-  "task": "B1",
+  "phase": "F",
+  "task": "F-01",
   "done": [
     "0.5",
     "0.1",
     "0.2",
     "0.3",
     "0.4",
-    "0.6"
+    "0.6",
+    "B1",
+    "B2",
+    "B3"
   ],
   "blocked": [],
-  "findings_open": [],
+  "findings_open": [
+    "C-01",
+    "C-02",
+    "C-03",
+    "C-04",
+    "C-05",
+    "C-08",
+    "C-11",
+    "C-13",
+    "C-15",
+    "EP-GET-/api/sessions/open",
+    "EP-GET-/api/reports/{id}",
+    "EP-GET-/api/ledger/blocks",
+    "EP-GET-/api/ledger/verify",
+    "EP-GET-/api/ledger/cert/65b/{id}",
+    "EP-POST-/api/ledger/anchor"
+  ],
   "last_commit": "",
   "last_evidence": "",
   "notes": "Phase 0 initialized on branch ml/blueprint-sync-v7"

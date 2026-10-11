@@ -38,20 +38,20 @@
   {
     "id": "B1",
     "phase": "B",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "docs/claims/claims.json generated"
   },
   {
     "id": "B2",
     "phase": "B",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "scripts/verify_blueprint_claims.py generated and executed"
   },
   {
     "id": "B3",
     "phase": "B",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "eval/runs/20261011_182816_claims/report.json and docs/BLUEPRINT_VS_REALITY.md generated (62 VERIFIED, 15 FALSE, 1 UNVERIFIABLE)"
   },
   {
     "id": "F-01",
