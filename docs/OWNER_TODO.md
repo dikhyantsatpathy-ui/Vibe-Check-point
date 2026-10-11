@@ -2,6 +2,15 @@
 
 This document records all tasks, credentials, and actions that require human owner intervention. Kept current across all work order phases.
 
+## 0. JURY EVALUATION PASS CONFIGURATION (F-01)
+
+**To keep the jury one-click pass working you MUST set DEMO_PASS_ENABLED=1 on the jury deployment only; never on a real checkpoint deployment.**
+
+```powershell
+# On jury demo instance (Vercel or local):
+$env:DEMO_PASS_ENABLED = "1"
+```
+
 ---
 
 ## 1. PENDING CREDENTIALS & ACCESS
@@ -61,3 +70,36 @@ This document records all tasks, credentials, and actions that require human own
 - **Current Status**: Download requires manual browser session if direct cURL is blocked.
 - **URL**: `https://data.mendeley.com/datasets/wk6n8fhx3c/1`
 - **Owner Action**: If automated download fails, download zip from Mendeley page and extract to `data/raw/mendeley_synthetic_aadhaar/`.
+
+---
+
+## 4. VERCEL DEPLOYMENT & ISOLATION ACTIONS (F-13 / F-14)
+
+### Item 6: Staging vs Production Environment Isolation (F-13)
+- **Status**: **BLOCKED (Vercel CLI logged out)**
+- **Detail**: Blueprint claims isolated `main` vs `stage_test` Neon branches, distinct vault keys, and separate OAuth clients. Must be verified with active Vercel session; until verified, stays **UNVERIFIABLE**.
+- **Owner Action**:
+  ```powershell
+  # 1. Log in to Vercel
+  vercel login
+
+  # 2. Inspect and compare production vs preview/staging env vars (never share secrets)
+  vercel env ls --environment=production
+  vercel env ls --environment=preview
+
+  # 3. Verify DATABASE_URL points to different Neon branches:
+  # Production: ep-red-scene-... (main branch)
+  # Staging: stage_test branch
+  ```
+
+### Item 7: Token Hygiene in Deployed Vercel Projects (F-14)
+- **Status**: **BLOCKED (Vercel CLI logged out)**
+- **Detail**: Ensure `HF_TOKEN` is NOT injected into the frontend/app Vercel deployment unless code in `app/` requires it. Hugging Face Space should hold a dedicated read-only token.
+- **Owner Action**:
+  ```powershell
+  # Check if HF_TOKEN is configured in Vercel project:
+  vercel env ls
+  # If present and unneeded on Vercel:
+  vercel env rm HF_TOKEN production
+  ```
+

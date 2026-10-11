@@ -15,7 +15,7 @@ _ML_MAIN_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "
 _ml_spec = importlib.util.spec_from_file_location("ml_service_main", _ML_MAIN_PATH)
 _ml_mod = importlib.util.module_from_spec(_ml_spec)
 if os.path.dirname(_ML_MAIN_PATH) not in sys.path:
-    sys.path.insert(0, os.path.dirname(_ML_MAIN_PATH))
+    sys.path.append(os.path.dirname(_ML_MAIN_PATH))
 _ml_spec.loader.exec_module(_ml_mod)
 ml_app = _ml_mod.app
 

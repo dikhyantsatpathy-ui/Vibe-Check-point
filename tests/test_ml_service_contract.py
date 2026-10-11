@@ -128,6 +128,8 @@ def test_env_flag_combinations_boot(client, monkeypatch):
 def test_ml_latency_regression(client):
     """Inference on standard sized image should complete under p50 latency threshold."""
     img_bytes = _make_dummy_image_bytes(400, 300)
+    # Warmup once to ensure cold model weights / sessions are primed in memory
+    client.post("/classify/doctype", files={"file": ("warmup.jpg", img_bytes, "image/jpeg")})
     times = []
     for _ in range(5):
         t0 = time.perf_counter()
@@ -138,3 +140,68 @@ def test_ml_latency_regression(client):
     median_latency = sorted(times)[len(times) // 2]
     # In local testing without GPU, heuristic/fast fallback completes in <350ms
     assert median_latency < 600.0, f"Latency regression detected: median {median_latency:.1f}ms exceeds 600ms"
+
+
+def test_ml_service_auth_precedence_and_fail_closed(monkeypatch):
+    """F-02: Test secret precedence (ML_SERVICE_SECRET vs ML_SECRET_KEY), hmac auth, and fail closed."""
+    from remote_ml import get_auth_headers
+
+    # 1. No secret configured, ML_ALLOW_NO_AUTH unset -> 503 on non-health requests, 200 on health
+    monkeypatch.delenv("ML_SERVICE_SECRET", raising=False)
+    monkeypatch.delenv("ML_SECRET_KEY", raising=False)
+    monkeypatch.delenv("ML_ALLOW_NO_AUTH", raising=False)
+
+    unauth_client = TestClient(app)
+    # Health checks pass without auth
+    assert unauth_client.get("/health").status_code == 200
+    assert unauth_client.get("/ml/health").status_code in (200, 503)
+
+    # Non-health endpoint fails closed with 503
+    img_bytes = _make_dummy_image_bytes(100, 100)
+    res_503 = unauth_client.post("/detect/card", files={"file": ("test.jpg", img_bytes, "image/jpeg")})
+    assert res_503.status_code == 503
+    assert "ML_SECRET_KEY or ML_SERVICE_SECRET is required" in res_503.json()["detail"]
+
+    # 2. ML_ALLOW_NO_AUTH truthy variants ("true", "1", "yes") permit requests without key
+    for truthy_val in ("true", "1", "yes"):
+        monkeypatch.setenv("ML_ALLOW_NO_AUTH", truthy_val)
+        res_allow = unauth_client.post("/detect/card", files={"file": ("test.jpg", img_bytes, "image/jpeg")})
+        assert res_allow.status_code == 200
+
+    # 3. Secret configured: test identical precedence in app.remote_ml and ml_service.main
+    monkeypatch.delenv("ML_ALLOW_NO_AUTH", raising=False)
+    monkeypatch.setenv("ML_SERVICE_SECRET", "primary_secret")
+    monkeypatch.setenv("ML_SECRET_KEY", "fallback_secret")
+
+    # remote_ml.get_auth_headers must pick primary_secret
+    headers = get_auth_headers()
+    assert headers.get("X-ML-Secret-Key") == "primary_secret"
+
+    # ML service must require primary_secret and reject fallback_secret
+    res_wrong = unauth_client.post(
+        "/detect/card",
+        files={"file": ("test.jpg", img_bytes, "image/jpeg")},
+        headers={"X-ML-Secret-Key": "fallback_secret"},
+    )
+    assert res_wrong.status_code == 401
+    assert "Unauthorized" in res_wrong.json()["detail"]
+
+    res_right = unauth_client.post(
+        "/detect/card",
+        files={"file": ("test.jpg", img_bytes, "image/jpeg")},
+        headers={"X-ML-Secret-Key": "primary_secret"},
+    )
+    assert res_right.status_code == 200
+
+    # 4. Only ML_SECRET_KEY set -> both use ML_SECRET_KEY
+    monkeypatch.delenv("ML_SERVICE_SECRET", raising=False)
+    monkeypatch.setenv("ML_SECRET_KEY", "only_key")
+    assert get_auth_headers().get("X-ML-Secret-Key") == "only_key"
+
+    res_only_key = unauth_client.post(
+        "/detect/card",
+        files={"file": ("test.jpg", img_bytes, "image/jpeg")},
+        headers={"X-ML-Secret-Key": "only_key"},
+    )
+    assert res_only_key.status_code == 200
+

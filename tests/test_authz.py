@@ -181,12 +181,26 @@ def test_health_reveals_detail_to_a_signed_in_officer(owned_env):
     assert "database" in body and "capabilities" in body
 
 
-def test_demo_login_route_serves_evaluator_pass(anon_client):
-    """SIH Evaluator 1-click pass issues a valid session for evaluation."""
-    resp = anon_client.post("/api/admin/demo_login")
-    assert resp.status_code == 200
-    assert resp.json().get("status") == "SUCCESS"
-    assert "nischay_session" in resp.cookies
+def test_demo_login_route_serves_evaluator_pass(anon_client, monkeypatch):
+    """SIH Evaluator 1-click pass issues a valid session when DEMO_PASS_ENABLED is on, 404 when off."""
+    # 1. When DEMO_PASS_ENABLED is unset / off -> 404
+    monkeypatch.delenv("DEMO_PASS_ENABLED", raising=False)
+    resp_off = anon_client.post("/api/admin/demo_login")
+    assert resp_off.status_code == 404
+
+    # 2. When DEMO_PASS_ENABLED is set to '1' -> 200, session issued
+    monkeypatch.setenv("DEMO_PASS_ENABLED", "1")
+    resp_on = anon_client.post("/api/admin/demo_login")
+    assert resp_on.status_code == 200
+    assert resp_on.json().get("status") == "SUCCESS"
+    assert "nischay_session" in resp_on.cookies
+
+    # 3. Restricted capabilities: demo evaluator cannot author broadcasts or modify watchlist
+    res_bcast = anon_client.post("/api/broadcasts/create", data={"broadcast_title": "Alert", "message": "Test"})
+    assert res_bcast.status_code == 403
+
+    res_wl = anon_client.post("/api/screen/watchlist/add", data={"category": "passport", "value": "A1234567"})
+    assert res_wl.status_code == 403
 
 
 def test_every_registered_route_is_classified():

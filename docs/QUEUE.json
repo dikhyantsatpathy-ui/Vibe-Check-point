@@ -56,86 +56,86 @@
   {
     "id": "F-01",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Demo pass gated behind DEMO_PASS_ENABLED=1; evaluator restricted from watchlist/broadcasts (403); tested in tests/test_authz.py"
   },
   {
     "id": "F-02",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "ML service secret precedence unified ML_SERVICE_SECRET/ML_SECRET_KEY; fails closed 503; tested in tests/test_ml_service_contract.py"
   },
   {
     "id": "F-03",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Upload limits enforced: streaming cap (8MB/15MB), Content-Length check, magic-byte check, Image.MAX_IMAGE_PIXELS=50M, PDF max 10 pages; tested in tests/test_upload_limits.py"
   },
   {
     "id": "F-04",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "CSV formula injection sanitized by escaping =, +, -, @, \\t, \\r with single quote; tested in tests/test_csv_injection.py"
   },
   {
     "id": "F-05",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Rate limit proxy keying checks TRUST_PROXY_HEADERS (default False); tested in tests/test_rate_limit_proxy.py"
   },
   {
     "id": "F-06",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Content-Security-Policy-Report-Only header set without unsafe-eval; tested in tests/test_csp_headers.py"
   },
   {
     "id": "F-07",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "conftest.py tracked and committed to git; baseline 305 tests collected"
   },
   {
     "id": "F-08",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": ".gitignore verified ignoring .env*, pics/, eval/local/, weights/ while tracking !.env.example and !docs/**/*.md"
   },
   {
     "id": "F-09",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Requirements pinned strictly with == in requirements.txt, ml_service/requirements.txt, training/requirements-train.txt; verified in C-01"
   },
   {
     "id": "F-10",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Merkle tree claim documented in AUDIT_V7.md and BLUEPRINT_VS_REALITY.md as linear SHA-256 hash-chain (open feature gap)"
   },
   {
     "id": "F-11",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Face matching routed to Phase A"
   },
   {
     "id": "F-12",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Ephemeral video files guaranteed unlinked in finally block in media_processor.py; tested in tests/test_media_processor_tempfile.py"
   },
   {
     "id": "F-13",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "BLOCKED",
+    "evidence": "Vercel edge isolation unverifiable in local environment without credentials; logged in OWNER_TODO.md with exact vercel commands"
   },
   {
     "id": "F-14",
     "phase": "F",
-    "status": "TODO",
-    "evidence": ""
+    "status": "BLOCKED",
+    "evidence": "HF_TOKEN in Vercel environment logged in OWNER_TODO.md as BLOCKED with remediation command vercel env rm HF_TOKEN"
   },
   {
     "id": "A1",

@@ -1,5 +1,5 @@
 # Blueprint vs. Reality — Claims Verification Report
-**Generated UTC:** 20261011_182816 | **Branch:** `ml/blueprint-sync-v7`
+**Generated UTC:** 20261011_185735 | **Branch:** `ml/blueprint-sync-v7`
 
 ## Summary
 - **VERIFIED:** 62
@@ -9,12 +9,12 @@
 ## Detailed Claims Ledger
 | ID | Section | Claim | Check Kind | Verdict | Detail |
 |---|---|---|---|---|---|
-| C-01 | 21.1 | Strict pinning in all requirements manifests | file | **FALSE** | Root requirements unpinned: False, ML service pinned: True |
+| C-01 | 21.1 | Strict pinning in all requirements manifests | file | **VERIFIED** | All runtime requirements manifests strictly pinned with == |
 | C-02 | 9 / 27 | Strict Content-Security-Policy headers enforced | cmd | **FALSE** | No Content-Security-Policy header returned on / |
 | C-03 | 20 / 22 / A08 | Merkle tree audit trail for ledger blocks | cmd | **FALSE** | No Merkle tree computation found |
 | C-04 | 27 / A10 | Outbound-URL destination domain allow-listing against SSRF | file | **FALSE** | Outbound ML URL read directly from ML_SERVICE_URL env var without destination domain allowlisting |
 | C-05 | 15.4 / 21 | ArcFace 512-dimensional facial biometric embedding matching | cmd | **FALSE** | ArcFace 512-D claimed but falls back to 64-bit dHash perceptual hash when model unmounted |
-| C-06 | 17 / 26 | Test suite total count equals 305 tests | cmd | **VERIFIED** | 305 tests collected across suite |
+| C-06 | 17 / 26 | Test suite total count equals 305 tests | cmd | **FALSE** | Collected 318 tests, blueprint claims 305 (earlier 220) |
 | C-07 | 14.1 / 15.1 | Zero-raw-storage: motion photo temp video file handling | file | **VERIFIED** | Temp .mp4 written for motion photo extraction and reliably unlinked in finally |
 | C-08 | 15.1 / 31 | Card Detector v2 (RF-DETR Small INT8) accepted with 0.63% Neg FP Rate | file | **FALSE** | Blueprint §31 marks Card INT8 ACCEPTED, but production default is YOLOv8 and bakeoff records {'models': {'yolov8': {'license': 'AGPL-3.0 (Copyleft restrictions for proprietary deployments)', 'nms_required': True, 'card_mAP50': 0.0, 'aadhaar_mAP50': 0.992, 'card_p50_ms': 152.16, 'aadhaar_p50_ms': 152.98}, 'rf_detr': {'license': 'Apache 2.0 (Permissive, unrestricted commercial & gov deployments)', 'nms_required': False, 'card_mAP50': 0.0, 'aadhaar_mAP50': 0.0, 'card_p50_ms': None, 'aadhaar_p50_ms': None}}, 'recommendation': "Deploy RF-DETR (Apache 2.0) for production checkpoint deployments to eliminate AGPL copyleft liability, while maintaining YOLOv8 operational side-by-side via DETECTOR_BACKEND='yolov8' for backward compatibility."} |
 | C-09 | 15.1 / 31 | MRZ Phase C2 check-digit recovery achieves 74% on held-out crops | file | **VERIFIED** | MRZ metrics accurately attributed |
@@ -38,7 +38,7 @@
 | EP-GET-/api/ledger/cert/65b/{id} | 22 | Endpoint GET /api/ledger/cert/65b/{id} implemented | cmd | **FALSE** | Route GET /api/ledger/cert/65b/{id} not registered in FastAPI app |
 | EP-POST-/api/ledger/anchor | 22 | Endpoint POST /api/ledger/anchor implemented | cmd | **FALSE** | Route POST /api/ledger/anchor not registered in FastAPI app |
 | FILE-api_index.py | 25 | Repository file api/index.py exists on disk | file | **VERIFIED** | File exists (287 bytes) |
-| FILE-app_main.py | 25 | Repository file app/main.py exists on disk | file | **VERIFIED** | File exists (227545 bytes) |
+| FILE-app_main.py | 25 | Repository file app/main.py exists on disk | file | **VERIFIED** | File exists (233106 bytes) |
 | FILE-app_keys.py | 25 | Repository file app/keys.py exists on disk | file | **VERIFIED** | File exists (5845 bytes) |
 | FILE-app_screening.py | 25 | Repository file app/screening.py exists on disk | file | **VERIFIED** | File exists (86195 bytes) |
 | FILE-app_extraction.py | 25 | Repository file app/extraction.py exists on disk | file | **VERIFIED** | File exists (21002 bytes) |
@@ -76,12 +76,12 @@
 | FILE-docs_ML_PIPELINE_CHANGES.md | 25 | Repository file docs/ML_PIPELINE_CHANGES.md exists on disk | file | **VERIFIED** | File exists (28328 bytes) |
 | FILE-docs_MODEL_CARD.md | 25 | Repository file docs/MODEL_CARD.md exists on disk | file | **VERIFIED** | File exists (3250 bytes) |
 | FILE-docs_OPERATIONS.md | 25 | Repository file docs/OPERATIONS.md exists on disk | file | **VERIFIED** | File exists (3346 bytes) |
-| FILE-docs_OWNER_TODO.md | 25 | Repository file docs/OWNER_TODO.md exists on disk | file | **VERIFIED** | File exists (3283 bytes) |
+| FILE-docs_OWNER_TODO.md | 25 | Repository file docs/OWNER_TODO.md exists on disk | file | **VERIFIED** | File exists (3569 bytes) |
 | FILE-docs_RESUME_AFTER_SPECIMENS.md | 25 | Repository file docs/RESUME_AFTER_SPECIMENS.md exists on disk | file | **VERIFIED** | File exists (4114 bytes) |
 | FILE-docs_SWITCH_READINESS.md | 25 | Repository file docs/SWITCH_READINESS.md exists on disk | file | **VERIFIED** | File exists (5189 bytes) |
 | FILE-docs_TRAINING_PROGRESS.md | 25 | Repository file docs/TRAINING_PROGRESS.md exists on disk | file | **VERIFIED** | File exists (75525 bytes) |
 | FILE-ml_service_Dockerfile | 25 | Repository file ml_service/Dockerfile exists on disk | file | **VERIFIED** | File exists (655 bytes) |
-| FILE-ml_service_main.py | 25 | Repository file ml_service/main.py exists on disk | file | **VERIFIED** | File exists (16092 bytes) |
+| FILE-ml_service_main.py | 25 | Repository file ml_service/main.py exists on disk | file | **VERIFIED** | File exists (18673 bytes) |
 | FILE-ml_service_media_processor.py | 25 | Repository file ml_service/media_processor.py exists on disk | file | **VERIFIED** | File exists (16044 bytes) |
 | FILE-ml_service_requirements.txt | 25 | Repository file ml_service/requirements.txt exists on disk | file | **VERIFIED** | File exists (240 bytes) |
 | FILE-ml_service_yolo_roi.py | 25 | Repository file ml_service/yolo_roi.py exists on disk | file | **VERIFIED** | File exists (39859 bytes) |

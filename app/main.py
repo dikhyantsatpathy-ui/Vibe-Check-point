@@ -74,6 +74,88 @@ from config import to_ist, IST, MAX_UPLOAD_BYTES, DOCUMENT_CATALOG
 from guide import (flow_for, checkpoint_catalog, document_catalog,
                    nationality_catalog)
 from stats import report_stats, session_stats, throughput
+
+from PIL import Image
+# Decompression bomb explicit hardening: lower than default 89,478,485
+Image.MAX_IMAGE_PIXELS = 50_000_000
+
+
+async def read_upload_capped(upload_file: UploadFile, max_bytes: int = MAX_UPLOAD_BYTES) -> bytes:
+    """Stream an uploaded file in 64KB chunks and enforce a hard byte cap (HTTP 413)."""
+    if upload_file is None:
+        return b""
+    total = 0
+    chunks = []
+    while True:
+        chunk = await upload_file.read(65536)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Upload payload exceeds maximum allowed size of {max_bytes // (1024 * 1024)} MB.",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def validate_upload_bytes(data: bytes, filename: str = "", max_pdf_pages: int = 10) -> str:
+    """Validate magic bytes, guard against decompression bombs and polyglots, cap PDF pages."""
+    if not data or len(data) == 0:
+        raise HTTPException(status_code=400, detail="Empty file — please attach a document image or PDF.")
+
+    # 1. PDF document
+    if data.startswith(b"%PDF"):
+        num_pages = 0
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(io.BytesIO(data))
+            num_pages = len(reader.pages)
+        except Exception as exc:
+            import re
+            if not re.search(rb"\d+\s+\d+\s+obj\b", data):
+                raise HTTPException(status_code=400, detail=f"Corrupt or malformed PDF: {exc}")
+            num_pages = len(re.findall(rb"/Type\s*/Page\b", data))
+
+        if num_pages > max_pdf_pages:
+            raise HTTPException(
+                status_code=413,
+                detail=f"PDF document exceeds {max_pdf_pages} page limit (found {num_pages} pages).",
+            )
+        return "pdf"
+
+    # 2. Magic-byte verification for image formats
+    is_jpeg = data.startswith(b"\xff\xd8\xff")
+    is_png = data.startswith(b"\x89PNG\r\n\x1a\n")
+    is_webp = data.startswith(b"RIFF") and len(data) > 12 and data[8:12] == b"WEBP"
+    is_bmp = data.startswith(b"BM")
+    is_tiff = data.startswith((b"II*\x00", b"MM\x00*"))
+
+    if not (is_jpeg or is_png or is_webp or is_bmp or is_tiff):
+        raise HTTPException(
+            status_code=415,
+            detail="Unsupported type — send a PDF or a jpg/png/webp/bmp image.",
+        )
+
+    # 3. Decode verification against corrupt images / polyglots / decompression bombs
+    try:
+        img = Image.open(io.BytesIO(data))
+        img.verify()
+        img = Image.open(io.BytesIO(data))
+        w, h = img.size
+        if w * h > Image.MAX_IMAGE_PIXELS:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Decompression bomb rejected: image dimensions ({w}x{h}) exceed {Image.MAX_IMAGE_PIXELS} pixels.",
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Corrupt or malformed image: {exc}")
+
+    return "jpg" if is_jpeg else ("png" if is_png else ("webp" if is_webp else "bmp"))
+
 # Passport/Visa MRZ / Driving-Licence / PAN / Voter-ID validation lives in
 # identity.py and feeds the screening desk's Module 2 (document validation)
 # through app/validation.py. Emits explainable checks, stores zero raw bytes.
@@ -1158,6 +1240,14 @@ def is_super_admin(email: str) -> bool:
         return False
     return clean in set(get_super_admins())
 
+def is_demo_pass_enabled() -> bool:
+    """True only when DEMO_PASS_ENABLED is set to truthy value (1, true, yes). Default False."""
+    return os.getenv("DEMO_PASS_ENABLED", "").strip().lower() in ("1", "true", "yes")
+
+def is_demo_officer(email: str) -> bool:
+    """Check if the officer account is the SIH demo evaluator identity."""
+    return (email or "").strip().lower() == "evaluator@ssb.gov.in"
+
 # ==============================================================================
 # [ COLUMN 2: DATABASE MODELS ]
 # ==============================================================================
@@ -2050,11 +2140,28 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="No Cap · Enterprise Provenance Engine", version="12.0",
               max_body_size=50 * 1024 * 1024, lifespan=lifespan)
+def get_trusted_remote_address(request: Request) -> str:
+    """Resolve client IP for rate-limiting.
+    Reads X-Forwarded-For ONLY when TRUST_PROXY_HEADERS is truthy ('1', 'true', 'yes').
+    By default (TRUST_PROXY_HEADERS off), always uses direct request.client.host
+    to prevent spoofed header rate-limit bypasses.
+    NOTE: Without REDIS_URL/KV_URL configured, rate-limit counters are kept in-memory per application instance.
+    """
+    trust_proxy = os.getenv("TRUST_PROXY_HEADERS", "").strip().lower() in ("1", "true", "yes")
+    if trust_proxy:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+    if request.client and request.client.host:
+        return request.client.host
+    return "127.0.0.1"
+
+
 _redis_uri = os.getenv("REDIS_URL") or os.getenv("KV_URL")
 if _redis_uri:
-    limiter = Limiter(key_func=get_remote_address, storage_uri=_redis_uri)
+    limiter = Limiter(key_func=get_trusted_remote_address, storage_uri=_redis_uri)
 else:
-    limiter = Limiter(key_func=get_remote_address)
+    limiter = Limiter(key_func=get_trusted_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -2090,6 +2197,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()"
+        response.headers["Content-Security-Policy-Report-Only"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://accounts.google.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com data:; "
+            "img-src 'self' data: blob: https:; "
+            "connect-src 'self' https://accounts.google.com; "
+            "frame-src https://accounts.google.com; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self';"
+        )
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0, private"
             response.headers["Pragma"] = "no-cache"
@@ -2167,6 +2286,7 @@ def health_check(request: Request, admin: str = Depends(get_current_admin_or_non
         return base
     return {
         **base,
+        "demo_pass_enabled": is_demo_pass_enabled(),
         "database": {
             "connected": db_connected,
             "engine": db_type,
@@ -2345,27 +2465,26 @@ def admin_login(request: Request, credential: str = Form(...)):
 @app.post("/api/admin/demo_login")
 @limiter.limit("30/minute")
 def admin_demo_login(request: Request):
-    """Instant 1-click authentication for SIH evaluators and sandbox officers."""
+    """Instant 1-click authentication for SIH evaluators and sandbox officers.
+    Gated strictly behind DEMO_PASS_ENABLED=1 for jury evaluations only.
+    On production or unattended deployments without DEMO_PASS_ENABLED, this route returns 404."""
+    if not is_demo_pass_enabled():
+        raise HTTPException(status_code=404, detail="Demo evaluator pass is disabled on this deployment.")
     demo_email = "evaluator@ssb.gov.in"
     with get_db() as db:
-        identity = get_or_create_signer_identity(db, demo_email, "Inspector R. Sharma (Border Screening Division)")
+        identity = get_or_create_signer_identity(db, demo_email, "Inspector R. Sharma (Border Screening Division) [DEMO EVALUATOR]")
         if not identity.designation:
-            identity.designation = "Border Screening Inspector"
+            identity.designation = "Border Screening Inspector [DEMO]"
         if not identity.institution:
-            identity.institution = "Sashastra Seema Bal (Police II Div)"
+            identity.institution = "Sashastra Seema Bal (Police II Div) [DEMO]"
         try:
             db.commit()
         except Exception:
             db.rollback()
     is_secure = os.getenv("VERCEL") == "1" or request.url.scheme == "https" or os.getenv("ENVIRONMENT") == "production"
-    res = JSONResponse(content={"status": "SUCCESS", "admin": demo_email})
+    res = JSONResponse(content={"status": "SUCCESS", "admin": demo_email, "demo": True})
     res.set_cookie(key="nischay_session", value=make_session_token(demo_email), httponly=True, secure=is_secure, samesite="lax", max_age=86400)
     return res
-# that minted a session cookie for `evaluator@ssb.gov.in` -- an account that
-# was also in the hardcoded super-admin list. It was, in effect, an
-# unauthenticated root login on any reachable deployment. It has been removed.
-# If you need a sandbox, run locally with TESTING=1 or point the frontend at a
-# dev instance; do not ship a shared bypass to a screening desk.
 
 @app.post("/api/admin/logout")
 @limiter.limit("20/minute")
@@ -2599,11 +2718,16 @@ async def screen_document(
     admin: str = Depends(get_current_admin),
 ):
     try:
-        data = await file.read()
-        if not data:
-            raise HTTPException(status_code=400, detail="Empty file — please attach a document image or PDF.")
-        if len(data) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="Document too large (8 MB cap).")
+        cl = request.headers.get("content-length")
+        if cl:
+            try:
+                if int(cl) > MAX_UPLOAD_BYTES:
+                    raise HTTPException(status_code=413, detail="Document too large (8 MB cap).")
+            except ValueError:
+                pass
+
+        data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
+        ext = validate_upload_bytes(data, file.filename or "")
 
         session_owner = session_id.strip() or None
         if session_owner:
@@ -2618,27 +2742,14 @@ async def screen_document(
         if _cached_report is not None:
             logger.info(f"[screen_document] Idempotent replay for {file.filename} — returning cached result, no re-screening.")
             return _cached_report
-
-        ext = (file.filename or "").lower().rsplit(".", 1)[-1] if "." in (file.filename or "") else ""
-        if ext not in _SYNC_SCREENED_EXTS:
-            if data.startswith(b"%PDF"):
-                ext = "pdf"
-            elif data.startswith((b"\xff\xd8", b"\x89PNG", b"RIFF", b"BM")):
-                ext = "jpg"
-            elif (file.content_type or "").startswith("image/"):
-                ext = "jpg"
-            elif (file.content_type or "") == "application/pdf":
-                ext = "pdf"
-            else:
-                raise HTTPException(status_code=415, detail="Unsupported type — send a PDF or a jpg/png/webp/bmp image.")
         
         data_back = None
         filename_back = None
         if file_back is not None:
-            data_back = await file_back.read()
-            filename_back = file_back.filename or "back.jpg"
-            if len(data_back) > MAX_UPLOAD_BYTES:
-                raise HTTPException(status_code=413, detail="Back side document too large (8 MB cap).")
+            data_back = await read_upload_capped(file_back, MAX_UPLOAD_BYTES)
+            if data_back:
+                validate_upload_bytes(data_back, file_back.filename or "")
+                filename_back = file_back.filename or "back.jpg"
 
         declared_map = {}
         if declared.strip():
@@ -2648,9 +2759,9 @@ async def screen_document(
                     declared_map = {}
             except Exception:
                 declared_map = {}
-        live_bytes = await live_frame.read() if live_frame is not None else None
-        if live_bytes and len(live_bytes) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="Live frame too large (8 MB cap).")
+        live_bytes = await read_upload_capped(live_frame, MAX_UPLOAD_BYTES) if live_frame is not None else None
+        if live_bytes:
+            validate_upload_bytes(live_bytes, live_frame.filename or "")
         nat = (nationality or "").strip().upper()[:2] or None
         purpose_txt = (purpose or "").strip()[:120] or None
         session_owner = session_id.strip() or None
@@ -3444,16 +3555,18 @@ async def extract_live_image(
     an OCR/MRZ status, before deciding to run a full screening.
     """
     try:
-        data = await file.read()
-        if len(data) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="Image too large (8 MB cap).")
-        ext = (file.filename or "").lower().rsplit(".", 1)[-1] if "." in (file.filename or "") else ""
-        if ext not in _SYNC_SCREENED_EXTS:
-            if data.startswith((b"\xff\xd8", b"\x89PNG", b"RIFF", b"BM")) or (file.content_type or "").startswith("image/"):
-                ext = "jpg"
-            else:
-                raise HTTPException(status_code=415, detail="Send a jpg/png/webp/bmp image.")
-        frame_bytes = await live_frame.read() if live_frame is not None else None
+        cl = request.headers.get("content-length")
+        if cl:
+            try:
+                if int(cl) > MAX_UPLOAD_BYTES:
+                    raise HTTPException(status_code=413, detail="Image too large (8 MB cap).")
+            except ValueError:
+                pass
+        data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
+        ext = validate_upload_bytes(data, file.filename or "")
+        frame_bytes = await read_upload_capped(live_frame, MAX_UPLOAD_BYTES) if live_frame is not None else None
+        if frame_bytes:
+            validate_upload_bytes(frame_bytes, live_frame.filename or "")
         
         # Auto-classify document type with local ONNX classifier
         from doctype_cls import classify_document
@@ -3623,12 +3736,27 @@ def screening_shift_export(
         "confidence", "screener", "adjudication",
         "adjudicator", "created_at", "masked_fields",
     ])
+    def sanitize_csv_cell(val):
+        if val is None:
+            return ""
+        s = str(val)
+        if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
+            return "'" + s
+        return s
+
     for r in rows:
         writer.writerow([
-            r.id, r.doc_type or "other", r.checkpoint or "",
-            r.verdict, r.risk_score, r.confidence,
-            r.screener or "", r.adjudication or "", r.adjudicator or "",
-            r.created_at, r.extracted_fields or "{}",
+            sanitize_csv_cell(r.id),
+            sanitize_csv_cell(r.doc_type or "other"),
+            sanitize_csv_cell(r.checkpoint or ""),
+            sanitize_csv_cell(r.verdict),
+            sanitize_csv_cell(r.risk_score),
+            sanitize_csv_cell(r.confidence),
+            sanitize_csv_cell(r.screener or ""),
+            sanitize_csv_cell(r.adjudication or ""),
+            sanitize_csv_cell(r.adjudicator or ""),
+            sanitize_csv_cell(r.created_at),
+            sanitize_csv_cell(r.extracted_fields or "{}"),
         ])
 
     csv_body = buf.getvalue()
@@ -4110,6 +4238,8 @@ def screening_watchlist_add(
     admin: str = Depends(get_current_admin),
 ):
     from screening import norm, mask, sha256
+    if is_demo_officer(admin):
+        raise HTTPException(status_code=403, detail="Demo evaluator account is restricted from modifying watchlist entries.")
     if not is_super_admin(admin):
         raise HTTPException(status_code=403, detail="Watchlist access requires a supervisory officer.")
     if not value.strip():
@@ -4147,6 +4277,8 @@ def screening_watchlist_remove(
     entry_id: int = Form(...),
     admin: str = Depends(get_current_admin),
 ):
+    if is_demo_officer(admin):
+        raise HTTPException(status_code=403, detail="Demo evaluator account is restricted from modifying watchlist entries.")
     if not is_super_admin(admin):
         raise HTTPException(status_code=403, detail="Watchlist access requires a supervisory officer.")
     with get_db() as db:
@@ -4399,9 +4531,15 @@ async def screen_aadhaar_fields(
     """Detect Aadhaar-card field bounding boxes using the trained 5-class YOLO model
     (classes: Aadhaar_No, DOB, Gender, Name, Photo)."""
     try:
-        data = await file.read()
-        if len(data) > 8 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="Document too large (8 MB cap).")
+        cl = request.headers.get("content-length")
+        if cl:
+            try:
+                if int(cl) > MAX_UPLOAD_BYTES:
+                    raise HTTPException(status_code=413, detail="Document too large (8 MB cap).")
+            except ValueError:
+                pass
+        data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
+        validate_upload_bytes(data, file.filename or "")
         try:
             from yolo_roi import extract_aadhaar_fields
             boxes = extract_aadhaar_fields(data)
@@ -4434,8 +4572,9 @@ async def verify_liveness(
     try:
         raw_frames = []
         for f in frames:
-            b = await f.read()
+            b = await read_upload_capped(f, MAX_UPLOAD_BYTES)
             if b:
+                validate_upload_bytes(b, f.filename or "")
                 raw_frames.append(b)
         meta = {}
         if client_meta.strip():
@@ -4663,6 +4802,8 @@ def create_broadcast(
     admin: str = Depends(get_current_admin),
 ):
     """Author a signed authority notice (requires an approved officer session)."""
+    if is_demo_officer(admin):
+        raise HTTPException(status_code=403, detail="Demo evaluator account is restricted from authoring official broadcasts.")
     title = broadcast_title.strip()
     if not title or not message.strip():
         raise HTTPException(status_code=400, detail="A title and a message are required.")

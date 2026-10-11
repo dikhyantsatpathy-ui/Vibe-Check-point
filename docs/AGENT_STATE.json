@@ -1,20 +1,34 @@
 {
-  "phase": "F",
-  "task": "F-01",
+  "phase": "A",
+  "task": "A1",
   "done": [
-    "0.5",
     "0.1",
     "0.2",
     "0.3",
     "0.4",
+    "0.5",
     "0.6",
     "B1",
     "B2",
-    "B3"
+    "B3",
+    "F-01",
+    "F-02",
+    "F-03",
+    "F-04",
+    "F-05",
+    "F-06",
+    "F-07",
+    "F-08",
+    "F-09",
+    "F-10",
+    "F-11",
+    "F-12"
   ],
-  "blocked": [],
+  "blocked": [
+    "F-13",
+    "F-14"
+  ],
   "findings_open": [
-    "C-01",
     "C-02",
     "C-03",
     "C-04",
@@ -31,6 +45,6 @@
     "EP-POST-/api/ledger/anchor"
   ],
   "last_commit": "",
-  "last_evidence": "",
-  "notes": "Phase 0 initialized on branch ml/blueprint-sync-v7"
+  "last_evidence": "Phase F completed (F-01 through F-14 verified/tested or blocked)",
+  "notes": "Transitioning to Phase A (Face Matching / ArcFace)"
 }

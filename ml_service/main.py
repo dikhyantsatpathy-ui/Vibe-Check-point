@@ -16,7 +16,7 @@ logger = logging.getLogger("ml_service")
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
-    sys.path.insert(0, _HERE)
+    sys.path.append(_HERE)
 
 from yolo_roi import extract_roi_boxes
 from face_match import compare_faces
@@ -30,14 +30,14 @@ _API_KEY_HEADER = APIKeyHeader(name="X-ML-Secret-Key", auto_error=False)
 def verify_ml_auth(x_ml_secret_key: Optional[str] = Security(_API_KEY_HEADER)):
     expected = (os.getenv("ML_SERVICE_SECRET") or os.getenv("ML_SECRET_KEY") or "").strip()
     if not expected:
-        if os.getenv("ML_ALLOW_NO_AUTH", "").strip().lower() == "true":
+        if os.getenv("ML_ALLOW_NO_AUTH", "").strip().lower() in ("true", "1", "yes"):
             logger.warning(
-                "[auth] ML_SECRET_KEY unset. Request permitted because ML_ALLOW_NO_AUTH=true is explicitly set."
+                "[auth] ML_SECRET_KEY / ML_SERVICE_SECRET unset. Non-health request permitted because ML_ALLOW_NO_AUTH is explicitly set."
             )
             return True
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="ML microservice auth not configured: ML_SECRET_KEY is required (or set ML_ALLOW_NO_AUTH=true for local dev).",
+            detail="ML microservice auth not configured: ML_SECRET_KEY or ML_SERVICE_SECRET is required (or set ML_ALLOW_NO_AUTH=true for local dev).",
         )
     if not x_ml_secret_key or not hmac.compare_digest(x_ml_secret_key.strip(), expected):
         raise HTTPException(
@@ -192,8 +192,28 @@ def onnx_detect(image_bytes: bytes) -> dict:
 Image.MAX_IMAGE_PIXELS = 50_000_000
 
 
+async def read_stream_capped(file: UploadFile, max_bytes: int = 15 * 1024 * 1024) -> bytes:
+    """Stream an uploaded file in 64KB chunks and enforce a hard byte cap (HTTP 413)."""
+    if file is None:
+        return b""
+    total = 0
+    chunks = []
+    while True:
+        chunk = await file.read(65536)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Upload payload exceeds maximum allowed size of {max_bytes // (1024 * 1024)} MB.",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 def harden_image_input(raw_data: bytes, max_mb: int = 15) -> tuple[bytes, Image.Image]:
-    """Validate, sanitize, and guard image inputs against decompression bombs and corrupted data."""
+    """Validate magic bytes, sanitize against polyglots/corrupt data, and guard against decompression bombs."""
     if not raw_data or len(raw_data) == 0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty image data provided.")
     if len(raw_data) > max_mb * 1024 * 1024:
@@ -201,14 +221,34 @@ def harden_image_input(raw_data: bytes, max_mb: int = 15) -> tuple[bytes, Image.
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"Image file size exceeds limit of {max_mb} MB.",
         )
+
+    # Magic-byte check
+    is_jpeg = raw_data.startswith(b"\xff\xd8\xff")
+    is_png = raw_data.startswith(b"\x89PNG\r\n\x1a\n")
+    is_webp = raw_data.startswith(b"RIFF") and len(raw_data) > 12 and raw_data[8:12] == b"WEBP"
+    is_bmp = raw_data.startswith(b"BM")
+    is_tiff = raw_data.startswith((b"II*\x00", b"MM\x00*"))
+    if not (is_jpeg or is_png or is_webp or is_bmp or is_tiff):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid image format: unsupported or corrupt magic bytes.",
+        )
+
     try:
         from PIL import ImageOps
         img = Image.open(io.BytesIO(raw_data))
         img.verify()
         # Reload after verify()
         img = Image.open(io.BytesIO(raw_data))
+        if img.width * img.height > Image.MAX_IMAGE_PIXELS:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Decompression bomb rejected: dimensions ({img.width}x{img.height}) exceed {Image.MAX_IMAGE_PIXELS} pixel limit.",
+            )
         img = ImageOps.exif_transpose(img)
         img = img.convert("RGB")
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -348,7 +388,7 @@ def startup_prewarm():
 @app.post("/api/ml/yolo_roi", dependencies=[Depends(verify_ml_auth)])
 @app.post("/detect/card", dependencies=[Depends(verify_ml_auth)])
 async def api_yolo_roi(file: UploadFile = File(...)):
-    raw_data = await file.read()
+    raw_data = await read_stream_capped(file)
     data, _ = harden_image_input(raw_data)
     boxes = extract_roi_boxes(data)
     return boxes
@@ -358,7 +398,7 @@ from yolo_roi import extract_aadhaar_fields
 @app.post("/api/ml/aadhaar_fields", dependencies=[Depends(verify_ml_auth)])
 @app.post("/detect/fields", dependencies=[Depends(verify_ml_auth)])
 async def api_aadhaar_fields(file: UploadFile = File(...)):
-    raw_data = await file.read()
+    raw_data = await read_stream_capped(file)
     data, _ = harden_image_input(raw_data)
     boxes = extract_aadhaar_fields(data)
     return boxes
@@ -371,14 +411,14 @@ async def api_face_match(
     doc_age_years: Optional[float] = Form(None),
     emb_same: Optional[float] = Form(None)
 ):
-    live_bytes = await live_frame.read()
+    live_bytes = await read_stream_capped(live_frame)
     result = compare_faces(doc_face_b64, live_bytes, doc_age_years, emb_same)
     return result
 
 
 @app.post("/api/ml/detect_image", dependencies=[Depends(verify_ml_auth)])
 async def api_detect_image(file: UploadFile = File(...)):
-    raw_data = await file.read()
+    raw_data = await read_stream_capped(file)
     data, _ = harden_image_input(raw_data)
     result = onnx_detect(data)
     return result
@@ -388,7 +428,7 @@ from doctype_cls import classify_document
 @app.post("/api/ml/doctype", dependencies=[Depends(verify_ml_auth)])
 @app.post("/classify/doctype", dependencies=[Depends(verify_ml_auth)])
 async def api_doctype(file: UploadFile = File(...)):
-    raw_data = await file.read()
+    raw_data = await read_stream_capped(file)
     data, _ = harden_image_input(raw_data)
     result = classify_document(data)
     return result or {"doc_type": "other", "confidence": 0.0, "scores": {}, "engine": "none"}
@@ -397,7 +437,7 @@ async def api_doctype(file: UploadFile = File(...)):
 from doc_forgery import analyze_doc_forgery
 @app.post("/api/ml/doc_forgery", dependencies=[Depends(verify_ml_auth)])
 async def api_doc_forgery(file: UploadFile = File(...)):
-    raw_data = await file.read()
+    raw_data = await read_stream_capped(file)
     data, _ = harden_image_input(raw_data)
     result = analyze_doc_forgery(data)
     return result
@@ -408,8 +448,29 @@ from media_processor import process_pdf_document, process_live_photo
 
 @app.post("/api/ml/media/process_pdf", dependencies=[Depends(verify_ml_auth)])
 async def api_process_pdf(file: UploadFile = File(...), max_pages: int = 5):
-    data = await file.read()
-    res = process_pdf_document(data, max_pages=max_pages)
+    server_max_pages = min(max(1, max_pages), 10)
+    data = await read_stream_capped(file)
+    if not data or len(data) == 0:
+        raise HTTPException(status_code=400, detail="Empty PDF payload.")
+    if not data.startswith(b"%PDF"):
+        raise HTTPException(status_code=400, detail="Invalid PDF: missing %PDF magic bytes.")
+    num_pages = 0
+    try:
+        from pypdf import PdfReader
+        reader = PdfReader(io.BytesIO(data))
+        num_pages = len(reader.pages)
+    except Exception as exc:
+        import re
+        if not re.search(rb"\d+\s+\d+\s+obj\b", data):
+            raise HTTPException(status_code=400, detail=f"Corrupt or malformed PDF: {exc}")
+        num_pages = len(re.findall(rb"/Type\s*/Page\b", data))
+
+    if num_pages > 10:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"PDF page count ({num_pages}) exceeds server-side limit of 10 pages.",
+        )
+    res = process_pdf_document(data, max_pages=server_max_pages)
     # Serialize rendered PNG buffers to base64 for JSON response
     serialized_pages = []
     for p in res.get("pages", []):
@@ -424,7 +485,7 @@ async def api_process_pdf(file: UploadFile = File(...), max_pages: int = 5):
 
 @app.post("/api/ml/media/process_live_photo", dependencies=[Depends(verify_ml_auth)])
 async def api_process_live_photo(file: UploadFile = File(...)):
-    data = await file.read()
+    data = await read_stream_capped(file)
     filename = file.filename or ""
     res = process_live_photo(data, filename=filename)
     raw_primary = res.pop("primary_image_png", None)

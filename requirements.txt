@@ -1,21 +1,21 @@
-fastapi
-uvicorn
-sqlalchemy
-psycopg2-binary
-psycopg[binary]
-pypdf
-requests
-python-multipart
-slowapi
-google-auth
-python-dotenv
-numpy
-Pillow
-openai
-pydantic
+fastapi==0.141.1
+uvicorn==0.52.4
+sqlalchemy==2.0.52
+psycopg2-binary==2.9.12
+pypdf==6.16.2
+requests==2.34.2
+python-multipart==0.0.32
+slowapi==0.1.10
+google-auth==2.57.0
+python-dotenv==1.2.3
+numpy==2.3.5
+Pillow==12.3.0
+openai==2.54.0
+pydantic==2.13.4
 
 # Local-only (NOT installed on Vercel): on-device AI pretrained model runtime.
 # Only needed if you run AI_DETECTOR_PROVIDER=self-hosted on a laptop/worker.
 # onnxruntime
-httpx
-cryptography
+httpx==0.28.1
+cryptography==50.0.1
+
