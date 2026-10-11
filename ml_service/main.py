@@ -1,3 +1,4 @@
+import hmac
 import io
 import os
 import sys
@@ -38,7 +39,7 @@ def verify_ml_auth(x_ml_secret_key: Optional[str] = Security(_API_KEY_HEADER)):
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="ML microservice auth not configured: ML_SECRET_KEY is required (or set ML_ALLOW_NO_AUTH=true for local dev).",
         )
-    if not x_ml_secret_key or x_ml_secret_key.strip() != expected:
+    if not x_ml_secret_key or not hmac.compare_digest(x_ml_secret_key.strip(), expected):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unauthorized: invalid or missing X-ML-Secret-Key",
