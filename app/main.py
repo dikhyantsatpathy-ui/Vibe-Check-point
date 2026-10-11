@@ -82,6 +82,8 @@ from stats import report_stats, session_stats, throughput
 from PIL import Image
 # Decompression bomb explicit hardening: lower than default 89,478,485
 Image.MAX_IMAGE_PIXELS = 50_000_000
+# Upload payload boundaries: 8MB app boundary, 15MB ML microservice boundary
+MAX_ML_SERVICE_UPLOAD_CAP = 15 * 1024 * 1024
 
 
 async def read_upload_capped(upload_file: UploadFile, max_bytes: int = MAX_UPLOAD_BYTES) -> bytes:
@@ -2201,7 +2203,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()"
-        response.headers["Content-Security-Policy-Report-Only"] = (
+        csp_val = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://accounts.google.com; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
@@ -2213,6 +2215,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "base-uri 'self'; "
             "form-action 'self';"
         )
+        response.headers["Content-Security-Policy"] = csp_val
+        response.headers["Content-Security-Policy-Report-Only"] = csp_val
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0, private"
             response.headers["Pragma"] = "no-cache"

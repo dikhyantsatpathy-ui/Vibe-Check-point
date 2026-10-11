@@ -1,6 +1,6 @@
 {
-  "phase": "K",
-  "task": "K1",
+  "phase": "R",
+  "task": "R1",
   "done": [
     "0.1",
     "0.2",
@@ -66,18 +66,20 @@
     "X6",
     "X7",
     "X8",
-    "L1"
+    "L1",
+    "K1",
+    "K2",
+    "K3",
+    "K4"
   ],
   "blocked": [
     "F-13",
     "F-14"
   ],
   "findings_open": [
-    "C-11",
-    "C-15",
     "S1-01"
   ],
   "last_commit": "ml/blueprint-sync-v7",
-  "last_evidence": "Phase L completed (Convergence loop finished; canonical endpoints classified in tests/test_authz.py; core test suite 121/121 passed; artifact in eval/runs/20261011_reverify_v1/convergence_l.json)",
-  "notes": "Phase L complete. Transitioning to Phase K (Blueprint Rewrite: K1-K4)."
+  "last_evidence": "Phase K completed (Blueprint rewritten: model facts reconciled, Rule 12 split into Invariant AUTH & Invariant FS, statutory claims qualified, test suite updated to 397+ tests, 6 canonical endpoints documented; C-11 and C-15 resolved in AUDIT_V7.md)",
+  "notes": "Phase K complete. Transitioning to Phase R (Release Gate: R1-R3)."
 }

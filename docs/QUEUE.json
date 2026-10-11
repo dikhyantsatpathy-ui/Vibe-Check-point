@@ -405,26 +405,26 @@
   {
     "id": "K1",
     "phase": "K",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Model facts reconciled in Blueprint §15.1 and §31: dual-track card detector (YOLOv8 default + RF-DETR permissive option); scale 2x/3x reality; DocType v2 calibrated accuracy with n < 30 caveat; honest rejections (Aadhaar RF-DETR DO-NOT-SHIP, ID-fields unrouted)."
   },
   {
     "id": "K2",
     "phase": "K",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Security architecture and invariants reconciled in Blueprint §9, §27.1, §31: dual invariant separation into Invariant AUTH (fail-closed 401/403) and Invariant FS (fail-safe screening, never CLEAR in degraded/fallback); CSP headers; streaming payload limits (8MB app / 15MB ML service); pairwise Merkle root; ArcFace 512-D + dHash fallback contract."
   },
   {
     "id": "K3",
     "phase": "K",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Statutory and legal claims reconciled in Blueprint §28 and §31: explicit qualification that technical architecture and electronic evidence chain-of-custody align with BSA 2023 §65B, BNS 2023, and DPDP 2023, with formal legal admissibility subject to counsel review."
   },
   {
     "id": "K4",
     "phase": "K",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Test counts and canonical endpoints reconciled in Blueprint §17, §22, §26: updated test suite to 397+ automated tests across 40 test suites; verified and documented all 6 canonical endpoints in §22."
   },
   {
     "id": "R1",

@@ -581,7 +581,7 @@ def chain_hash(prev_hash: str | None, payload: str) -> str:
 
 
 def compute_merkle_root(leaf_hashes: list[str]) -> str:
-    """Compute binary Merkle tree root hash over an ordered list of leaf hashes."""
+    """Compute binary pairwise Merkle tree root hash over an ordered list of leaf hashes."""
     leaves = [h for h in leaf_hashes if h]
     if not leaves:
         return hashlib.sha256(b"EMPTY_MERKLE_TREE").hexdigest()
