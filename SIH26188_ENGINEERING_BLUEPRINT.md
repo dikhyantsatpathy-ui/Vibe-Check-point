@@ -48,7 +48,7 @@ This document serves as the authoritative, definitive engineering blueprint and 
 23. AI Codebase Assistant & Retrieval-Augmented Security Model
 24. Development, Quality Gates & Atomic Git Workflow
 25. Repository Map & Source File Manifest
-26. Testing & Evaluation Suite (220 Automated Tests)
+26. Testing & Evaluation Suite (305 Automated Tests)
 27. Security Hardening & Threat Model (OWASP Top 10)
 28. Legal Admissibility Framework (BSA Section 65B & BNS 2023)
 29. Deployment Architecture (Vercel Serverless & ML Microservice)
@@ -587,10 +587,15 @@ d:\mos\crypto\
 │   ├── extraction.py       # Module 1: OCR, MRZ detection, QR decoding, Gemini fallback
 │   ├── validation.py       # Module 2: Checksum engines, format rules, watchlist matching
 │   ├── mrz.py              # ICAO Doc 9303 MRZ 7-3-1 weight algorithms & TD1/TD2/TD3 specs
+│   ├── mrz_enhancer.py     # CLAHE MRZ enhancement preprocessing & binarization
 │   ├── forensics.py        # Module 3: Image forensics (ELA, FFT PAPR, PRNU noise, blur)
 │   ├── tampering.py        # Computer vision tamper detection helpers & kernels
+│   ├── doc_forgery.py      # Document forgery detection helpers (ELA, splice, metadata checks)
 │   ├── face_match.py       # Module 4: Face extraction, cosine similarity, age thresholding
 │   ├── face.py             # Face detector wrappers & landmark alignment helpers
+│   ├── identity.py         # Identity-document field extraction & validation wrappers
+│   ├── rectification.py    # Perspective rectification & DLT homography mapping (CR-80 geometry)
+│   ├── remote_ml.py        # Remote ML microservice circuit-breaker client & health monitor
 │   ├── syndicate.py        # Cross-checkpoint syndicate graph analysis & duplicate tracker
 │   ├── session.py          # Multi-document session cross-comparison & raw field purging
 │   ├── stats.py            # Border screening analytics & IST/UTC operational metrics
@@ -620,8 +625,7 @@ d:\mos\crypto\
 │   │       └── ChatModal.tsx       # Floating conversational AI assistant modal
 ├── scripts/
 │   └── anchor_ledger.py    # CLI tool: anchors ledger hash to public GitHub Gist
-├── tests/                  # 15 test suites with 220 automated unit/integration tests
-├── pyproject.toml          # Modern Python packaging specification
+├── tests/                  # 30 test suites with 305 automated unit/integration tests (302 passed, 3 skipped)
 ├── pytest.ini              # Pytest configuration isolating test discovery to tests/
 ├── requirements.txt        # Production dependencies (psycopg2-binary, fastapi, Pillow, numpy)
 └── vercel.json             # Vercel serverless deployment routing configuration
@@ -677,8 +681,8 @@ The Syndicate Intelligence Engine (`app/syndicate.py`):
 | **Database Driver** | psycopg2-binary | `==2.9.10` | Battle-tested, high-performance PostgreSQL driver with SSL support. |
 | **ORM / Migration** | SQLAlchemy | `==2.0.38` | Modern declarative 2.0 syntax, pre-ping connection pool, idempotent DDL scripts. |
 | **Cryptography** | Python `hashlib`, `hmac`, `cryptography` | `cryptography==44.0.1` | HKDF-SHA256 key derivation, constant-time HMAC verification (`compare_digest`), SHA-256 ledger chaining. |
-| **Computer Vision** | Pillow, NumPy, OpenCV (headless) | `Pillow==11.1.0`, `numpy==2.2.3`, `opencv-python-headless==4.11.0.86` | In-memory ELA calculation, 2D-FFT spectral PAPR, PRNU noise variance, CLAHE contrast tuning. |
-| **Machine Learning Inference** | ONNX Runtime | `onnxruntime==1.21.0` | High-efficiency cross-platform INT8/FP32 neural model execution with sub-2ms doc classification. |
+| **Computer Vision** | Pillow, NumPy, OpenCV (headless) | `pillow==12.3.0`, `numpy==2.3.5`, `opencv-python-headless==5.0.0.93` | In-memory ELA calculation, 2D-FFT spectral PAPR, PRNU noise variance, CLAHE contrast tuning. |
+| **Machine Learning Inference** | ONNX Runtime | `onnxruntime==1.29.0` | High-efficiency cross-platform INT8/FP32 neural model execution with sub-2ms doc classification. |
 | **Deep Learning Framework** | PyTorch / Torchvision | `torch==2.6.0`, `torchvision==0.21.0` | Offline training, weight export, and local neural benchmarking. |
 | **OCR & Text Extraction** | RapidOCR / Tesseract | `rapidocr-onnxruntime==1.4.3` | High-precision multi-script optical character recognition for Latin and Devanagari. |
 | **Frontend Framework**| React + Vite + TypeScript | React 18, Vite 5 | Single-bundle inlined production build with zero client-side routing latency. |
@@ -757,7 +761,6 @@ All development follows strict software engineering practices:
 d:\mos\crypto\
 ├── .env.example                       # Documented environment variables
 ├── .vercelignore                      # Bundle exclusion patterns (models, docs, tests)
-├── pyproject.toml                     # Modern Python project configuration
 ├── pytest.ini                         # Pytest configuration (testpaths = tests, pythonpath = .)
 ├── requirements.txt                   # Production Python package manifest
 ├── vercel.json                        # Serverless rewrite configuration
@@ -771,10 +774,15 @@ d:\mos\crypto\
 │   ├── extraction.py                  # Optical extraction, OCR, layout-mode PDF, MRZ & QR engine
 │   ├── validation.py                  # Checksum & rule validator (ICAO, Verhoeff, PAN, Treaty)
 │   ├── mrz.py                         # ICAO Doc 9303 MRZ algorithm & Phase C2 check-digit repair
+│   ├── mrz_enhancer.py                # CLAHE MRZ enhancement preprocessing & binarization
 │   ├── forensics.py                   # Multimodal pixel forensics engine (ELA, FFT, PRNU)
 │   ├── tampering.py                   # Tampering detection algorithms & spectral kernels
+│   ├── doc_forgery.py                 # Document forgery detection helpers (ELA, splice, metadata checks)
 │   ├── face_match.py                  # Facial biometric matching & liveness
 │   ├── face.py                        # Facial alignment helpers & landmark extraction
+│   ├── identity.py                    # Identity-document field extraction & validation wrappers
+│   ├── rectification.py               # Perspective rectification & DLT homography mapping (CR-80 geometry)
+│   ├── remote_ml.py                   # Remote ML microservice circuit-breaker client & health monitor
 │   ├── syndicate.py                   # Syndicate intelligence graph engine
 │   ├── session.py                     # Multi-document session tracker & zero-storage digest comparator
 │   ├── stats.py                       # Operational screening statistics & IST histograms
@@ -790,16 +798,55 @@ d:\mos\crypto\
 │   └── static/
 │       └── index.html                 # Compiled single-file frontend
 ├── docs/
+│   ├── AUDIT_V4.md                    # Work Order v4 Audit Register & Architecture Review
 │   ├── AUDIT_V5.md                    # Work Order v5 Audit Register & Findings (F-001–F-005)
-│   ├── DEPLOYMENT_ISOLATION.md        # Production vs Test site isolation architecture
+│   ├── DATASET_CREDITS.md             # Dataset source attribution, licensing & compliance
 │   ├── DEPENDENCY_LICENCES.md         # License compliance matrix & AGPL copyleft boundary
-│   └── OWNER_TODO.md                  # Secret vault migration & Neon test branch setup
+│   ├── DEPLOYMENT_ISOLATION.md        # Production vs Test site isolation architecture
+│   ├── LIMITATIONS.md                 # Known operational boundaries & edge-case catalog
+│   ├── ML_PIPELINE.md                 # Machine learning architecture & pipeline overview
+│   ├── ML_PIPELINE_CHANGES.md         # Comprehensive log of ML pipeline changes & trade-offs
+│   ├── MODEL_CARD.md                  # Model performance characteristics, bias, and evaluation cards
+│   ├── OPERATIONS.md                  # Standard operating procedures for border checkpoint booths
+│   ├── OWNER_TODO.md                  # Secret vault migration & Neon test branch setup
+│   ├── RESUME_AFTER_SPECIMENS.md      # Indian physical card evaluation protocols
+│   ├── SWITCH_READINESS.md            # Pre-flight operational readiness checklist
+│   └── TRAINING_PROGRESS.md           # Training logs, validation curves, and ablation notes
 ├── eval/
-│   └── repro_ledger.py                # Deterministic metric reproduction harness
+│   ├── audit_leakage.py               # Train/val/test data leakage audit
+│   ├── audit_task1.py                 # Task 1 card detection ablation audit
+│   ├── audit_task1c.py                # Task 1c candidate evaluation audit
+│   ├── audit_v4.py                    # Comprehensive system benchmark audit
+│   ├── benchmark.py                   # End-to-end CPU throughput and latency benchmark
+│   ├── dataset.py                     # Evaluation dataset loaders and split parsers
+│   ├── eval_aadhaar_rfdetr.py         # Aadhaar field detector evaluation harness
+│   ├── eval_id_fields.py              # Unified ID-fields detector evaluation harness
+│   ├── eval_indian_specimens.py       # Indian card specimen evaluation harness
+│   ├── eval_int8.py                   # INT8 quantization precision and drift evaluator
+│   ├── eval_mrz.py                    # ICAO Doc 9303 MRZ extraction and check-digit benchmark
+│   ├── eval_pipeline_latency.py       # 2-thread CPU pipeline latency budget verification
+│   ├── eval_replay.py                 # Historical checkpoint screening replay evaluation
+│   ├── evaluate.py                    # Core multi-metric evaluation runner
+│   ├── forensics_benchmark.py         # Tamper and forgery detection benchmark on IDNet-2025
+│   ├── metrics.py                     # Precision, recall, mAP, and ROC-AUC calculation utilities
+│   ├── repro_ledger.py                # Deterministic metric reproduction harness
+│   ├── run_all.py                     # Master evaluation orchestrator
+│   ├── task2_negatives_and_stress.py  # Hard negative and stress testing harness
+│   ├── task3_deployment_latency.py    # Edge deployment latency profiler
+│   ├── task4f_crop_contact_sheet.py   # Diagnostic contact sheet generator for card crops
+│   └── task7_synthetic_indian_diagnostic.py # Synthetic Indian card diagnostic harness
 ├── frontend/                          # React + Vite + TypeScript application
 ├── ml_service/
+│   ├── Dockerfile                     # Container definition for containerized ML deployment
+│   ├── README.md                      # Microservice setup, environment & deployment guide
+│   ├── app.py                         # Gradio UI interactive debugging console
+│   ├── doc_forgery.py                 # Server-side document forgery detection engine
+│   ├── doctype_cls.py                 # Server-side document type classification engine
+│   ├── face_match.py                  # ArcFace 512D facial embedding and liveness engine
 │   ├── main.py                        # Dedicated ML microservice with constant-time HMAC auth
 │   ├── media_processor.py             # PDF signature and motion photo analysis
+│   ├── model_fetch.py                 # Hugging Face Model Hub weight downloader and SHA-256 verifier
+│   ├── rectification.py               # Server-side perspective rectification engine
 │   ├── requirements.txt               # 13 exact-pinned runtime dependencies (pip-audit clean)
 │   └── yolo_roi.py                    # Server-side ROI detection engine
 ├── scripts/

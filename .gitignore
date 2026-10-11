@@ -66,6 +66,9 @@ scripts/*
 !scripts/anchor_ledger.py
 !scripts/check_repo_hygiene.py
 !scripts/audit_secrets_s1.py
+!scripts/skill_router.py
+!scripts/verify_blueprint_claims.py
+!scripts/render_blueprint.py
 
 # ---- Rollback snapshots (local only, never pushed) ----
 _backup/
@@ -98,6 +101,7 @@ frontend/smoke/out.*
 !.env.example
 pics/
 eval/data/
+eval/local/
 
 # Ignore root generated documentation, blueprints, and chat logs
 *.md
@@ -105,6 +109,8 @@ eval/data/
 !SIH26188_ENGINEERING_BLUEPRINT.md
 !ml_service/README.md
 !docs/*.md
+!docs/**/*.md
+!docs/claims/*.json
 !training/indian_specimens/CAPTURE_PROTOCOL.md
 CHAT_EXPORT.html
 chat_transcripts/

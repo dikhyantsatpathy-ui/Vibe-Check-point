@@ -1,0 +1,446 @@
+[
+  {
+    "id": "0.1",
+    "phase": "0",
+    "status": "DONE",
+    "evidence": "branch ml/blueprint-sync-v7 created; state files initialized"
+  },
+  {
+    "id": "0.2",
+    "phase": "0",
+    "status": "DONE",
+    "evidence": "env receipt in eval/runs/20261011_180630_env"
+  },
+  {
+    "id": "0.3",
+    "phase": "0",
+    "status": "DONE",
+    "evidence": "pytest baseline 305 collected (302 passed, 3 skipped); conftest restored"
+  },
+  {
+    "id": "0.4",
+    "phase": "0",
+    "status": "DONE",
+    "evidence": "blueprint headings verified"
+  },
+  {
+    "id": "0.5",
+    "phase": "0",
+    "status": "DONE",
+    "evidence": "skill router & 15 skills installed"
+  },
+  {
+    "id": "0.6",
+    "phase": "0",
+    "status": "DONE",
+    "evidence": "eval/local/pics_manifest.json built with 13 images; .gitignore verified"
+  },
+  {
+    "id": "B1",
+    "phase": "B",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "B2",
+    "phase": "B",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "B3",
+    "phase": "B",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-01",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-02",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-03",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-04",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-05",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-06",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-07",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-08",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-09",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-10",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-11",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-12",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-13",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "F-14",
+    "phase": "F",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "A1",
+    "phase": "A",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "A2",
+    "phase": "A",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "A3",
+    "phase": "A",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "A4",
+    "phase": "A",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "A5",
+    "phase": "A",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "A6",
+    "phase": "A",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "A7",
+    "phase": "A",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "A8",
+    "phase": "A",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "A9",
+    "phase": "A",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "V1",
+    "phase": "V",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "V2",
+    "phase": "V",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "V3",
+    "phase": "V",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "V4",
+    "phase": "V",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "V5",
+    "phase": "V",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "T1",
+    "phase": "T",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "T2",
+    "phase": "T",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "T3",
+    "phase": "T",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "T4",
+    "phase": "T",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "T5",
+    "phase": "T",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "T6",
+    "phase": "T",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "T7",
+    "phase": "T",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "T8",
+    "phase": "T",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "C1",
+    "phase": "C",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "C2",
+    "phase": "C",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "C3",
+    "phase": "C",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "C4",
+    "phase": "C",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "C5",
+    "phase": "C",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "M1",
+    "phase": "M",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "M2",
+    "phase": "M",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "M3",
+    "phase": "M",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "M4",
+    "phase": "M",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "M5",
+    "phase": "M",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "M6",
+    "phase": "M",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "M7",
+    "phase": "M",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "P1",
+    "phase": "P",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "X1",
+    "phase": "X",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "X2",
+    "phase": "X",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "X3",
+    "phase": "X",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "X4",
+    "phase": "X",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "X5",
+    "phase": "X",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "X6",
+    "phase": "X",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "X7",
+    "phase": "X",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "X8",
+    "phase": "X",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "L1",
+    "phase": "L",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "K1",
+    "phase": "K",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "K2",
+    "phase": "K",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "K3",
+    "phase": "K",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "K4",
+    "phase": "K",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "R1",
+    "phase": "R",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "R2",
+    "phase": "R",
+    "status": "TODO",
+    "evidence": ""
+  },
+  {
+    "id": "R3",
+    "phase": "R",
+    "status": "TODO",
+    "evidence": ""
+  }
+]
