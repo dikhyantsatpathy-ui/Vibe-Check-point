@@ -1,0 +1,27 @@
+{
+  "phase": "T3",
+  "sample_size": 10000,
+  "metrics": {
+    "verhoeff": {
+      "hits": 12,
+      "far": 0.0012
+    },
+    "pan": {
+      "hits": 0,
+      "far": 0.0
+    },
+    "epic": {
+      "hits": 0,
+      "far": 0.0
+    },
+    "dl_form7": {
+      "hits": 0,
+      "far": 0.0
+    },
+    "mrz_td3": {
+      "hits": 1,
+      "far": 0.0002
+    }
+  },
+  "all_parsers_survived_zero_crashes": true
+}

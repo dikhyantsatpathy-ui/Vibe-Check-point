@@ -163,8 +163,9 @@ def _clean_mrz_lines(raw_text: str) -> list[str]:
     lines = []
     for line in (raw_text or "").splitlines():
         cleaned = re.sub(r"[^A-Z0-9<]", "", line.upper().strip())
-        if len(cleaned) >= 28 and cleaned.count("<") >= 1:
+        if len(cleaned) in (30, 36, 44) or (len(cleaned) >= 28 and cleaned.count("<") >= 1):
             lines.append(cleaned)
+
     return lines
 
 

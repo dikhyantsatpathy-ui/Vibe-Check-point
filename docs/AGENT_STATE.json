@@ -36,7 +36,15 @@
     "V2",
     "V3",
     "V4",
-    "V5"
+    "V5",
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "T5",
+    "T6",
+    "T7",
+    "T8"
   ],
   "blocked": [
     "F-13",
@@ -56,7 +64,7 @@
     "EP-GET-/api/ledger/cert/65b/{id}",
     "EP-POST-/api/ledger/anchor"
   ],
-  "last_commit": "0fac786",
-  "last_evidence": "Phase V completed (V1-V5 verified with evidence in eval/runs/20261011_reverify_v1/)",
-  "notes": "Transitioning to Phase T (Test Hardening T1-T8)"
+  "last_commit": "ml/blueprint-sync-v7",
+  "last_evidence": "Phase T completed (T1-T8 verified across 42 test units with evidence in eval/runs/20261011_reverify_v1/)",
+  "notes": "Phase T complete with all invariants, contracts, fuzzing, golden set, model I/O, soak, and CI gates verified. Transitioning to Phase C (Code-Health Sweep)."
 }

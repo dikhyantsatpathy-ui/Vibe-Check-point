@@ -56,8 +56,9 @@ def generate_valid_td3_mrz(rng: random.Random) -> Tuple[str, str]:
     exp = f"{rng.randint(26, 35):02d}{rng.randint(1, 12):02d}{rng.randint(1, 28):02d}"
     exp_cd = str(compute_mrz_check_digit(exp))
 
-    optional = "".join(rng.choices(string.digits, k=14))
+    optional = "".join(rng.choices(string.digits, k=rng.randint(4, 8))).ljust(14, "<")
     opt_cd = str(compute_mrz_check_digit(optional))
+
 
     composite_payload = doc_num + doc_num_cd + dob + dob_cd + exp + exp_cd + optional + opt_cd
     comp_cd = str(compute_mrz_check_digit(composite_payload))

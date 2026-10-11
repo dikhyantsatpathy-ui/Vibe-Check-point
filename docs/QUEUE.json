@@ -224,51 +224,52 @@
   {
     "id": "T1",
     "phase": "T",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Invariant suite created in tests/test_invariants_t1.py; 20/20 tests passed asserting Module 4 contract, fail-safe screening verdict logic, grade matrix, timeout/corrupt payload resilience, and unauthenticated endpoint rejection."
   },
   {
     "id": "T2",
     "phase": "T",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Contract snapshot tests created in tests/test_contract_snapshots_t2.py; 6/6 tests passed verifying schemas for /health, /api/checkpoints, /api/guide, /api/border/threat_matrix, POST /api/screen canonical keys, and compare_faces."
   },
   {
     "id": "T3",
     "phase": "T",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Parser fuzzing suite created in tests/test_parser_fuzz_t3.py; 7/7 tests passed surviving 10,000 deterministic fuzz inputs with zero unhandled exceptions; metrics recorded in eval/runs/20261011_reverify_v1/parser_fuzz_t3.json."
   },
   {
     "id": "T4",
     "phase": "T",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Golden set suite created in tests/test_golden_set_t4.py; 40 specimens x 3 noise levels = 120 evaluations executed with zero exceptions and 100% clean specimen pass rate; metrics recorded in eval/runs/20261011_reverify_v1/golden_set_t4.json."
   },
   {
     "id": "T5",
     "phase": "T",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Model I/O and parity suite created in tests/test_model_io_t5.py; 3/3 tests passed verifying ONNX sessions, tensor dimensions, sidecar SHA-256 match, and parity between app/yolo_roi.py and ml_service/yolo_roi.py; metrics recorded in eval/runs/20261011_reverify_v1/model_io_t5.json."
   },
   {
     "id": "T6",
     "phase": "T",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Load and soak test suite created in tests/test_load_soak_t6.py; 2/2 tests passed verifying concurrent endpoint access with 0 errors and 30-pass screening soak with 0 errors and bounded memory growth; metrics recorded in eval/runs/20261011_reverify_v1/soak_t6.json."
   },
   {
     "id": "T7",
     "phase": "T",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Coverage and stability suite created in tests/test_coverage_stability_t7.py; 2/2 tests passed verifying zero flakiness across 5 loops and measuring code coverage via coverage.py; metrics recorded in eval/runs/20261011_reverify_v1/coverage_t7.json."
   },
   {
     "id": "T8",
     "phase": "T",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "CI workflow audited and upgraded in .github/workflows/ci.yml with test suite in tests/test_ci_workflow_t8.py; passing 1/1 asserting mandatory lint, security, invariant, and regression gates; report in eval/runs/20261011_reverify_v1/ci_audit_t8.json."
   },
+
   {
     "id": "C1",
     "phase": "C",

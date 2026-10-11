@@ -1,0 +1,211 @@
+{
+  "phase": "T7",
+  "stability_verified": true,
+  "zero_flakiness": true,
+  "consecutive_passes": 5,
+  "coverage_summary": {
+    "remote_ml.py": {
+      "path": "D:\\mos\\crypto\\app\\remote_ml.py",
+      "statements": 61,
+      "executed": 11,
+      "missing": 50,
+      "coverage_pct": 18.03
+    },
+    "main.py": {
+      "path": "D:\\mos\\crypto\\app\\main.py",
+      "statements": 2445,
+      "executed": 0,
+      "missing": 2445,
+      "coverage_pct": 0.0
+    },
+    "validation.py": {
+      "path": "D:\\mos\\crypto\\app\\validation.py",
+      "statements": 68,
+      "executed": 35,
+      "missing": 33,
+      "coverage_pct": 51.47
+    },
+    "stats.py": {
+      "path": "D:\\mos\\crypto\\app\\stats.py",
+      "statements": 151,
+      "executed": 0,
+      "missing": 151,
+      "coverage_pct": 0.0
+    },
+    "screening.py": {
+      "path": "D:\\mos\\crypto\\app\\screening.py",
+      "statements": 1114,
+      "executed": 28,
+      "missing": 1086,
+      "coverage_pct": 2.51
+    },
+    "codebase.py": {
+      "path": "D:\\mos\\crypto\\app\\codebase.py",
+      "statements": 135,
+      "executed": 0,
+      "missing": 135,
+      "coverage_pct": 0.0
+    },
+    "yolo_roi.py": {
+      "path": "D:\\mos\\crypto\\app\\yolo_roi.py",
+      "statements": 771,
+      "executed": 0,
+      "missing": 771,
+      "coverage_pct": 0.0
+    },
+    "doc_forgery.py": {
+      "path": "D:\\mos\\crypto\\app\\doc_forgery.py",
+      "statements": 147,
+      "executed": 0,
+      "missing": 147,
+      "coverage_pct": 0.0
+    },
+    "keys.py": {
+      "path": "D:\\mos\\crypto\\app\\keys.py",
+      "statements": 52,
+      "executed": 4,
+      "missing": 48,
+      "coverage_pct": 7.69
+    },
+    "dl_verify.py": {
+      "path": "D:\\mos\\crypto\\app\\dl_verify.py",
+      "statements": 48,
+      "executed": 0,
+      "missing": 48,
+      "coverage_pct": 0.0
+    },
+    "guide.py": {
+      "path": "D:\\mos\\crypto\\app\\guide.py",
+      "statements": 48,
+      "executed": 0,
+      "missing": 48,
+      "coverage_pct": 0.0
+    },
+    "doctype_cls.py": {
+      "path": "D:\\mos\\crypto\\app\\doctype_cls.py",
+      "statements": 138,
+      "executed": 0,
+      "missing": 138,
+      "coverage_pct": 0.0
+    },
+    "face_match.py": {
+      "path": "D:\\mos\\crypto\\app\\face_match.py",
+      "statements": 230,
+      "executed": 36,
+      "missing": 194,
+      "coverage_pct": 15.65
+    },
+    "forensics.py": {
+      "path": "D:\\mos\\crypto\\app\\forensics.py",
+      "statements": 456,
+      "executed": 0,
+      "missing": 456,
+      "coverage_pct": 0.0
+    },
+    "heif_support.py": {
+      "path": "D:\\mos\\crypto\\app\\heif_support.py",
+      "statements": 7,
+      "executed": 0,
+      "missing": 7,
+      "coverage_pct": 0.0
+    },
+    "llm.py": {
+      "path": "D:\\mos\\crypto\\app\\llm.py",
+      "statements": 85,
+      "executed": 0,
+      "missing": 85,
+      "coverage_pct": 0.0
+    },
+    "replay_detector.py": {
+      "path": "D:\\mos\\crypto\\app\\replay_detector.py",
+      "statements": 79,
+      "executed": 0,
+      "missing": 79,
+      "coverage_pct": 0.0
+    },
+    "transliterate.py": {
+      "path": "D:\\mos\\crypto\\app\\transliterate.py",
+      "statements": 45,
+      "executed": 0,
+      "missing": 45,
+      "coverage_pct": 0.0
+    },
+    "identity.py": {
+      "path": "D:\\mos\\crypto\\app\\identity.py",
+      "statements": 340,
+      "executed": 49,
+      "missing": 291,
+      "coverage_pct": 14.41
+    },
+    "qr_decoder.py": {
+      "path": "D:\\mos\\crypto\\app\\qr_decoder.py",
+      "statements": 261,
+      "executed": 0,
+      "missing": 261,
+      "coverage_pct": 0.0
+    },
+    "tampering.py": {
+      "path": "D:\\mos\\crypto\\app\\tampering.py",
+      "statements": 170,
+      "executed": 0,
+      "missing": 170,
+      "coverage_pct": 0.0
+    },
+    "mrz_enhancer.py": {
+      "path": "D:\\mos\\crypto\\app\\mrz_enhancer.py",
+      "statements": 96,
+      "executed": 0,
+      "missing": 96,
+      "coverage_pct": 0.0
+    },
+    "session.py": {
+      "path": "D:\\mos\\crypto\\app\\session.py",
+      "statements": 294,
+      "executed": 0,
+      "missing": 294,
+      "coverage_pct": 0.0
+    },
+    "rectification.py": {
+      "path": "D:\\mos\\crypto\\app\\rectification.py",
+      "statements": 82,
+      "executed": 0,
+      "missing": 82,
+      "coverage_pct": 0.0
+    },
+    "config.py": {
+      "path": "D:\\mos\\crypto\\app\\config.py",
+      "statements": 61,
+      "executed": 0,
+      "missing": 61,
+      "coverage_pct": 0.0
+    },
+    "face.py": {
+      "path": "D:\\mos\\crypto\\app\\face.py",
+      "statements": 94,
+      "executed": 0,
+      "missing": 94,
+      "coverage_pct": 0.0
+    },
+    "mrz.py": {
+      "path": "D:\\mos\\crypto\\app\\mrz.py",
+      "statements": 275,
+      "executed": 0,
+      "missing": 275,
+      "coverage_pct": 0.0
+    },
+    "syndicate.py": {
+      "path": "D:\\mos\\crypto\\app\\syndicate.py",
+      "statements": 51,
+      "executed": 0,
+      "missing": 51,
+      "coverage_pct": 0.0
+    },
+    "extraction.py": {
+      "path": "D:\\mos\\crypto\\app\\extraction.py",
+      "statements": 322,
+      "executed": 0,
+      "missing": 322,
+      "coverage_pct": 0.0
+    }
+  }
+}

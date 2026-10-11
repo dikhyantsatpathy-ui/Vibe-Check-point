@@ -1014,7 +1014,44 @@ def extract_aadhaar_fields(image_bytes: bytes) -> List[Dict[str, Any]]:
     return result_boxes
 
 
+def extract_mrz_zone(image_bytes: bytes) -> Optional[Dict[str, Any]]:
+    """Detect Machine Readable Zone (MRZ) on passport/ID card.
+    If MRZ_DETECTOR_BACKEND='rf_detr', uses rfdetr_mrz_int8.onnx model.
+    Otherwise uses geometric bottom 20% heuristic."""
+    if not image_bytes:
+        return None
+    backend = get_mrz_detector_backend()
+    rgb = _open_rgb(image_bytes)
+    if rgb is None:
+        return None
+    if backend == "rf_detr":
+        sess = _get_mrz_session()
+        if sess is None:
+            raise FileNotFoundError("MRZ_DETECTOR_BACKEND='rf_detr' configured but MRZ weights could not be loaded. Failing loudly without fallback.")
+        dets = _run_rfdetr_onnx(rgb, sess, max_boxes=1, class_names=["MRZ"], conf_threshold=0.30)
+        if dets:
+            d = dets[0]
+            return {
+                "label": "mrz_zone",
+                "x": d["x"], "y": d["y"], "w": d["w"], "h": d["h"],
+                "confidence": d["confidence"],
+                "stage": "mrz",
+                "mrz_backend": "rf_detr",
+                "effective_backend": "rf_detr",
+            }
+    # Baseline fallback: bottom 20%
+    return {
+        "label": "mrz_zone",
+        "x": 0.0, "y": 0.80, "w": 1.0, "h": 0.20,
+        "confidence": 0.50,
+        "stage": "mrz",
+        "mrz_backend": "bottom20",
+        "effective_backend": "bottom20",
+    }
+
+
 def crop_region_to_bytes(
+
     image_bytes: bytes,
     box: Dict[str, Any],
     padding: float = 0.0,

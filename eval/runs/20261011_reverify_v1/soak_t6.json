@@ -1,0 +1,18 @@
+{
+  "phase": "T6",
+  "soak_iterations": 30,
+  "concurrent_endpoint_calls": 100,
+  "error_rate": 0.0,
+  "latency_ms": {
+    "min": 11783.81,
+    "p50": 12219.3,
+    "p90": 12470.39,
+    "p95": 12488.78,
+    "max": 14010.91
+  },
+  "memory_mb": {
+    "growth_net": 0.27,
+    "peak": 188.12
+  },
+  "memory_stable": true
+}

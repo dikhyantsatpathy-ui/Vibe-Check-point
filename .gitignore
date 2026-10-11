@@ -1,7 +1,11 @@
 # ---- Python ----
 __pycache__/
 .pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
 *.py[cod]
+
 *$py.class
 .venv/
 .venv*/

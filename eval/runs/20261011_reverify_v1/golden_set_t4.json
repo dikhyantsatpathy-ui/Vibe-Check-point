@@ -1,0 +1,94 @@
+{
+  "phase": "T4",
+  "total_specimens": 40,
+  "noise_levels": [
+    0,
+    1,
+    2
+  ],
+  "total_evaluations": 120,
+  "clean_pass_rate": 1.0,
+  "zero_exceptions_survived": true,
+  "evaluations_summary": [
+    {
+      "specimen_id": "specimen_card_00",
+      "doc_type": "aadhaar",
+      "noise_level": 0,
+      "verdict": "REVIEW",
+      "mrz_valid": null,
+      "checks_count": 2
+    },
+    {
+      "specimen_id": "specimen_card_00",
+      "doc_type": "aadhaar",
+      "noise_level": 1,
+      "verdict": "REVIEW",
+      "mrz_valid": null,
+      "checks_count": 2
+    },
+    {
+      "specimen_id": "specimen_card_00",
+      "doc_type": "aadhaar",
+      "noise_level": 2,
+      "verdict": "REVIEW",
+      "mrz_valid": null,
+      "checks_count": 2
+    },
+    {
+      "specimen_id": "specimen_card_01",
+      "doc_type": "pan",
+      "noise_level": 0,
+      "verdict": "PASS",
+      "mrz_valid": null,
+      "checks_count": 4
+    },
+    {
+      "specimen_id": "specimen_card_01",
+      "doc_type": "pan",
+      "noise_level": 1,
+      "verdict": "PASS",
+      "mrz_valid": null,
+      "checks_count": 4
+    },
+    {
+      "specimen_id": "specimen_card_01",
+      "doc_type": "pan",
+      "noise_level": 2,
+      "verdict": "PASS",
+      "mrz_valid": null,
+      "checks_count": 4
+    },
+    {
+      "specimen_id": "specimen_card_02",
+      "doc_type": "voter_id",
+      "noise_level": 0,
+      "verdict": "PASS",
+      "mrz_valid": null,
+      "checks_count": 1
+    },
+    {
+      "specimen_id": "specimen_card_02",
+      "doc_type": "voter_id",
+      "noise_level": 1,
+      "verdict": "PASS",
+      "mrz_valid": null,
+      "checks_count": 1
+    },
+    {
+      "specimen_id": "specimen_card_02",
+      "doc_type": "voter_id",
+      "noise_level": 2,
+      "verdict": "PASS",
+      "mrz_valid": null,
+      "checks_count": 1
+    },
+    {
+      "specimen_id": "specimen_card_03",
+      "doc_type": "driving_licence",
+      "noise_level": 0,
+      "verdict": "PASS",
+      "mrz_valid": null,
+      "checks_count": 2
+    }
+  ]
+}

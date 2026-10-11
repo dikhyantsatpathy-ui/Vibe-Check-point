@@ -365,10 +365,15 @@ def verify_passport(number: str, mrz_text: str = "") -> list:
     if mrz_text and isinstance(mrz_text, str):
         mrz_res = None
         try:
-            from mrz import parse_mrz
+            from app.mrz import parse_mrz
             mrz_res = parse_mrz(mrz_text)
         except Exception:
-            mrz_res = extract_mrz(mrz_text)
+            try:
+                from mrz import parse_mrz
+                mrz_res = parse_mrz(mrz_text)
+            except Exception:
+                mrz_res = extract_mrz(mrz_text)
+
 
         if isinstance(mrz_res, dict) and mrz_res.get("format"):
             is_valid = mrz_res.get("valid")
@@ -424,10 +429,15 @@ def verify_visa(number: str, mrz_text: str = "") -> list:
     if mrz_text and isinstance(mrz_text, str):
         mrz_res = None
         try:
-            from mrz import parse_mrz
+            from app.mrz import parse_mrz
             mrz_res = parse_mrz(mrz_text)
         except Exception:
-            mrz_res = extract_mrz(mrz_text)
+            try:
+                from mrz import parse_mrz
+                mrz_res = parse_mrz(mrz_text)
+            except Exception:
+                mrz_res = extract_mrz(mrz_text)
+
 
         if isinstance(mrz_res, dict) and mrz_res.get("format"):
             is_valid = mrz_res.get("valid")

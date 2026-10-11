@@ -1,0 +1,279 @@
+{
+  "phase": "T5",
+  "models_verified_count": 8,
+  "models": [
+    {
+      "path": "app\\models\\card.onnx",
+      "filename": "card.onnx",
+      "size_bytes": 44746499,
+      "sha256": "ba5b3a91e3d80df74a6b31d1da695306d6a6bc767f27d2a9422de1ed66c98428",
+      "inputs": [
+        {
+          "name": "images",
+          "shape": [
+            1,
+            3,
+            640,
+            640
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output0",
+          "shape": [
+            1,
+            5,
+            8400
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "has_sidecar": false,
+      "sidecar_sha256_match": null
+    },
+    {
+      "path": "app\\models\\aadhaar_fields.onnx",
+      "filename": "aadhaar_fields.onnx",
+      "size_bytes": 44752739,
+      "sha256": "20754291b3e773dddc8be3155b5e3d15e3475f636b79ca30ae3d3e93cfc29c55",
+      "inputs": [
+        {
+          "name": "images",
+          "shape": [
+            1,
+            3,
+            640,
+            640
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output0",
+          "shape": [
+            1,
+            9,
+            8400
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "has_sidecar": false,
+      "sidecar_sha256_match": null
+    },
+    {
+      "path": "app\\models\\doctype_v2.onnx",
+      "filename": "doctype_v2.onnx",
+      "size_bytes": 6113857,
+      "sha256": "548faa0fd6cf98ca0ca520c9e7848b37e11cee2b7de9ed7bc13c6b9d1a5552a6",
+      "inputs": [
+        {
+          "name": "input",
+          "shape": [
+            "batch_size",
+            3,
+            224,
+            224
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "shape": [
+            "batch_size",
+            8
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "has_sidecar": false,
+      "sidecar_sha256_match": null
+    },
+    {
+      "path": "data\\models\\w600k_r50.onnx",
+      "filename": "w600k_r50.onnx",
+      "size_bytes": 174383860,
+      "sha256": "4c06341c33c2ca1f86781dab0e829f88ad5b64be9fba56e56bc9ebdefc619e43",
+      "inputs": [
+        {
+          "name": "input.1",
+          "shape": [
+            "None",
+            3,
+            112,
+            112
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "683",
+          "shape": [
+            1,
+            512
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "has_sidecar": false,
+      "sidecar_sha256_match": null
+    },
+    {
+      "path": "data\\models\\model.onnx",
+      "filename": "model.onnx",
+      "size_bytes": 343401688,
+      "sha256": "44cb205f596f2530686bf4895e3678f08f9483c926b6bdc0e02998d5b54978a2",
+      "inputs": [
+        {
+          "name": "pixel_values",
+          "shape": [
+            "batch_size",
+            "num_channels",
+            "height",
+            "width"
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "logits",
+          "shape": [
+            "batch_size",
+            2
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "has_sidecar": false,
+      "sidecar_sha256_match": null
+    },
+    {
+      "path": "ml_service\\models\\rfdetr_card_int8.onnx",
+      "filename": "rfdetr_card_int8.onnx",
+      "size_bytes": 38963695,
+      "sha256": "ccab01630e53389387738a5af0c9456fb1aa6f3d68e3a0f1128ebe78b7f6b179",
+      "inputs": [
+        {
+          "name": "input",
+          "shape": [
+            1,
+            3,
+            512,
+            512
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "dets",
+          "shape": [
+            1,
+            300,
+            4
+          ],
+          "type": "tensor(float)"
+        },
+        {
+          "name": "labels",
+          "shape": [
+            1,
+            300,
+            2
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "has_sidecar": true,
+      "sidecar_sha256_match": true
+    },
+    {
+      "path": "ml_service\\models\\rfdetr_aadhaar_int8.onnx",
+      "filename": "rfdetr_aadhaar_int8.onnx",
+      "size_bytes": 39058702,
+      "sha256": "bc0af8e5483b9e503988537bf39666e680124f4a34ff496b3af4c55bbee59698",
+      "inputs": [
+        {
+          "name": "input",
+          "shape": [
+            1,
+            3,
+            512,
+            512
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "dets",
+          "shape": [
+            1,
+            300,
+            4
+          ],
+          "type": "tensor(float)"
+        },
+        {
+          "name": "labels",
+          "shape": [
+            1,
+            300,
+            6
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "has_sidecar": true,
+      "sidecar_sha256_match": true
+    },
+    {
+      "path": "ml_service\\models\\rfdetr_mrz_int8.onnx",
+      "filename": "rfdetr_mrz_int8.onnx",
+      "size_bytes": 39034095,
+      "sha256": "a208402229d99023067214fb38bcf1a3436701dd5bf92c96adf0af650d25d96a",
+      "inputs": [
+        {
+          "name": "input",
+          "shape": [
+            1,
+            3,
+            512,
+            512
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "dets",
+          "shape": [
+            1,
+            300,
+            4
+          ],
+          "type": "tensor(float)"
+        },
+        {
+          "name": "labels",
+          "shape": [
+            1,
+            300,
+            2
+          ],
+          "type": "tensor(float)"
+        }
+      ],
+      "has_sidecar": true,
+      "sidecar_sha256_match": true
+    }
+  ],
+  "parity_verified": true
+}

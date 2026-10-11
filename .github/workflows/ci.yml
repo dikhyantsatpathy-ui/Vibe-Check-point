@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, ml/detector-v3 ]
+    branches: [ main, ml/detector-v3, "ml/**" ]
   pull_request:
-    branches: [ main, ml/detector-v3 ]
+    branches: [ main, "ml/**" ]
 
 jobs:
   test:
@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff pytest pytest-asyncio
+          pip install ruff pytest pytest-asyncio coverage pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Repo Hygiene Check
@@ -31,6 +31,14 @@ jobs:
       - name: Lint with Ruff
         run: |
           ruff check app/ ml_service/ tests/ --exclude=Vibe-Check-point-main,.venv
+
+      - name: Security Invariants Suite (Invariant FS & AUTH)
+        run: |
+          pytest tests/test_invariants_t1.py -v
+
+      - name: Contract Snapshots & Model I/O Audit
+        run: |
+          pytest tests/test_contract_snapshots_t2.py tests/test_model_io_t5.py -v
 
       - name: Drift Test (Dual yolo_roi Alignment)
         run: |
