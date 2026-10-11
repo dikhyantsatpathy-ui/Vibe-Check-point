@@ -273,32 +273,32 @@
   {
     "id": "C1",
     "phase": "C",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Binary compute_merkle_root algorithm implemented in app/session.py; wired into /api/sessions/ledger/blocks and verify; tested in test_c1_merkle_tree_computation"
   },
   {
     "id": "C2",
     "phase": "C",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "SSRF destination domain allowlist enforced in app/remote_ml.py via ALLOWED_ML_DOMAINS and is_allowed_ml_url; tested in test_c2_ssrf_domain_allowlist"
   },
   {
     "id": "C3",
     "phase": "C",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Canonical Blueprint routes registered in app/main.py (/api/sessions/open, /api/reports/{id}, /api/ledger/blocks, /api/ledger/verify, /api/ledger/cert/65b/{id}, /api/ledger/anchor); tested in test_c3_blueprint_canonical_routes"
   },
   {
     "id": "C4",
     "phase": "C",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Code-health test suite tests/test_code_health_sweep_c.py passing 4/4; ruff checks verified clean on new code"
   },
   {
     "id": "C5",
     "phase": "C",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Phase C remediation artifact recorded in eval/runs/20261011_reverify_v1/code_health_c.json with all gates passed"
   },
   {
     "id": "M1",

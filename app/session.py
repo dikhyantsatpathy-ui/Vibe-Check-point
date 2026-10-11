@@ -578,3 +578,22 @@ def session_payload(*, session_id, checkpoint, screener, verdict, risk_score,
 def chain_hash(prev_hash: str | None, payload: str) -> str:
     """Chained block digest: sha256(f"{prev||'GENESIS'}:{payload}")."""
     return hashlib.sha256(f"{(prev_hash or 'GENESIS')}:{payload}".encode("utf-8")).hexdigest()
+
+
+def compute_merkle_root(leaf_hashes: list[str]) -> str:
+    """Compute binary Merkle tree root hash over an ordered list of leaf hashes."""
+    leaves = [h for h in leaf_hashes if h]
+    if not leaves:
+        return hashlib.sha256(b"EMPTY_MERKLE_TREE").hexdigest()
+
+    current_level = list(leaves)
+    while len(current_level) > 1:
+        next_level = []
+        for i in range(0, len(current_level), 2):
+            left = current_level[i]
+            right = current_level[i + 1] if i + 1 < len(current_level) else left
+            combined = hashlib.sha256(f"{left}:{right}".encode("utf-8")).hexdigest()
+            next_level.append(combined)
+        current_level = next_level
+
+    return current_level[0]

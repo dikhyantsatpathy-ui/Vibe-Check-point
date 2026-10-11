@@ -1,6 +1,6 @@
 {
-  "phase": "T",
-  "task": "T1",
+  "phase": "M",
+  "task": "M1",
   "done": [
     "0.1",
     "0.2",
@@ -44,27 +44,24 @@
     "T5",
     "T6",
     "T7",
-    "T8"
+    "T8",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5"
   ],
   "blocked": [
     "F-13",
     "F-14"
   ],
   "findings_open": [
-    "C-03",
-    "C-04",
     "C-08",
     "C-11",
     "C-15",
-    "S1-01",
-    "EP-GET-/api/sessions/open",
-    "EP-GET-/api/reports/{id}",
-    "EP-GET-/api/ledger/blocks",
-    "EP-GET-/api/ledger/verify",
-    "EP-GET-/api/ledger/cert/65b/{id}",
-    "EP-POST-/api/ledger/anchor"
+    "S1-01"
   ],
   "last_commit": "ml/blueprint-sync-v7",
-  "last_evidence": "Phase T completed (T1-T8 verified across 42 test units with evidence in eval/runs/20261011_reverify_v1/)",
-  "notes": "Phase T complete with all invariants, contracts, fuzzing, golden set, model I/O, soak, and CI gates verified. Transitioning to Phase C (Code-Health Sweep)."
+  "last_evidence": "Phase C completed (C1-C5 verified with Merkle root, SSRF domain allowlist, canonical Blueprint routes, and passing test suite in tests/test_code_health_sweep_c.py)",
+  "notes": "Phase C complete. Transitioning to Phase M (Model Facts: M1-M7)."
 }

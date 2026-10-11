@@ -66,7 +66,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from screening import run_screening
 # Border SESSION orchestration: cross-document comparison + signed session
 # ledger blocks (SIH26188). Pure hash-based; imports screening's norm/mask.
-from session import build_comparison, session_payload, chain_hash
+try:
+    from app.session import build_comparison, session_payload, chain_hash, compute_merkle_root
+except ImportError:
+    from session import build_comparison, session_payload, chain_hash, compute_merkle_root
+
 # Central configuration: IST display timezone, checkpoint clusters (every
 # Indian border post SSB screens at), document catalog, guided-flow protocol.
 # IST display timezone + UTC<->IST helpers + stats aggregation.
@@ -2727,7 +2731,7 @@ async def screen_document(
                 pass
 
         data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
-        ext = validate_upload_bytes(data, file.filename or "")
+        validate_upload_bytes(data, file.filename or "")
 
         session_owner = session_id.strip() or None
         if session_owner:
@@ -3179,6 +3183,13 @@ def list_sessions(request: Request, status: str = "", checkpoint: str = "",
         return {"sessions": [_session_pub(s, counts.get(s.id, 0)) for s in rows]}
 
 
+@app.get("/api/sessions/open")
+@limiter.limit("120/minute")
+def blueprint_sessions_open(request: Request, checkpoint: str = "", admin: str = Depends(get_current_admin)):
+    """Blueprint canonical route for listing currently open border screening sessions."""
+    return list_sessions(request=request, status="open", checkpoint=checkpoint, admin=admin)
+
+
 @app.get("/api/sessions/{session_id}")
 @limiter.limit("120/minute")
 def session_detail(session_id: str, request: Request, admin: str = Depends(get_current_admin)):
@@ -3563,7 +3574,7 @@ async def extract_live_image(
             except ValueError:
                 pass
         data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
-        ext = validate_upload_bytes(data, file.filename or "")
+        validate_upload_bytes(data, file.filename or "")
         frame_bytes = await read_upload_capped(live_frame, MAX_UPLOAD_BYTES) if live_frame is not None else None
         if frame_bytes:
             validate_upload_bytes(frame_bytes, live_frame.filename or "")
@@ -3628,8 +3639,11 @@ def session_ledger(request: Request, admin: str = Depends(get_current_admin)):
                 .group_by(ScreeningReport.session_id).all()
             )
         blocks = [_session_pub(s, counts.get(s.id, 0)) for s in rows]
+        block_hashes = [s.ledger_hash for s in rows if s.ledger_hash]
+        merkle_root = compute_merkle_root(block_hashes)
         return {"blocks": blocks,
                 "head_hash": rows[-1].ledger_hash if rows else None,
+                "merkle_root": merkle_root,
                 "total_blocks": len(blocks)}
 
 
@@ -3637,7 +3651,7 @@ def session_ledger(request: Request, admin: str = Depends(get_current_admin)):
 @limiter.limit("60/minute")
 def session_ledger_verify(request: Request, admin: str = Depends(get_current_admin)):
     """Recomputes every signed session block from its canonical payload and
-    checks the chain linkage end to end (tamper detection)."""
+    checks the chain linkage end to end (tamper detection). Also computes Merkle tree root."""
     with get_db() as db:
         rows = (db.query(ScreeningSession)
                 .filter(ScreeningSession.ledger_hash.isnot(None))
@@ -3645,6 +3659,7 @@ def session_ledger_verify(request: Request, admin: str = Depends(get_current_adm
                 .all())
         if not rows:
             return {"valid": True, "total_blocks": 0, "head_hash": None,
+                    "merkle_root": compute_merkle_root([]),
                     "broken_at": None, "verified_blocks": 0, "status": "EMPTY_CHAIN"}
 
         # Single batch query to avoid N+1 SQL queries across all sessions
@@ -3680,9 +3695,54 @@ def session_ledger_verify(request: Request, admin: str = Depends(get_current_adm
                         "broken_at": s.id, "status": "CHAIN_BROKEN_TAMPERED_BLOCK",
                         "reason": f"Block {s.id} payload tampered"}
             expected_prev = s.ledger_hash
+
+        block_hashes = [s.ledger_hash for s in rows if s.ledger_hash]
+        merkle_root = compute_merkle_root(block_hashes)
         return {"valid": True, "total_blocks": len(rows), "verified_blocks": len(rows),
                 "head_hash": rows[-1].ledger_hash, "broken_at": None,
+                "merkle_root": merkle_root,
                 "status": "CHAIN_VALID_UNBROKEN"}
+
+
+# ---------------------------------------------------------------------------
+# Blueprint Section 22 Canonical Route Aliases (Finding C-03 / EP audit)
+# ---------------------------------------------------------------------------
+
+@app.get("/api/ledger/blocks")
+@limiter.limit("120/minute")
+def blueprint_ledger_blocks(request: Request, admin: str = Depends(get_current_admin)):
+    """Blueprint canonical route for signed session blocks and Merkle audit root."""
+    return session_ledger(request=request, admin=admin)
+
+
+@app.get("/api/ledger/verify")
+@limiter.limit("60/minute")
+def blueprint_ledger_verify(request: Request, admin: str = Depends(get_current_admin)):
+    """Blueprint canonical route for hash-chain and Merkle tree verification."""
+    return session_ledger_verify(request=request, admin=admin)
+
+
+@app.post("/api/ledger/anchor")
+@limiter.limit("30/minute")
+def blueprint_ledger_anchor(request: Request, admin: str = Depends(get_current_admin)):
+    """Blueprint canonical route for anchoring current ledger head."""
+    return anchor_ledger_chain(request=request, admin=admin)
+
+
+
+@app.get("/api/ledger/cert/65b/{session_id}")
+@limiter.limit("60/minute")
+def blueprint_ledger_cert_65b(request: Request, session_id: str, admin: str = Depends(get_current_admin)):
+    """Blueprint canonical route for BSA 2023 Section 65B Electronic Record Certificate."""
+    return screening_bsa65b_certificate(request=request, session_id=session_id, admin=admin)
+
+
+@app.get("/api/reports/{report_id}")
+@limiter.limit("120/minute")
+def blueprint_report_detail(report_id: str, request: Request, admin: str = Depends(get_current_admin)):
+    """Blueprint canonical route for retrieving a screening report by ID."""
+    return screening_report_detail(report_id=report_id, request=request, admin=admin)
+
 
 @app.get("/api/screen/watchlist")
 @limiter.limit("120/minute")

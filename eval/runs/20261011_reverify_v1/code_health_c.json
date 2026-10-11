@@ -1,0 +1,24 @@
+{
+  "phase": "C",
+  "findings_resolved": [
+    {
+      "id": "C-03",
+      "area": "claims/20 / 22 / A08",
+      "resolution": "Implemented binary compute_merkle_root algorithm and wired into /api/sessions/ledger/blocks and /api/sessions/ledger/verify.",
+      "status": "RESOLVED"
+    },
+    {
+      "id": "C-04",
+      "area": "claims/27 / A10",
+      "resolution": "Enforced SSRF destination domain allowlist (ALLOWED_ML_DOMAINS) in app/remote_ml.py before any outbound HTTP dispatch.",
+      "status": "RESOLVED"
+    },
+    {
+      "id": "EP-AUDIT",
+      "area": "claims/22",
+      "resolution": "Added canonical Blueprint route aliases for GET /api/sessions/open, GET /api/reports/{id}, GET /api/ledger/blocks, GET /api/ledger/verify, GET /api/ledger/cert/65b/{id}, POST /api/ledger/anchor.",
+      "status": "RESOLVED"
+    }
+  ],
+  "all_gates_passed": true
+}

@@ -7,6 +7,8 @@ import logging
 import os
 import time
 
+from urllib.parse import urlparse
+
 logger = logging.getLogger("app.remote_ml")
 
 _CIRCUIT_BROKEN_UNTIL = 0.0
@@ -14,16 +16,46 @@ _CONSECUTIVE_FAILURES = 0
 _FAILURE_THRESHOLD = int(os.getenv("ML_CONSECUTIVE_FAILURES", "3"))
 _BREAKER_BACKOFF_SEC = float(os.getenv("ML_BREAKER_BACKOFF", "45.0"))
 
+# SSRF destination allowlist for ML microservice integration
+ALLOWED_ML_DOMAINS = {
+    "localhost",
+    "127.0.0.1",
+    "::1",
+    "hf.space",
+    "huggingface.co",
+    "ssb.gov.in",
+    "mha.gov.in",
+    "nic.in",
+}
+
+
+def is_allowed_ml_url(url: str) -> bool:
+    """Validate that ML URL domain conforms to SSRF allowlist."""
+    if not url:
+        return False
+    try:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").lower()
+        if not hostname:
+            return False
+        return any(hostname == d or hostname.endswith(f".{d}") for d in ALLOWED_ML_DOMAINS)
+    except Exception:
+        return False
+
 
 def is_remote_available(endpoint: str = "") -> bool:
-    """Returns False if ML_SERVICE_URL is not set or if circuit-breaker is active."""
+    """Returns False if ML_SERVICE_URL is not set, blocked by SSRF allowlist, or circuit-breaker active."""
     url = os.getenv("ML_SERVICE_URL")
     if not url:
+        return False
+    if not is_allowed_ml_url(url):
+        logger.warning(f"[remote_ml] Outbound ML_SERVICE_URL rejected by SSRF allowlist: {url}")
         return False
     global _CIRCUIT_BROKEN_UNTIL
     if time.monotonic() < _CIRCUIT_BROKEN_UNTIL:
         return False
     return True
+
 
 
 def mark_remote_failed(endpoint: str = "") -> None:
