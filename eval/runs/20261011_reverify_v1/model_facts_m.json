@@ -1,0 +1,75 @@
+{
+  "phase": "M",
+  "timestamp": "20261012_reverify_v1",
+  "frozen_manifest": "eval/manifests/card_v7.json",
+  "facts": {
+    "card_detector": {
+      "yolov8_card": {
+        "weights": "card.onnx (42.67 MB)",
+        "midv2020_recall": 0.0,
+        "production_status": "Baseline retained for fallback / Indian doc pipelines",
+        "license": "AGPL-3.0"
+      },
+      "rfdetr_card_int8": {
+        "weights": "rfdetr_card_int8.onnx (37.16 MB)",
+        "midv2020_recall": 1.0,
+        "midv2020_precision": 1.0,
+        "negatives_fp_rate": 0.0063,
+        "scale_2x_recall": 0.4433,
+        "scale_3x_recall": 0.0967,
+        "scale_gates_passed": false,
+        "production_status": "Deployed on ML service behind DETECTOR_BACKEND=rf_detr",
+        "license": "Apache-2.0"
+      }
+    },
+    "mrz_detector": {
+      "weights": "rfdetr_mrz_int8.onnx (37.16 MB)",
+      "recall_at_0_5": 1.0,
+      "precision_at_0_5": 0.9772,
+      "ocr_valid_check_digit_rate": 0.2067,
+      "baseline_bottom20_valid_rate": 0.02,
+      "provenance": "MIDV-2020 mock passports (not physical real passports)"
+    },
+    "doctype_classifier": {
+      "weights": "doctype_v2.onnx (1.75 ms p50)",
+      "macro_f1": 0.9977,
+      "overall_accuracy": 0.9969,
+      "real_validated_classes": [
+        "aadhaar",
+        "other"
+      ],
+      "indicative_only_classes": [
+        "passport (n=15)",
+        "bhutan_cid (n=16)"
+      ],
+      "synthetic_trained_classes": [
+        "pan",
+        "voter_id",
+        "driving_licence",
+        "nepali_citizenship",
+        "bhutan_cid"
+      ]
+    },
+    "aadhaar_field_detector": {
+      "yolov8_mAP50_95": 0.838,
+      "rfdetr_mAP50_95": 0.7678,
+      "decision": "RF-DETR Aadhaar stays DO-NOT-SHIP (0.7678 < 0.838 baseline)"
+    },
+    "id_fields_detector": {
+      "mean_recall_at_0_5": 0.5583,
+      "gate_target": 0.9,
+      "decision": "ID-fields model stays NOT ROUTED in production (failed recall gate)"
+    },
+    "latency": {
+      "budget_section_9_full_pipeline_ms": 1200.0,
+      "budget_dod_detector_ms": 900.0,
+      "measured_p50_ms": {
+        "passport_chain": 657.53,
+        "aadhaar_chain": 503.25,
+        "generic_chain": 321.85
+      },
+      "status": "ALL PIPELINES WITHIN BUDGET"
+    }
+  },
+  "all_m_gates_verified": true
+}

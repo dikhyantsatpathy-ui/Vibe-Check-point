@@ -1,6 +1,6 @@
 {
-  "phase": "M",
-  "task": "M1",
+  "phase": "P",
+  "task": "P1",
   "done": [
     "0.1",
     "0.2",
@@ -49,19 +49,25 @@
     "C2",
     "C3",
     "C4",
-    "C5"
+    "C5",
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M6",
+    "M7"
   ],
   "blocked": [
     "F-13",
     "F-14"
   ],
   "findings_open": [
-    "C-08",
     "C-11",
     "C-15",
     "S1-01"
   ],
   "last_commit": "ml/blueprint-sync-v7",
-  "last_evidence": "Phase C completed (C1-C5 verified with Merkle root, SSRF domain allowlist, canonical Blueprint routes, and passing test suite in tests/test_code_health_sweep_c.py)",
-  "notes": "Phase C complete. Transitioning to Phase M (Model Facts: M1-M7)."
+  "last_evidence": "Phase M completed (M1-M7 verified with frozen manifest card_v7.json, detector truth reconciliation, MRZ validity, DocType real/synth breakdown, field detector routing, latency reconciliation in eval/runs/20261011_reverify_v1/model_facts_m.json)",
+  "notes": "Phase M complete. Transitioning to Phase P (Parser Hardening: P1)."
 }

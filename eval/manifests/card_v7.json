@@ -1,0 +1,2606 @@
+{
+  "manifest_name": "card_v7.json",
+  "total_items": 460,
+  "items": [
+    {
+      "path": "data\\coco_card\\test\\alb_id_00.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "d4febe3ba2a8dc561990d45c9ac4770a27ca5751dbb64c89af23c584aaa64195"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_01.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "680333f75fecd81817cbb1afa4d6c51889f88ee87ccc55ac939d45e218ee279a"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_02.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "395cdf846e75a15e62eb590feccf0f224729f822959e2eafc14c4e5f70d40e3f"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_03.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "a2bab2e531a0b899691263385c685dd23ca085dfb0e0ccad09fbf9121a00bbb0"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_04.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "c62d95479fed712887ed85602faa6da53cb7346f7679fc2f12a86fbcb0144faf"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_05.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "457d8cf8149532951db2b77bca95510ca68e4143e95d3b9e6df15a894c994c90"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_06.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "c8b791c7bd64eaff4f1d98edf641e71927395bbc9fd0fe9908d410e28332e4fe"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_07.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "50e57b7bfb01c1f3bee9b6730990e480943f84d8da315cf9e1fcb8f228a17f7b"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_08.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "a700df56ecfa2c3439e350f49e397e6117c88413b06784e6af0e3290f623af2f"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_09.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "9f0a95807c9b9609e227b3a9ec366278f7d5f848173281204719109a1c915c54"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_10.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "44df835df22a9fdaf53bc35dc74862f985874682543a8997e6b3ee783ea45e0f"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_11.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "a16b2dfe78499f1350226e11e222e1ce78eb1cfb32dfd3b756527762df4418be"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_12.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "131d56a1d2f8ba37daa25793c5268116d0fef8810555223a49c8fc552b41f61e"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_13.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "9126987b5544bd1ba7faa77c0cad97965c232e7f288a1d1a27b1837517f54626"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_14.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "5136eec4e562f56679e6accaa5d5691753d4f9c447a55f371d2d93ed15d1d912"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_15.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "c3dd29c1fca7bfc27fc0e3cef77f05fdc2e0dca415ef581ad5e2b4c7ae5a9063"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_16.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "5975ec764e3ab6eee7d3c1c7188bface5fc06b2663e300a6acb3eabbff3b0410"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_17.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "ace4d3735016e27c7482c5e45039fd48bc2df519313058da480a0a464f7c5914"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_18.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "3e92f8b00296428e8964a274ed186c4348a3ecce229ceda1b113dc8f1d5391ae"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_19.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "bd8aa8a554ba391d89a9087595f44000161c6a9e88cd5c55a2300344b07dd4f3"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_20.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "3ade237ae9752418d3a9dee8f9244b644104597bcdda0d5764029a09bc54ca92"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_21.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "fa17b82807c4e185520fb8e2a9d5142c228fa9f293d99207bcd36338ad82ade0"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_22.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "5602613b3897b7e915846b85654b67862506534fad723c4d33dfb6427a86eae5"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_23.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "62942a901fea963eaa2c1fd2d43e61b379a4d7e4efa292c6d96fc1d5a1067ff9"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_24.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "484e4156db64a5bdaa2a13ed121dff2ae80c0c6f355dd9d0bc56062983caa5e4"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_25.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "2722932036d1dceef019d6891a3a92e8cbeb32a0d1e2e5b0f9db77a348ffa174"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_26.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "4d50d71fde0a8bdae728f3902119953165870933228f4ce234e69ea87ece9b10"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_27.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "9a31e8b9575374f800883a01246aea0336045731a094c8294d804c82ca1862a1"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_28.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "bbec21e8944176db6eb27b3833447d39299dd1c660cc0e22b4394e9abb275695"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_29.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "0210ba427793f070ad83df0b8fdf29c4c1f5076c787d19a945aa5c0c57f0f42d"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_30.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "12a22e7ffac9f4b1e90a8b1126e6ad77c6bfc6605abfd94c9b8ab899aa6f0343"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_31.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "88153d8054ba3dcfc6422d15ac1fef9cb49d356a50db11c2979b39b9745fc608"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_32.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "c7fbb708e0e572fc688363f7eff7bfb2ad0b04ad28cafed6962e29028169b76e"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_33.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "5cdd0e0483fb40649f229b80de18fcd892f273a1dab5a1b2ad762eff7d24c4f2"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_34.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "431392eec677ef4da4adfb6c7c59fbd2a6b9906a72ca35a0110938c9d472b7e9"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_35.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "b8462d6a4bfe02e328bcf52fc5bb1548812afc3984fd38cf70fb4b2a0e8feaf1"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_36.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "e3f116dabd258f1ca386583aab59cf5840074ba5d015a03beb860afd05ff90a6"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_37.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "3ace365952136822e862399f911d3b33f8ff96e436a103ad15ef329652cd7271"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_38.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "7582c7961a4c833e9b9cd2dcc3d5c1b1ab59498e6dc0414bc9cc68dba69c4a2c"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_39.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "a19fd1f7750dc0a26d9b56418e98e7359089ab0dc70796b05aeb628ffa27b7e6"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_40.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "0a6303204664f246aee8e86e654653d60aa56feea9c2771c1627bb0606429552"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_41.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "6fdda3f0ceea653b3e29699843b9b909fda2241cc9188bd167003f24bb765aa9"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_42.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "3dbf934193cbb33b4441a69b7ea6ade28746cbf786c568ed35d4b9f8436845ab"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_43.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "6f5566607a0afcdc9af8cd027a262731bab7a417d43362005e45c5813ccd2e36"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_44.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "b8686d4206ffccc3c9f109e7976d6f25210e1ff3be64159a33cf019d1c345f2a"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_45.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "9507e8d186aca0e41662f7235ecb619126bc6793df77bd8abf5fb3eea1c93a97"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_46.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "bc7c254075434cb1690ebf520c03022cc82832672c9f1814c938c2bee78e801c"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_47.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "4a86fcfdc2b9bdac4e8ce73a9ae533a804d4439966c4480a5d50f4864c16a3d5"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_48.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "2a6d435dbdbd212273cd2b5cf2406d82d809093a5a9e3bc821133e562e465d6f"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_49.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "df214353de31232026a64ee80af5b798b32aab8e43edb1e9e06419679441b26d"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_50.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "31a848da11054fb3df4c0056ebc80d1c26051e1ded0b88c4ea1159ac265eb2d0"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_51.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "c61eddca2eaf4d592a076bfd4e8ba3add14810055c24e3e32872ee3ec2c60bf4"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_52.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "c78354ccec0030f72565055f3f114f9e5877b93248c6865c2b2af11a4583d880"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_53.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "fe4b14045c83c5e43258732132ba4c97cf9198e138de5b91bb02ee219397a49c"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_54.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "e20c9da47674fdaa40e40f6f6d11307051e3672077219f5e8f5b187e2740f9b5"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_55.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "83cfe28b51ffc3cb4a400b2f083d489ca6056e0ee9a9a6759681243e31d531ee"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_56.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "ccd8f90f9a79363e8117db5d45d6b0295305eee95510b2117d4654651b163d01"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_57.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "658a82bb05bd270d53d90f66fbfa94780ee87cdef0ce850c89c013da89fa2177"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_58.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "71415ff8f0c44e4f6775dc653b0a619d571cb54d05b7dbe5beead3ad0be11043"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_59.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "45f2b9ca4da9760143a3e38986e234782155eb283045833e6a720ee957bccc4e"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_60.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "ba7dee341175f5bb7f0b1ebd21cc9e004d52e3fd99fdd6954d9c379d1a403201"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_61.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "018e5bb14ab99f1154900eafe90a3fc0115dd2ea0ace527bda78b1b2496840b9"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_62.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "2dc4fabec0fb1c8a4ec3d200adca96d297417a55c63fdadef6d5fd3ed1d6b9b7"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_63.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "736c459e73d8bfaa32b51706dbcd1c15dffa8645a080fc53270146c2645d51f6"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_64.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "0277395406aecc9a93b1492788bd86f241ba93a4d24aad07998ec4786f79cfe4"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_65.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "9e88e896ccc838640562778d35f0a0f6a671cec1353186c4ad8f2e60a761f755"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_66.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "af950286992ebf9cefbc5825ca793ddf7a3293e15940511ab16197c03fcb3e28"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_67.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "2c1dec8a7efe896fb2c7447f9e7769fbe777e531a9bea52685b802730f0dd351"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_68.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "bd62ab9fdbf3a423411bda0e55e57dea115dbb944cacad29ae7d8777b65f5e42"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_69.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "da70852d23b7f4b6af157fe274e121308bc7ef20ff61c46cad2e641ca393a447"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_70.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "c00c8409f7a8135d3ce1106b1bf604a55e25c8461470ba37d56702c3f026a111"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_71.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "a2b7ee595af12193c10f02126eef3019d3d8041b84a0b563d65e5764c5463e3c"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_72.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "3060f19cf65fe7c795356bccf2348930591db6d9a4cf0eee646d505b7e45c964"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_73.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "ca7fc3335d226d19bb75981d88fc20d325f873719efa04344d2ebd9e2aef6205"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_74.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "b33cd2bac0d7f1657cd13f3ee8120b2dd20938f81dc10d3b933be9e227f3ab46"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_75.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "5ccb6efee32afc5ac026566123776b975f0b2a28a09bd54c451aeff51bd52191"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_76.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "f5bd8b1ae8660a7e2c1ef5beb7e714db8fa8e8e716edc0182ee78d9f53bfad6b"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_77.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "1f1ccfd714c20bb50c254de9584bba8f33367b84fbaca8d27202635084bc1be6"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_78.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "d907331b3251ff3bfec75f68c6f0fede1c0d3a03878468eda0e7d92735a6d017"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_79.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "472eef0bc1787cb2210943ad43d5af8612405af8bc93e4425f38291745b62acf"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_80.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "e67d3654aea066aa2830a6060e63f901fb4307e1c0f9c08f29ef720ce47d2e35"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_81.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "1d2bdc11249fc16e085b8b44e53a9e89f6f9d72cef10b02fc6bfb36b5e67c676"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_82.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "22dd50f1e772e775c012492b2b89ab31ba7ed50bab0f24487ca44f55d1a2697f"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_83.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "acc73afafd4281bb71994d3b3cc9890f3c9e9be92016332c6e59ee7bf1562896"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_84.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "adfa3c7e3a47dd41d9f479e7f9bd6ab590cc22e89e1fa071bb32c7d78d0eaac6"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_85.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "a74f7028bf7f4187074f61fb697702d9ba86a7949bac3066ac2e6d39d6f8ba2f"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_86.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "1039bdb62ccb2c5eeae39631168b1b7d1aa123e70df111ca77568fddf41b443b"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_87.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "cc458a92660dc55ccc37dbfc986875af2dfbeb4204bd148015d9d4cceb04e17b"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_88.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "4d34f822cce97c29f48334b5bb21f861add1c8cb3a469270d7f16b2af73c5537"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_89.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "a40d871080e52609447b85b2afabf9929f30e826f877c16b06e618e72a3e2fa3"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_90.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "0d42449eb9cd8324b756133367187c1ea0d73465cd2e0f8dc8ce37e9f25457d7"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_91.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "44e9452869071899db37e03ca04dedb8a52487f0a78146c5157a63d935b04a76"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_92.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "47ed651cbb76e007da048e690b274d33d154469353e090b7ec6cd12b20d62c69"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_93.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "527cc848f20bdf83d4d217eb0c8a1174af8639bf81b13a76fac29294dfabd23e"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_94.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "c2c459b208eda1d9c67e61eb72942f72db1b8772c1c52c5bf17e9ea7d299ccf6"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_95.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "79281d09f4cb116963f9bd68dfac09e2adc567a7adbe29a03302d2a25e3df8dd"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_96.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "43f256ecfc1201f23d9ff4a9c3a642586d52c4d904abdba4e84e0f3b02b424db"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_97.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "2f7635a00e37c6cf12aa0ff7df93c4ec4771ea6f8c09b9d111cf8380eb2c876c"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_98.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "ece7da07c5dad156cc655d4ceec4cbefda248e0d7dac9722582952eaebc9ad5c"
+    },
+    {
+      "path": "data\\coco_card\\test\\alb_id_99.jpg",
+      "category": "midv2020_test",
+      "doc_type": "alb",
+      "sha256": "bcafc068f89a47da85812b7225aa503642e814df9ffd0c58431bf2c456d3de7f"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_00.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "311de06bb46af3173e8829cb5c63ad06402253452a4997291090ab74abcdad53"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_01.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "b29b68c8db4f5928be94baf165dc142114ae376d7bc7cb9e4862182e24159273"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_02.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "5817f7ff045884ed3690bf97395cfe6031943437b6e404337e5643178c2d55fd"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_03.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "9d212d697461e27346af3012e390130edabc6461de2eb9a4d7f28ad652edca75"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_04.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "33cfe7b4928ea3969a1aa0f35ce018c965f3d8e387a7542b88b370192a41685d"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_05.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "1ff2f6e230ea49a2c529465dd8e686ab199a80230ace3c72b57503ece6d8bd80"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_06.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "19c1f0c78f4653e85cbf0fa960d507015562ed809e040187e087413372c572bb"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_07.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "c076bfd9c7c84b1dcf25771bbca1eda14f081121f120c4ebc96acafc2372c05a"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_08.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "183780917336c4c5655297c7313b71c23749d6706cf25cc7538a20d81d9cef96"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_09.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "406c7c33337a86d0bbe42a53789584551da0c1a1c3a97560c9229d5eaf761921"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_10.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "0724667ba4df7b61cf820d7d2094d2384eb9c302f5e84d0a611a39a9989dd01f"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_11.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "69cd8ef31b0f839e52b4d82ffd52152adeaf144764915cde45c3fd292952ae21"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_12.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "9942b6488b37fc9b3e13181f7baf865791a76338280367edbb5e65748228dda1"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_13.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "df954be9d87e98f064cfa767d36e4e028ce7122e4bb5c6fdf8411776bf085f0a"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_14.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "44ac1340382bc108e2095b20200ecc256507bf17d06dbaad6253ae6a39321229"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_15.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "d6491a7d97406dd4dac7b1103a7eba6be7186c5c7602aa31030d4dd03b0d2b38"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_16.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "9c95a348c184a84ee894d1f1a8083b570137b738c6655624cbc187155b29bf58"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_17.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "8a229078949faa2c82e3e391585610f2fa9ffa842d0603687cdf3392b020651d"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_18.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "932df4de6386f459f216037cf67534d01af8d99cdbc5b83cfb1122aec8e2676e"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_19.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "38e885cdbd48228e77e77f49c6aa92cc4a8f3515cb065b8f5c79642a86e74fe1"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_20.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "f0d7757015dc8a8bb9d369e7521e0ddf03cc4a20b6b24a497b693bafcb2aa074"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_21.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "95e6f22c4ef4021518d3b584b9d04301a43e64e3f0c7f86ec109c1aedef8d97f"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_22.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "61cf4840cdce5f1da6a5ab0b01799e14ea20e2c13987ee9a7109449e2d97d98a"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_23.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "9f21e53362f3c2c0cb534e2da5f92ab088250275ba710099d4212a7283bbd0df"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_24.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "deb49487edf638edf2eff201194b7063e70d69e6a6da5842a7b5e8120cda84d8"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_25.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "371dd421dae1e5607fd9943e92c4ec8ad1db991c14a71a43037046539488a863"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_26.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "70a5fb7bb1afb0a4525dfd4c4f29e4a6ce9c52f5fa2672d7045f7a6c308d537f"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_27.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "502e7aade653449436de7dfc873a438ddce26e05392b65c5b7d5226d608bab2c"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_28.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "de9edb9af225da21e7ac0257dd12ca751a3a4c0bb8c484d722f40e851e3c595f"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_29.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "c4c24427fb670029f2e10e765651798fae2ca28f40c5e6a0ea4479f98eaa7bcb"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_30.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "39466ef4ec5c4f7a317605fea9bf0c1df5c94e412c1ec66ae552f7364325b205"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_31.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "19849a71b66ecb553364b34c84c3fb57898022ddb5d687c0e41c4bebeabaac9a"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_32.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "da4012c5677fb0c028d16b29fe77a6bda58abcf78ec0099ab8b7ae497b1cc5a3"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_33.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "bbe0ad9fa0ed1160dfc1f467bf465fa2d856c3ed0557f6b59c96eb1af7af215e"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_34.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "612e96ed53be6972a57fb585a698f9df32948ed43023395335cc041d0f332e16"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_35.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "324a76e8d6b9e3bcc09f1756c5ba7cb918909c1ed040737fbfec55d871efd6f6"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_36.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "835aaf974a5a60e999ff094c63dff2c88763a9cc679e19e7f465d68cb2da2697"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_37.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "e854ef25b8d317630eea91ca5a1a715ced881e81a27426c61d52fe98257afe0e"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_38.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "e70a15546e7713aac4db6ceb5c56385dafdd6aaaac4502fc55dfb2c337811b94"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_39.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "e743eddfb0445bf155bf6bd2d860760c9a57539bc5ef842cf8c8f6ff699a0642"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_40.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "467cbc8b31afaa2850380f08f68151d5f03f41d788b9e0c765f4a35e36b43a21"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_41.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "2830cebecb80a812c257411bdef20615c88c031b8b1a09223379941897ce64a4"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_42.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "136b0fcfe5f5dd6fc3aa9b41702ace30f9792b022ba7d4d31d5379a824807b19"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_43.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "3b26389cd6693e0ce0c81cd4dcf9fb23497aa162007ac5703f4e089d20b3f68e"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_44.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "a30076ba844eb09086eebda2083d6d8f1fa7ab3e27edd21c83c1938d0c7c756d"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_45.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "70758dfee071af7464cc6d84c1ce2f5f029d580811e815c83042975a9f1c059a"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_46.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "cb42326500d541e522cba8982aa74996428e6b535ea2690839587995c9488c68"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_47.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "8dc2271774b03d7fdeeb0a0eabec9c760fb3dd2d4f88bd6f40b2a2168a7cdd2b"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_48.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "4773cb250a54103243b151928082f4ceb0081b44dfc65fcd2aa3c428e0407459"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_49.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "8d03cc89e09876fc5b48ceba0e3ea91f833bf7c499b11da6b6c4c1c2ff4ea5ea"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_50.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "3d391e16a92f09ba2e0de0fb344df3c7ba7f72c22ab79ecf76fbe41fed691575"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_51.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "9102fee072793472693d96bf887f99e9bda96d4a96961c5590acf31770ea26ae"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_52.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "b79db592c6ae081d1c2614535cf77798283db1a4338a70365517ae19e0a4ad39"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_53.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "98844c2a4b6e781a679af9195a70cef789e378b0696d137bd7101b04e51c80f9"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_54.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "3788e4de208e2fd0cfa356929cda17e22d2981f2ed97f7065c45ffddb07732b7"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_55.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "a72dfa0248c78f7042dac4deba763ea1fb5d04b61e220c215f3f36548c4e196b"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_56.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "a34335bee6ed1fd9632976c64fb303f7111b920979e5d01dc26e0d981fdf11be"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_57.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "fb5307bc8f3d340509457a868a7a165507a57c815f79c44321026016a0cd7364"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_58.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "72d5eeb042bfa42d1c735bbe509d3b3364a3449b1710bd49b9c881235ddb757e"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_59.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "47376dde23a5d4b7d1e160db58a916dff17b2811776782c4e2dc254d626ae157"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_60.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "8fbf8dce81656e628825d2d0175b214eed66213d40c26860d9fd656dd41a073a"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_61.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "e939349e23d20a3a78db3b7e5e26bd9e63bd4134d8c1e386f017de70441266e0"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_62.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "6c2fe16fcbdb80fc73be9c9782fd44105f0c488f621a2ef81590952a25cbb3c1"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_63.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "4fff8fa148797d4827e97875270cb4b2915dbf54d2cefb7d4b2e311288e67819"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_64.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "05022d1f65fe5d28afc590fb242f7b1a0bc9298ff20d91c1e4196566b9331279"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_65.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "21dcb4c2129f0a8135dad31ae5fed423c5e8d3337cec18a47d50868847b87cab"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_66.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "ec11f81e20b1da6c7a83c29680ec8e03d31099d5b41af2188f079d280206f93b"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_67.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "be2ca5f2268ae864408e89a51585b70b3c5350844a16d64b6502a1c1a8d22c5e"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_68.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "e6e27a06681bd63c4af10fd1d896f1accf96b4a2e649405d899feb902f6fa3fd"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_69.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "3a224ee9fe6a4c29ea0c1a8f0ed267b041cbcc7d22e93e05b27a1623fed54290"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_70.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "a094ad42ca54ab372d00ce2dba97d90bd7bf641c267dc1fbd8fea05ea39663b2"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_71.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "3c72e86aa4de54ee98ee75521cf9107651753f9e8b89be37f033bc77f18cc6a1"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_72.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "34cba20f632a55030ee016bad3f33c03f210550b6ae639e07388bf8683d9d27e"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_73.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "8f601d5316238a14b6b877c0ad216f3f7809a2685871dffaed775d65b42a5ea4"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_74.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "9679d3fbf06ab70d0afaa21b7d8d0a0e388ce4f33b31ef5e29036e5d0c9cdf34"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_75.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "5fa872534fed2525c0b5b5d0efdb7b32e40cbac9e5a7ad825ed1ee888a49037f"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_76.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "faa4fa1d3f81ddadfb810579ceefd82da23dfb4dabaf7b87397b0a609152a846"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_77.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "b81e232c7a09f6c63111a13b691eb4297828e611580e3c6bfcea3e97607643fd"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_78.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "56a6bc81a03928eb465c06bfca49fd5684359e6fc8d0153e6797244af2d7f50b"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_79.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "a6467226ae5a74d1a3b45016b8d7560c0ca7a2dc5b6434265abe55ec4b36f281"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_80.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "a4914333d6697000c0c3e83bc9f623e3395eef1e12c1589b88edd9c8fa996411"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_81.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "5270868a6f197b8a90bae786b8d48d7df2998d545e2c23bd0abb715334ebc3b0"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_82.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "efc9300fea4ff2d898db80c6e94234a6ad13ed40e5b7df7f1fda53648513e096"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_83.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "7e0d17144232c585d6f56933d363f422b049c62ebe7ed0da4686ba1a44e936c7"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_84.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "9add122caae5b9ed4615a49e819e92c00a7e2d72e65830918d937390b4e18f8c"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_85.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "7c03e6371443e8e6977d434769f7c11c2f0f889d706aca8295b2c823efcb3c31"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_86.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "8bc330021888e2775afef17069ac57d9603eb709bfed55c4727a20829b80e408"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_87.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "71aae91e5b9ed63a298580b1bf27abe66262611590d201e677d6f0c9415bd3e3"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_88.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "dbd05e323fd86654100e2d47a08091a985addda90a3b65e1635ceaac31633fb5"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_89.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "adb9e2b1a6772c5b9e1da8d1b0b15e86a1813bdc0d4d7b4a799d1d617102154d"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_90.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "071f6c75aa7cf90c2c4a28e404d81289604f774cb96739f3d327c9f1ab8b198d"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_91.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "a4a67fb7a345dd9f1540e9ad16e9c9a993c08b3f622b6ec07a7a90fdbd628cea"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_92.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "fa1ff3f60e117d4233116a5fea7be5430c8910e84d8401d783140fd6a373ca0e"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_93.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "c759aa5b590136b22263563f3179d0036e0fc73772944c91627ca05074c3a2af"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_94.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "b12fd5afdc508e9456f17d674a0e9dd52e8c323fea796c5efea1abfaba6c24d5"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_95.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "3ab21f509b3a74c234af9979adf15c926402a01532b2d4b7c83584d80a9f27c1"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_96.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "0bef68fef2745903964005e59734389fc3edf3f2a450b9e3a0b31f54fc115eda"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_97.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "dbef66199f6c16a146afd02d46083756c3860d0371a2dcc08a15c144f75e81d1"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_98.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "b9895cd7b5f0f366e3a0a9b6662afb58fd43f3bfbe7c8170d5309119c0510a77"
+    },
+    {
+      "path": "data\\coco_card\\test\\srb_passport_99.jpg",
+      "category": "midv2020_test",
+      "doc_type": "srb",
+      "sha256": "d6275effda6ac67e989c8a7034e1c7fa036229d1e8c7002413645f4da7bbc670"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_00.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "f4b48bebc428ffb672d798087ce096b17be653e6fc078b7055a0128b6949bc35"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_01.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "57b51ba2db513fdd6bc7227ad72d8a873cfe0e76d9c73ac1b6c395061ec70d0e"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_02.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "952ba6736ee79dd3e892b3ea5648fe13a5ddef253e0a84d504c2e29e98adc571"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_03.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "ac8f27b6c88affc4f940c8dfd93f0aa75e52f0478230d0b36c385a88e6b3d796"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_04.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "7c313b2dbb998ecd80bed27e1da0a5452e46cdbb476f28a445b70399a7e27354"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_05.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "4581aef973c35dcd8a739dbc7de82966444e9429fec264607ddf89920444928f"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_06.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "2defb5ccccd85652d021fc9922ae1d165de0a513c7d9a6490fa5f15a369ed992"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_07.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "5543b3bcef4344c831de09aaf799aa1930fc71236c2668e0419ff7840d2ffc7e"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_08.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "c6e66bc8dc92c6f157a4f35ccb05660cbe421b77ca5fb3e4b6c37b8862010eef"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_09.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "d15ef5a271b2760ac4fdf117891183649882fed19fd0c7b61f28ca2576a13402"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_10.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "7138deef75b4f9634d4368da023c17fd6e0515799513d0d6abe2133b19dd92dc"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_11.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "bd37df6355cf7bd97bf7e36f53775d2006462c4fc5c204ec9e6112f9a1b346cd"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_12.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "06664c6d914cd7c98a5326fbae32b4d0fbbece7ac2a948285f9c64ff730b110c"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_13.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "1e45c95ce5818c5c70e51238dade9fe6ec90dccbafab7d8918ee17512abaeaf0"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_14.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "03e65a0c4c7fe56b14b4eed4aafba4c61b18a10593df1f3d544382553d45ee8e"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_15.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "b0da7504ea0a049e36d975eba712731500e2ab7123df6b21cad1101160c842dd"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_16.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "4f9584a802452ca0b3c1075007f1a79e454be8b31ee0138c39fa3d25453e5264"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_17.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "3a8ca36cc9f5889f024262d50eaa2506e4f1a81f7816b087483bfd6869a63628"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_18.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "dc0edfaefba48eee5e939afed39786f43a7552e5f365229cc19792c446eea50e"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_19.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "cc97aa271f3aba17d496fea50cac3ac15f6c4a49fa102adf36d648bb2fe68d04"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_20.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "948838c2ca61a3229b28dee1662f3823b449e6bf00df213bb61ab3234152ae64"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_21.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "f11953b0df5a46bc011df10485b72836cdefec6c3cfd9d1c77967c0634968cc8"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_22.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "4ec2598de5797d6cecc8077b35ca0f0c9e5b7e69e3758023e0bd439ceb7d05e8"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_23.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "f5c900e9e0ec4a122bec93d16dd7d25edf0f06424413bd2517fdfa1ae79973ad"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_24.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "9113450eb8f320da9e6121011dc1ba8f26ee6ba2b260f5a3be50dacc420769b6"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_25.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "deb41cfb1fe60d81260a53cbf348f8eb1e77ced8047fb06f199d1e408a5e2a87"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_26.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "358c4ffc186188a2f162d3317a40fd75508ccd117ad5858b1127d1988c5bd15b"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_27.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "f239f9154fa95d47e0ff3182766593d827ac9eca60686e2fc96f2b08ffac1700"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_28.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "b9e9c73d183dcf3e3e5e558b18a22ea5c4b71ec3b27278127f9766ee768e1a28"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_29.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "841720c558c02a0d184efe275ff60ab430ad40ebb1b9408aa608054e8fbf2e40"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_30.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "302761cea1e54f5890225c7eb5a276f90564e3355bb23ce2890f75a0ed80fa15"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_31.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "461f0a6582ec8db1410784e2c985423a856a30f86638658ce49dadc4f25cdd97"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_32.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "6a1844c4224b75c31181a4fd6ece7ed6d044cf9e1d92e72349ba6b5d5b39eb61"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_33.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "3226a8d411ce08b5687b81f1481a3277de4aa9692d59a36fe4b576e9774e190c"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_34.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "419defb4f47a6ada1d15a0ca588f08e3a599b8e0f43ae4216bd07bf5176b5b09"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_35.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "e34d229c700bf5cb94f5976c6a7054230705e2e9bff3b9b120b8679bda6c54ba"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_36.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "9a2c3e19ff83a313c5a211dd6526109a214808ddc4ff6d19d92900dbffd84d63"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_37.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "a21a87b1cdffaaaf7bfa4181ae98421f08a8cfd201a38a537139929ea570f2f7"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_38.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "5b1e81c8927b46dcbe9e78723092ce16e050680b1e57b5b1c1f38cd40f2541f2"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_39.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "61cc5e74254cff9d61a10bdf00201f8f5decc64f1554c7b549c6296ecfe0862d"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_40.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "1cfd2ed7c54e5a79bba256c3bf7b9013f5e1b6ef813c7b5ad95cc73ec982699e"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_41.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "12be046e5de4bac360eb0f8cd7f8e74a030e0d18b7206a033a8c8d5ca9c0d0af"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_42.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "050d64e7b00191f7a3c899cf67c4a048b34607f03643566dd3fb45f6e3ca5d8b"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_43.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "c1ffd3757af3348277f2129cfed91774a9ace794db0b07e70b5f9b127c46431a"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_44.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "4bcd46c68607dc62e0b53f905144d9ccb861cf56621d1c6ae8237a243717aaed"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_45.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "1d8d412f5f82b1d160594a6313f52280f94af772390672ed52cc6f0d9bb4e2da"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_46.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "d25382e508d26c53a4c7fd4e1bf358b63124b96656509268b1f725a8801ecec0"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_47.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "4862d08d48eae2f23294674f91a28a08bac1f3fbd4159c4ad7950f3bb6203a34"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_48.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "23c02828c0df158a1582039ace1b93ee4ce4ea14757be4725226749b3ba625fd"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_49.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "2020dcb58d29152548ed11c2e0bf45c0bb826c7164354d1e5c50cf4e6afc7ffd"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_50.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "4ea678b37b9fdac933d6be81143a704015ad5d91f0ad9fd83febc53fae7dd897"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_51.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "9dec45df8cf04ef984c9f4f8eaa279747c77cd2b48f8eca3eed89a0af713c5b2"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_52.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "ac178b794d8cb90318f21c6cb69d5275d7b2f1bdeb40f37adf5b0de3d5b9e650"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_53.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "762cc7af31c0b5a23702a54977090df62a719c69c7308bdddb610767672794da"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_54.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "a2fab30d2fecabe931ef810ce66e24045a2291f4b085eeaf1b97e3d47dd7bf4e"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_55.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "604f1e1ed06d19efbc296a834f685d4287f00695a285c404411fae62ea8450e4"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_56.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "09352074fc926bdc36bb3a3fd3b5e4e011b1fcdcebc6c5c99265b80b150b4ed3"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_57.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "3988fac48362e968f2414d1a2d8a2a49a4a76af7a8c9d14c69814423f5e67c9b"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_58.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "6f0216f022a9dacc33089a7c4fc901fc89c65c138e7d91ef0aa132a76f5489e4"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_59.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "7ba1a772abaa366cdc590aff5bb23f940533e74adab3bff987eedfce4c7702c3"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_60.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "cf45673483d73f0b3568103cdaad8c7453d1f24ad2b806333b73545719250855"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_61.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "4853c8c8c91ae6848f7e0a38b236ea6a646c9909f96b91f66330fe34464bef7c"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_62.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "b65870479c7b1ec700f593b5bcdac8d4b3244e93b384f0fe6f14f27000581521"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_63.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "2269019ae64b89ea246df686b96d8d995b9db324691f372f180e2b9346b06db6"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_64.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "6c2fdf9706eb20b9085b9be6fdce42068580bf791e9b3aebe934b0f7b99e72fa"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_65.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "1fa16b58d6fe9961c5904de394e79908b76303a0aa8bdc921428e2b363b68f48"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_66.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "8174044f2f07b13a9355b45b90415b8966495cf6d93d916d61f0139d1fbd51ef"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_67.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "44920abc4e5fe60f26b5716219561f253ab5a74271946de87a2a99a917824c4e"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_68.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "ec2a7efeb5ccbefbadc84698561c75a09bd32b38d1157f39160ab7ae40a3ca8c"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_69.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "1437ddfc158079844b61a80b18883dca2a3f7590d70134dbdbaf119d102ac029"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_70.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "65efb7370611044ca9dad49aa70a7a8e3c69af213d257eed61c770ae33fcee2b"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_71.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "5c7c4104a2d97266f92f4ca784ffe9a02eb32a81a2cfc593673b3edf8ce93a14"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_72.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "998688f7ae87a2682439712a0e8dcb009278150b1acfc7ac50f079402358173c"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_73.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "d7df2789de87bfb834bdb6c60887ed4126bad9e6d58b334905c194ce271643b7"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_74.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "369f00f519153787ab389fde622476f4e2b3a0f36c8c3ee0117d691bb1d8ad4e"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_75.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "378d49f5d2635a8dd6eaa4984cf586040d4338a6b5703769faa7360ec5e8d647"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_76.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "82278de67eb76cbda67015f8e02eb6fed8c8d03cb8c18675b3b74ce594940fa4"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_77.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "0262ad5189365e943fbdd4f55e4fc9beb254239432101c6d509922e0b4fb5dc5"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_78.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "19b2a714b1223fd4e42bc0b50eff9a80e56628822e6fed577015e1d3e42676cb"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_79.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "31ad52b92c7052f0f432892b0e22c867f52e7cbc2637d7b2a7938e23bba96ce0"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_80.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "953c76dfc0377c89dc3eb72b64f6b4b8cb81c952b864d4d8b057265ea61ce26d"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_81.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "c3d2c232ac07009d218712b1ea53494d50642a45f2f66fea222daf6e485b872d"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_82.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "2e5f41409f0de5d31619065d13e578666aaaf3608f634ad1f0f8ce828874b77c"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_83.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "a07e14e2ea2b16994d9d56926e0fdc523ba178e7bcd1584e80dc67da9ef68eda"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_84.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "0d5cd9dfb235e2d1eacb0140b811399b42dbe1eabb12cb4af97d3de096591959"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_85.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "1f52e9dda8888bd4c49735cfd4fb3114aba340c7772b19048ae89886972e034c"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_86.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "3a8f7b4241ab475557d42f49f89f77a8db508e3d31093267cd69a4ed60f875d5"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_87.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "028f65cd1c596f403bdc478cc1943274c54df7f891b5b31c0b2e2aaa8d903d0f"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_88.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "8d7fc04519ea35538299c99308ecd32f4fd2da1c63cbef61947f25deae63683a"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_89.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "c8a1470930b757bad0c5d0b94fa7d4c0d30246b191d000255879420260859558"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_90.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "314dd917d507828c3573da07ebc328de4e8521e21ddd3fc8ef5cc5407b373259"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_91.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "56b9caa8d604009601f076b2cc6877dbdbbdb31ffbb394976499b892075adf46"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_92.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "4d2710cffa18dd2919a084e6dd29950864edbc7ba18d883f10ef8d8190168fc1"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_93.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "41ee4af9aa8d2a95222bb2cbadb8f49f6a824dac5aff08045744c960993213c7"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_94.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "609524049db1ba29fb5675779002fb8a9307b3cec279610a9628016b6afeb893"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_95.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "57c231f43cc0f966fbc14ac3848efc95f24597aa81d8ba4cc6f9ec631277aa6b"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_96.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "118066c1da640b93d69341407e974d258ce2f7ae8ff7d15f74dcf5a3e481c72f"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_97.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "486ae65d88e387bc74255a8e84d809e0534e03d95681fd20fd1b0149551b6e1e"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_98.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "73865aa68e830bd04152b9f6b2aca06eac04a99fb53503360ff925e2522d6815"
+    },
+    {
+      "path": "data\\coco_card\\test\\svk_id_99.jpg",
+      "category": "midv2020_test",
+      "doc_type": "svk",
+      "sha256": "17dd9c0c8a641a267ca6a23396b0e1d07022e51ae9a50ede34fba46b91932247"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_000.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "8a71de8b12a2ec54436a1f42b68401ba0b93baf9b24ddd151e9186af719a5ad1"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_001.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "4278c9af663ade757424b3ff5d4983c740a1bf21abecc8d8dbf2ed2cdc1090af"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_002.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "97d48cc7e91be6fd79778cee79f06bb10eb0c8e2415f6acd6b32a1692c486dd4"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_003.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "f177344fd8085051364411efc96414f19750314a409a06dd493b604366ec23dd"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_004.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "174c18c0963bb8678e3ee5a551c50f35c053454b79477373640cfcb8a743aa4b"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_005.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "87df65e7b79f68e484677be4de34380fd5d1eeb7fd29ad5c61c732ce82d66a82"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_006.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "91a0c45e4820a7942cd6364950105ec5c768887966e57be06aded9c0ecae2fdb"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_007.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "b7a5f241bda05f64ba080bf5db24e7ad5331e4ec6ae55bd4e304a375076bd58a"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_008.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "eca94f5e62dee1b211d3ab61d5cae406a97dec5f9ad30a8ac00372a778dd9107"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_009.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "d05cb02e76e63d055e8de8f87d58d13e6d98b44b16e08ad38766574d9114137e"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_010.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "3319eac0cb350d770db0ef4c14f4214fd72cfdf004b01318a68de75e375fd259"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_011.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "cf01f80732fc6be7f38a6e1d48d9d9d2d217647ebc74a704c1fe0f88a4b68e44"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_012.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "d0694553a42607d8ed1530d531446d2290003a386aab40f4066477c79093cb92"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_013.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "d3fec8e1b916fe858b3413160c8bb6907096bb3c3480310e18c93c5b4a908d53"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_014.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "7978186895f89e5c567e3abb5d18de662415c4a9f6f800b04134d8176d23e5bb"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_015.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "02d4ff82ad8c9d4f19ed79a74024ab8bcde10d61f9506286c9ca3e395d010159"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_016.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "0c3c78c38e7eee4218ac94f5aeb22ac9822981b4a23444f725a45d94058c24e2"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_017.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "121c248cc7264ea12cf2d9fceec24170dc1e1edc4a4fad56845b2a13b97180a3"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_018.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "ea87426da6deed1509e290e7c97bd9184715a09c586cfc0bc4e2d9bae9e0b87f"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_019.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "c102c94c8bcbfb3d13557a3be3a5641a3bad64372166dbab0c3e853c4e4dbb57"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_020.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "44bb97b4acfbacf7f31cd44493e99bfb7658e2f4ce7a8a77cc58dfcc42acf669"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_021.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "df64f7fc83809c1ef0435c33ba0d3b16797f6d9b2e8bce74b2e989b72baa79b7"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_022.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "92606325b6d26840aa08375a8d2a1af35f7bbcf1f91703f9e96e82208b68f7a9"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_023.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "7958ff337cfd002382be1d60ff7cb6d4eb1409588596e26a87f8d6e971a4644e"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_024.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "50fa25d77593528402cff4bc536f3b4be742bf3fe7ed4203681f800e345808e4"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_025.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "bee6efad6c9accefe8000482bd60a4cd80477e7fda1baadfe2b3550995205fe8"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_026.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "03950e0ded9b57f2058268e92b89376fba738ce50687e45875755c2ce2d2b474"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_027.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "ac801b6dc61a4bb240a0133d5ff3c94e6915233c771135a0ef7261517301e8f1"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_028.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "7c68bda542c31b19cbad8efba5225b2faf60ae0544e9a77eab320065fb053eea"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_029.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "445cdbc028732834fa6d0b8cfa284408b5dd8e8c7539d4bb49b06a3a8db2c1af"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_030.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "ddb0024b84b965be8d861faaea22ab1c4fd94dc4bf4993f69d8138e6b7f76a98"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_031.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "ea8bbfd30e157144aecbe9708d4b77057134f98e3601e2996d09ab0a9ac622c1"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_032.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "625b7d8570347f87cab01fbb64dcfd495c16001116c5b497d80ffa26bb15db69"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_033.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "48ae2114bc378f2c7e63a9b6ed021f7ca7de5473e7260965757df173e994be58"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_034.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "aedfcbf089c0902599c5604da969048ca89843efa5f191ef6689ad6678d17262"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_035.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "3291ba002df9d8f2161afc8608390734bed52be52727b0d7bdfe34e9b39a051d"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_036.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "1b8e96f6f483066fe74351882bacbc76bc6a84bc1af971f0a2e11f038df0f104"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_037.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "a892fb439beabf565971f0484df57277483da47506036ef4a0df4a1d3d078215"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_038.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "da0d82acbdf48bea01b2306cd604f2c8350f06746afe375e3f7c41e753f87303"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_039.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "7f257d71e977460258babef3ccf476650d3e4b879dd82525c4a1bfa4580976d2"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_040.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "dfa73dd20233400c8cd89ad3094e9716f5a090c00e5d9af346aba1738e7282c2"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_041.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "6acbaf0a7440b86aed9ddafa40ec9117cbf34fbd25322dd41cee4a9dd9c714b2"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_042.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "fd5c0536e6b223883b7b01173d1970531e0d394d40d5c8f76c4ea2b00fba2c3d"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_043.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "869ad555f7a0c9e645c405c57642184445ca4bf84907926ff2d0e9a2bce5dbbf"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_044.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "1e05f59fb86567cb8005a4e860562a5f709fb967457625bb4c425eed7f04d449"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_045.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "b8e92b320cbe3dec5401d6669f2f325607c1a945bb299afef8f8eacdef6f7b76"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_046.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "15ba530a9704a3eb7368bf7ba801d8269846c3d2d4c27110c7099689dbfcff68"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_047.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "3926e4e42d42a0bbe7b2df1c0f14281012d9f4459bb45691c4d94388d3b32691"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_048.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "54ed0710a796814b4348724e49b6d2f71560b4bc7c7f9f670445f5aaf9131d1f"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_049.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "218120bab7afea92890d1f1b01b0122400e2c25f7e225755eed854f3fb2f82ce"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_050.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "aab739dfe559a3adb305bab804bc7a486ef11f16c893d20dceea5fca39d11a76"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_051.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "92c523725d56cd4bd327feef10a9dc1ff4c48d9f618caafaedfc49f233bb2bea"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_052.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "d7903f5e450536eda11885b06a457950eb816c5e346872a99464cd195bf76a95"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_053.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "f06f9063409345fb549a104c41b4d9e748f06ca78e8ef17dfe3d8da83c567954"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_054.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "105094c720d561dea03cdc3ffbbab5f40c07f706d5126aafc7a3c0920344dc98"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_055.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "262c39c08aefe8f8f321ec2579f6ac28c722e473624001903a3d06f2818d00f6"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_056.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "01545858fbb047e7eaae7ade211f5617000d1c2811476003862c4de507dff5b6"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_057.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "538a38a2c7fa90ac7f932c3b541739665063936848f4101a9a158c8aa44d960b"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_058.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "d28f175483d69e9f03552ccb6b91e3c6e45354712df23858f5c364c8ce51610a"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_059.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "47792058c393cde2b580c27dd3999478b209ba067a03988c219764e0c39fea6b"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_060.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "0916f3b291bb810ebdc1e9d2d0d1cddc5e06328057dc9c1c8cb49088c05cdea8"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_061.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "61a229f1a2b27b0c2d36b603a1e954c643acb365900ecd7046d98eef7f8c13dc"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_062.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "6b37f5e9b1fc465d49795805a18f21d47453569ed8e506a15a34c5207bd25d60"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_063.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "8650d26d0655c91544fd9c700dba7d639b8511f28ddc4f690a61b1926596b234"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_064.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "5ee39120662d8a6c7273721082a901a2a2ffe941b571a44751f2ed34856c0fdc"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_065.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "316a89f1fa9a43c1503b885198e00a746870d77e13cf9472271d3d897ab9f4d6"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_066.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "585f7264783f403bd6ea2ee726551be1500f25e51fd66426caeff02e2e13f1a1"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_067.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "b5adc1fa4da6440be214c02f2d9fe6af7de918f097ebf13dab09265f57d9f996"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_068.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "a98dac233d89c14fa001756dd737bb70374b612dc59dc5c4b9bb4ac6b09a7613"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_069.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "27f9633492aab83a17b93ec03b74d67c3df2a825d90c2696df5e70e3b9531f5a"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_070.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "5740f3934ba406dd538e5b2eee734288a01d8bd99ad91658d4b898b11697c953"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_071.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "9ea35fdf6eaf958e71cdfe49f33208d118b745f12331748013c2711982185bdc"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_072.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "290be40807a7c9a68629f13379685265e479e5d4ce797ace17d28d7948106403"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_073.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "8c6b4af63c64fc17ad326c46272e5792d9c56babbf309373ee06b292ee442b14"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_074.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "3ab9b2fba6c7ca5ed260e9aad321705496439c97eec466fb8fdcca8c4c07d724"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_075.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "ee63b5ba3f6d382d075f5ef4d23a7b3bbc698265661cc83a8ddab374150ca0a4"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_076.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "fc4ec3f95723783373dfa024654994b3cc30e1c7a797bbedb2ba9d690ab864e4"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_077.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "d4cee81ac709f18fee52ba7b064895b354eae0f6615e034f4ec823e658b52f7e"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_078.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "6aa094439f30e06c3d2a241a4d2650f776a92bde2a5750942d300dbabc1f9b8e"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_079.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "584e0acd84f06185dee7427b2378fa106f4da94e56703c86d7ffec41407f49ed"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_080.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "a74a5a0e29dc3ad2d22dd90c3db4a463643ab9ce41bd629c9c1735dbfeb2e042"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_081.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "6374700649bc3c6ea0c73a679cdc82865edcf2e9b807bc2274729ba028a37165"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_082.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "875c42d53e3c593209d6c6aaf91087debf780e37f8d273e09e840cc6205f7194"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_083.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "64ea2bfb61c9ce9f1c366198e2df097020152b85dafed6a772a6fe0161199fd0"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_084.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "49978955f11626a0ba213ba038ca53331682d4ca907023837d318ae7accccde9"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_085.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "83a4e095d23d419953c5df0c09e3ffd40632288bfd0065560c008eddf6f57a8a"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_086.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "d1fbad7924796f0a841f933c8b0615295cfe15f0e54cfb284f9fe7c7fa9324de"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_087.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "5a3b4fbed577fb1e54f4f19e522203ccf0d8da1d18df23642895c877ea1d783c"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_088.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "1514ffde68f5a4772e4a7b6bf703cd35063e6e95d33c025a4ba4e61fa7b7d865"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_089.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "ce54b95479f09885d488e1d8c8cf6cf52732620829e3cadb856375e98ad4724d"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_090.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "93433200d70f50dfdf95bac5beb599db00cd39549a9c5365961d2160ac033ac8"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_091.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "5c86550adbb5c364039ba4103e1faa5d5f4f5314ef86a2d52a5488891a46b168"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_092.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "2e749e5ea2a7bd7ce97b94e430cccfe673d51e8fcf8d78fae0e6687172d11a29"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_093.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "327737c016f0b6c4befef74b7a8d8ad39c3c4a93bf190270171b8bafab2cfc55"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_094.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "a5520ce4222da25ab3b6247dc0f190824d274a78889af9e29562d217171c6e2a"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_095.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "d5ba3522a845fa9a8328137e5c10ba90b57354fe66a4b5ebf63c97b87842443a"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_096.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "10247e8f06a415cdcdd6ad0865fc1e6debc7bef7e876591adb777e8df4b06112"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_097.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "cc12c25073b9e6725beb0ad7c480707a2616a8d07d70f52655fe8a40f317e5a7"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_098.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "5577e814a89ddc2a0d8388a4a7ef76f46c4ba304ed249e339da4fa60cdf3808a"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_test_bg\\neg_bg_099.jpg",
+      "category": "negative_negatives_test_bg",
+      "sha256": "9f9a68587f717a7a3ccdd5e39eb4a030a26f7913ddc5bd3416bb5b88fcf8eaa0"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_000.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "7cd8c124885b1a623c4690f4b06f5c97e73ec3beae04c7b6aa94b1f7fd4d0bcf"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_001.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "c38a424f79b8a3dff8f093e2f3a680d57af1df67b59f4482df9e0e993785ed42"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_002.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "684ee8eaca08795a16eaa3e6b7e51df52a78084d7d70a904f426bfea2a4b7e7a"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_003.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "e61ad98e76f6e492bc5bd848d874e08130059612020ec3054acbf893a63d6f67"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_004.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "75678b4d4b239e4485675e31b0bdad2e041de9f708b311a6439466ab26bba069"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_005.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "f56ba80b3adbb25946e28e181de3fb82b1b3f7185197b326068221022b19cc9b"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_006.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "7fb54ffe0a1d2f857cf1bf4bd794157507b1fcc5f96a16991d8b56a4d3ab1d33"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_007.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "de51da07a59ca3272f7e6c99fe10937f67801d09ae69c26afb5c4391e68047a1"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_008.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "1d3faf3191bfbcdd7ddec00a10f95fb3b900c49cf307e5421e5c92fc08c080cb"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_009.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "9c1d23d924e199d9710cf161f99f9c2887204c4153e3e539731947011bec1003"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_010.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "84f3454ea15c43f408775375dd174f44e3624df871fe9a683c48972a39606ee7"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_011.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "be886cd3b2eabd87017b014fcf876014a5a9ea782068d6d776621c691b7f9800"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_012.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "d371ffe4bec4ffb4f7a3be4c311dcf7ee591728002ef13e2119bdc91d4b5be46"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_013.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "7a30e59e927e085732a8c0cdba12a013a43811a67ec3660d384a83e99c7fd45f"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_014.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "341e560b89b8cfc0928d329083e5ebe3b4b7474274565f3ef887891b116ae421"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_015.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "2b86309e8b3b7cb0ee40b9a39cf3e1cde1bd35d4c6d7e1611bfff4adfa94fcac"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_016.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "fb7c99e06a7f4f3b7b5bc9af7678b0e5e07a8158b4a0a38cc753e21d6e2eb43c"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_017.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "d36da467f30c0b9d0d1d7a94491931e3cbf6b155938034ad101d79bbc96bc6eb"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_018.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "d492b1a9a3eaaa830bf4e05d44564ecf445dfa26df29707da57d044e671fa6b3"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_019.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "8984af3e2c54228c6035968f52390f652696ea4b01a1af2a86168f78aabe000d"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_020.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "6ffbef42398fdceabe6f1c88bf0995399a55c8a0ce6cd67eaef83042bee25c91"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_021.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "d697c547b812d7cdc3dbaf3ffe01c4f7c4a23df01fc7eea4f2154a455ec6f46a"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_022.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "ede05528e936223133c0d07ea0e2bbb9079300217ed1df60a044915e092351d2"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_023.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "82e108c580229ba29e6d0bad298213735fc65b08feeb9c2d88d1418233d4f8d7"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_024.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "040a071c6bce1147d52486b5a755f965e06e7fda5f17fb9faef1a45cac8469f2"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_025.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "6c400c264b22a6bb87cb7b5bdf88097432041f0fbf007a1510c9e7aaf03721b6"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_026.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "7e7d47b2f1b34a33b35a4be479fde4a04739e107ec455d1473000972cd9be66c"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_027.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "69797aa30dc1c8594549e0b9d369652e9834eb3217e89c8fbb582445f473c54f"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_028.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "d70b4461deab115ccc9ca78ce2e38cd0acbaf9bd8961c9d08ea41a69b113b58d"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_029.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "84981608209ec8ccd3d9a62940b9b105168bd4cfe2ea41d111f2fe34c668eccc"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_030.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "a0df5675fb74924a8bad70b24e6c0bdf798c362ccf369108cf519685c872c141"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_031.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "ff6bb044c83f595e2c350ea10edf798cf5351f598bc11a4dd5e7fb1844bad531"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_032.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "608def2b30176eb7e44664a7f286c9b619756eab3c5126ce3b89cecab9dc8be4"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_033.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "ae16cc95dcf53a966c15201e2a93d09828b64e32b8770c93c6190f7956a90c2d"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_034.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "bab77f77ce511e4567bb2c4988b544e7aee145d7b21de8280ecab362d98734e2"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_035.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "41f9c72f17fe0c1ccba09a44cb53dea58a58844ad50e711fd7209bc3b3c98793"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_036.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "906b93871d24ce2f3c42fa7c3d9e7831f29667e3fd70b9b312bca9654af7856b"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_037.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "372453ab331df78ee896b065adcb9bb1f2da2d0e86584299346ca58a72037595"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_038.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "648c09fecd101d9e38ac584469fd9846bc2508336a5fe82d17863e910bc8a173"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_039.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "1f80d3b8931c3c1de24933191bac1e360bd6721fe88ed3109e712771a4192a6c"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_040.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "d0f8658a803d6ed1a2e1c9e7020d51e0807bf753c3feed0603d249fd94f66e45"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_041.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "12b57ad9b2f4f150430026dde7fbcb95382c18bc8a1e44fead08127ef772e69b"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_042.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "88542a551f60dc902a1882a84df6350b8765f3aae84cc89f4e0aab8a15bbc055"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_043.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "6bd15f7bda569de4bbd43f76184cf4cd9854f28f20bf0978e127588330062a57"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_044.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "c9b974fd96dd9c14a287ad28b9e2317322a8f20fc880604142de933962720618"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_045.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "488f80f04fb8b533480090712a06309b38d60f537d460a3e2d4b652ad674e86c"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_046.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "ce9a5f402a0edf56fb8f159bbb91f56cd46e49051b9e7a83c984052bc2aedadb"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_047.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "41e83fd66ae0f1ebd092fa093382536a5fa4128fc79c4fc31975578cd90624d5"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_048.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "84aad25233bf534eea8a5fefe7b8da7402770a67d32730018bb31814ed2ebc3e"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_049.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "0bf2c1dd2027d5fb53d26ca2d3aae9f8a5689680b725c27e489eeb3f3d4561c4"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_050.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "f3d6b7f3ff87699ca9dfc22039719feee4710d87dfc836173b4d154f8dd33fe2"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_051.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "5981d9ca4f9c5f2fb30316e666a1022452dc5a0f4192c75e5802fd7b0096868d"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_052.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "eceba1b535ae33838d9b308597d7917dd33e431bfc542d62ef18c97f81cd2c44"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_053.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "ea57dbdd46359a873e4fd477cd13cb0bdc0135305e479873ac5b15d03e450e26"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_054.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "8b955a50017fe7587703d2c6c686b109cd202a2447ad94cd76df6f1e3c61b921"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_055.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "b6cc5b5691fa09c462e5ee5e7ee11094866e857e2a8f54a76f476e38a7c179db"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_056.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "9dab703b0a0f4ff847cc024c71fc229e3453480a5410329de9835091d4a70b2a"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_057.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "6e868a870bf25414f894c444c1ece6e77b6d7f6516f1c668f5b337a48376c027"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_058.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "c56eb5c6ab90819ff2abdf04eb23d2a66a84fc8aa1fa7eecaecf247cf987fc49"
+    },
+    {
+      "path": "eval\\runs\\20261006_170004_task2_negatives_and_stress\\negatives_synth_non_card\\neg_synth_059.jpg",
+      "category": "negative_negatives_synth_non_card",
+      "sha256": "518df7db57def44398cd977a40c51aad9eb69040eed52279cc67c8ec03af6280"
+    }
+  ]
+}

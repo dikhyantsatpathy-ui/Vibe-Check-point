@@ -303,44 +303,44 @@
   {
     "id": "M1",
     "phase": "M",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Frozen card manifest eval/manifests/card_v7.json generated with 460 items (SHA-256 5eef1a93...); comparative evaluation recorded across YOLOv8 and RF-DETR INT8 with unchanged original gates in test_m1_frozen_card_manifest_and_evaluation"
   },
   {
     "id": "M2",
     "phase": "M",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Reconciled RF-DETR Card INT8 acceptance vs scale gate reality (recall 1.0, precision 1.0, neg FP 0.63%, scale 2x/3x failed at 44.3%/9.7%); split disjoint by document types; documented in AUDIT_V7.md C-08 and verified in test_m2_detector_truth_reconciliation_and_leakage"
   },
   {
     "id": "M3",
     "phase": "M",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "MRZ valid definition audited (all check digits of every line valid); detector crop valid rate (20.67%) beats geometric baseline (2.0%); provenance verified as MIDV-2020 mock passports in test_m3_mrz_valid_definition_and_evaluation"
   },
   {
     "id": "M4",
     "phase": "M",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "DocType v2 macro-F1 (0.9977) and accuracy (0.9969) audited; classes with n < 30 marked INDICATIVE ONLY (passport n=15, bhutan_cid n=16); real vs synthetic split verified in test_m4_doctype_classifier_real_vs_synthetic"
   },
   {
     "id": "M5",
     "phase": "M",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Aadhaar field detector confirmed at 0.838 mAP50-95 baseline (RF-DETR 0.7678 stays DO-NOT-SHIP); ID-fields model (mean recall 0.5583 < 0.90) verified NOT ROUTED in app/ in test_m5_field_detectors_routing_and_status"
   },
   {
     "id": "M6",
     "phase": "M",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Reconciled Section 9 full pipeline budget (<= 1200ms) vs DoD detector chain budget (<= 900ms); measured p50: passport 657.5ms, aadhaar 503.3ms, generic 321.9ms on 2-thread CPU; verified in test_m6_latency_budget_reconciliation"
   },
   {
     "id": "M7",
     "phase": "M",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "All model facts derived from measured truth without new unauthorized training; artifact recorded in eval/runs/20261011_reverify_v1/model_facts_m.json in test_m7_generate_model_facts_artifact"
   },
   {
     "id": "P1",
