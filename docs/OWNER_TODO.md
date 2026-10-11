@@ -103,3 +103,18 @@ $env:DEMO_PASS_ENABLED = "1"
   vercel env rm HF_TOKEN production
   ```
 
+### Item 8: Historical Neon PostgreSQL Password Rotation (Phase V1 / S1)
+- **Status**: **ACTION REQUIRED (S1 Secret Hygiene)**
+- **Detail**: Commit `3724e9e3` historically introduced a hardcoded connection string for `ep-red-scene-azg0qzq0-pooler...neon.tech`. While the working tree code was cleaned, git history retains the commit. The Neon database user password must be rotated immediately in the Neon console.
+- **Owner Action**:
+  1. Log into the Neon Console at https://console.neon.tech
+  2. Select project `red-scene` / branch `main`.
+  3. Go to **Roles / Users** -> `neondb_owner` -> **Reset Password**.
+  4. Update `DATABASE_URL` in Vercel project environment variables (`vercel env add DATABASE_URL production`).
+
+### Item 9: AGPL Tooling License Assessment for ONNX Checkpoints (Phase V2 / Legal)
+- **Status**: **ACTION REQUIRED (Legal Counsel Review)**
+- **Detail**: YOLOv8 model weights exported to ONNX were trained using Ultralytics tooling (AGPL-3.0). While Ultralytics is omitted from all runtime dependencies and runtime inference is pure ONNX Runtime (MIT license), whether model weights derived from AGPL-licensed training tooling inherit copyleft obligations is an unresolved legal question for intellectual property counsel. Assert nothing about copyleft freedom without legal review.
+
+
+

@@ -1,0 +1,44 @@
+{
+  "timestamp_utc": "2026-10-06T14:04:16.945185Z",
+  "dataset_scope": "IDNet-2025 EST genuine samples + exact IDNet manipulation specifications (fraud5 inpaint, fraud6 face-swap, copy-move)",
+  "datasets_evaluated": [
+    "IDNet-2025 EST",
+    "Procedural CR-80"
+  ],
+  "fmidv_available": false,
+  "fmidv_note": "FMIDV not provided by owner in data/raw; skipped per \u00a78.1",
+  "manipulation_results": {
+    "face_swap_fraud6": {
+      "num_genuine": 40,
+      "num_fake": 40,
+      "auc": 1.0,
+      "tpr_at_5pct_fpr": 1.0,
+      "mean_fake_score": 0.33,
+      "mean_genuine_score": 0.0,
+      "gate_auc_threshold": 0.7,
+      "requires_learned_model": false
+    },
+    "text_inpaint_fraud5": {
+      "num_genuine": 40,
+      "num_fake": 40,
+      "auc": 1.0,
+      "tpr_at_5pct_fpr": 1.0,
+      "mean_fake_score": 0.3445,
+      "mean_genuine_score": 0.0,
+      "gate_auc_threshold": 0.7,
+      "requires_learned_model": false
+    },
+    "copy_move_tampering": {
+      "num_genuine": 40,
+      "num_fake": 40,
+      "auc": 1.0,
+      "tpr_at_5pct_fpr": 1.0,
+      "mean_fake_score": 0.3428,
+      "mean_genuine_score": 0.0,
+      "gate_auc_threshold": 0.7,
+      "requires_learned_model": false
+    }
+  },
+  "learned_patch_model_triggered": false,
+  "recommendation": "All evaluated forensic manipulation types achieve AUC > 0.70; existing multi-algorithm forensics pipeline retained without adding a patch classifier."
+}

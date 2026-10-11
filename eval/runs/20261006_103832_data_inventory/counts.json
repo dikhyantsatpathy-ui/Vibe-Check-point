@@ -1,0 +1,66 @@
+{
+  "timestamp_utc": "20261006_103832",
+  "datasets": {
+    "AADHAR": {
+      "source": "Roboflow Universe (cutm-iwh4a/aadhaar-card-details)",
+      "train": 2381,
+      "valid": 185,
+      "test": 79,
+      "total": 2645,
+      "shows_real_persons": "YES",
+      "notes": "Scanned/photographed Indian Aadhaar cards, local use only."
+    },
+    "IDcard": {
+      "source": "Roboflow Universe (imtiaz-uddin/id-card-detection-j63tp)",
+      "train": 40,
+      "valid": 10,
+      "test": 8,
+      "total": 58,
+      "shows_real_persons": "NO",
+      "notes": "Generic ID badges, student cards, mockups."
+    },
+    "card_synth": {
+      "source": "Procedural Synthetic Card Generator",
+      "train": 0,
+      "valid": 0,
+      "test": 0,
+      "total": 0,
+      "shows_real_persons": "NO",
+      "notes": "Synthetic mockups with fake data."
+    },
+    "coco_card": {
+      "source": "NO-CAP Processed COCO format (MIDV-2020 + IDcard + Synth)",
+      "splits": {
+        "train": 1839,
+        "valid": 200,
+        "test": 300
+      },
+      "total": 2339,
+      "shows_real_persons": "NO"
+    },
+    "doctype": {
+      "source": "NO-CAP Document-type Classification dataset",
+      "splits": {
+        "train": {
+          "aadhaar": 160,
+          "driving_licence": 120,
+          "nepali_citizenship": 160,
+          "other": 160,
+          "pan": 120,
+          "passport": 60,
+          "voter_id": 75
+        },
+        "valid": {
+          "aadhaar": 40,
+          "driving_licence": 30,
+          "nepali_citizenship": 40,
+          "other": 40,
+          "pan": 30,
+          "passport": 15,
+          "voter_id": 18
+        }
+      },
+      "shows_real_persons": "NO"
+    }
+  }
+}

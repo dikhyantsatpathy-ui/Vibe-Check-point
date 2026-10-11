@@ -1,0 +1,27 @@
+{
+  "phase": "V4",
+  "redaction_sanitizer_tests": [
+    {
+      "pattern": "postgresql...",
+      "sanitized": "Connection error with postgresql://testuser:[REDACTED_PASS]@[REDACTED_DB_HOST]/neondb occurred.",
+      "secret_leaked": false
+    },
+    {
+      "pattern": "sk-proj-FA...",
+      "sanitized": "Connection error with [REDACTED_API_KEY] occurred.",
+      "secret_leaked": false
+    },
+    {
+      "pattern": "gsk-FAKEGR...",
+      "sanitized": "Connection error with [REDACTED_API_KEY] occurred.",
+      "secret_leaked": false
+    },
+    {
+      "pattern": "AIzaSyFake...",
+      "sanitized": "Connection error with [REDACTED_API_KEY] occurred.",
+      "secret_leaked": false
+    }
+  ],
+  "pipeline_logger_leak_detected": false,
+  "verdict": "PASS"
+}

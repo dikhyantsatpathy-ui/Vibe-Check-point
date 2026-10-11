@@ -1,0 +1,168 @@
+{
+  "total_tested": 20,
+  "passed_count": 20,
+  "all_passed": true,
+  "min_iou_target": 0.95,
+  "results": [
+    {
+      "image": "esp_id_00.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_01.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_02.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_03.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_04.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_05.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_06.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_07.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_08.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_09.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_10.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_11.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_12.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_13.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_14.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_15.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_16.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_17.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_18.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "esp_id_19.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    }
+  ]
+}

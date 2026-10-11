@@ -194,32 +194,32 @@
   {
     "id": "V1",
     "phase": "V",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "audit_secrets_s1.py and independent tree + 300-commit history regex scan run; tree clean; historical commit 3724e9e3 flagged as S1-01 in AUDIT_V7.md and OWNER_TODO Item 8; evidence in eval/runs/20261011_reverify_v1/secrets_scan.json"
   },
   {
     "id": "V2",
     "phase": "V",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "pip-audit and npm audit run; npm audit 0 vulns; pypdf==6.16.2 flagged with 8 known CVEs; ultralytics verified absent from runtime requirements and code; AGPL tooling question recorded for counsel in OWNER_TODO Item 9; evidence in eval/runs/20261011_reverify_v1/dependency_audit.json"
   },
   {
     "id": "V3",
     "phase": "V",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "All 60 registered routes enumerated from FastAPI app object; all non-public routes reject unauthenticated requests; tampered and expired session tokens fail closed (401); ML service auth verified; evidence in eval/runs/20261011_reverify_v1/auth_reverification.json"
   },
   {
     "id": "V4",
     "phase": "V",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Log redaction test executed; sensitive tokens, DB passwords, and API keys actively redacted by sanitize_secret_text; zero secret leakage during pipeline execution; evidence in eval/runs/20261011_reverify_v1/log_redaction_test.json"
   },
   {
     "id": "V5",
     "phase": "V",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Blueprint Section 27.1 Phase S claims verified against independent evidence: S1=FALSE, S2=UNVERIFIABLE, S3=VERIFIED, S4=FALSE, Rule 12=VERIFIED; evidence in eval/runs/20261011_reverify_v1/phase_s_reverification.json"
   },
   {
     "id": "T1",

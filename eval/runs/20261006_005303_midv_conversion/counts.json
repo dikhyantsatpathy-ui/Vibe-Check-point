@@ -1,0 +1,64 @@
+{
+  "splits": {
+    "train": {
+      "images": 500,
+      "boxes": 487,
+      "types": {
+        "esp_id": 100,
+        "est_id": 100,
+        "grc_passport": 100,
+        "lva_passport": 100,
+        "rus_internalpassport": 100
+      },
+      "conditions": {
+        "projective_distortion": 100,
+        "text_document_background": 50,
+        "keyboard": 50,
+        "outdoors": 50,
+        "table": 50,
+        "highlight": 50,
+        "low_light": 100,
+        "cloth": 50
+      }
+    },
+    "valid": {
+      "images": 200,
+      "boxes": 198,
+      "types": {
+        "aze_passport": 100,
+        "fin_id": 100
+      },
+      "conditions": {
+        "projective_distortion": 40,
+        "text_document_background": 20,
+        "keyboard": 20,
+        "outdoors": 20,
+        "table": 20,
+        "highlight": 20,
+        "low_light": 40,
+        "cloth": 20
+      }
+    },
+    "test": {
+      "images": 300,
+      "boxes": 289,
+      "types": {
+        "alb_id": 100,
+        "srb_passport": 100,
+        "svk_id": 100
+      },
+      "conditions": {
+        "projective_distortion": 60,
+        "text_document_background": 30,
+        "keyboard": 30,
+        "outdoors": 30,
+        "table": 30,
+        "highlight": 30,
+        "low_light": 60,
+        "cloth": 30
+      }
+    }
+  },
+  "total_images": 1000,
+  "total_boxes": 974
+}

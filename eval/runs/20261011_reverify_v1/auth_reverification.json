@@ -1,0 +1,434 @@
+{
+  "phase": "V3",
+  "total_routes_enumerated": 60,
+  "all_protected_routes_reject_unauthenticated": true,
+  "tampered_cookie_rejected_401": true,
+  "expired_cookie_rejected_401": true,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/openapi.json",
+      "is_public": true,
+      "unauth_status": 200,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/docs",
+      "is_public": true,
+      "unauth_status": 200,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/docs/oauth2-redirect",
+      "is_public": true,
+      "unauth_status": 200,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/redoc",
+      "is_public": true,
+      "unauth_status": 200,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "is_public": true,
+      "unauth_status": 200,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "is_public": true,
+      "unauth_status": 200,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "is_public": true,
+      "unauth_status": 200,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/ml/keepalive/ping",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/ml/status",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/login",
+      "is_public": true,
+      "unauth_status": 422,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/demo_login",
+      "is_public": true,
+      "unauth_status": 404,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/logout",
+      "is_public": true,
+      "unauth_status": 200,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/me",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/assign_role",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/revoke_officer",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/unrevoke_officer",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/remove_officer",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/signers",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/queue",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/reports/{report_id}",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen/reports/{report_id}/adjudicate",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/sessions",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/sessions",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/sessions/{session_id}",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/sessions/{session_id}/close",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/sessions/sweep-raw-fields",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/sessions/close-unused",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/sessions/{session_id}/adjudicate",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/sessions/{session_id}/documents/{report_id}/remove",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/sessions/{session_id}/documents/{report_id}/restore",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/checkpoints",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/guide",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/stats/overview",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/extract",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/sessions/ledger/blocks",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/sessions/ledger/verify",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/watchlist",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/shift-export",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/syndicate-alerts",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/dossier/{report_id}",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/bsa65b/{session_id}",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/handover/{session_id}",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/border/threat_matrix",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen/watchlist/add",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen/watchlist/remove",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/ledger/verify",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen/ledger/anchor",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/ledger/anchor",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen/aadhaar-fields",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen/liveness",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/verify/dl",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/verify/aadhaar-qr",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/verify",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/broadcasts",
+      "is_public": true,
+      "unauth_status": 200,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/broadcasts/create",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/broadcasts/delete",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/analytics",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/analytics/summary",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat",
+      "is_public": false,
+      "unauth_status": 401,
+      "auth_enforced": true
+    }
+  ],
+  "ml_service_auth": {
+    "unauthenticated_status": 503,
+    "wrong_secret_status": 503,
+    "protected": true
+  }
+}

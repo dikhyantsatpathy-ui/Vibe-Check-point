@@ -1,0 +1,63 @@
+{
+  "evaluation_run_id": "20261006_164300_summary",
+  "timestamp_utc": "20261006_164300",
+  "rules_compliance": {
+    "rule_1_truth": "All numbers backed by script execution; synthetic data explicitly labeled.",
+    "rule_5_git_hygiene": "Zero model weights or images committed to git.",
+    "rule_6_frozen_contracts": "Dual yolo_roi.py drift test verified.",
+    "rule_7_no_gate_weakening": "Honest failure on artificial 3x scale-stress recorded; retained YOLOv8 baseline."
+  },
+  "stages": {
+    "card_detection": {
+      "model": "card.onnx (YOLOv8n)",
+      "dataset": "MIDV-500 clean document-type held-out test split",
+      "n_test_images": 150,
+      "n_negatives": 160,
+      "data_type": "REAL (MIDV-500)",
+      "recall_at_50": 1.0,
+      "precision_at_50": 1.0,
+      "negative_fp_rate": 0.0,
+      "scale_stress_2x": 0.0333,
+      "scale_stress_3x": 0.1667,
+      "gate_status": "PASS (Clean Real Split, Retained YOLOv8)"
+    },
+    "mrz_extraction": {
+      "engine": "Multi-variant preprocessing + ICAO position-aware repair",
+      "real_midv_passports": {
+        "source": "MIDV-500 real passport crops (unseen test types)",
+        "n_samples": 100,
+        "data_type": "REAL",
+        "check_digit_valid_rate": 0.74,
+        "target_gate": ">= 0.6000",
+        "status": "PASS (74.0% > 60%)"
+      },
+      "synthetic_passports": {
+        "source": "Synthesized ICAO Doc 9303 TD3 templates",
+        "n_samples": 100,
+        "data_type": "SYNTHETIC-ONLY",
+        "check_digit_valid_rate": 0.94,
+        "target_gate": ">= 0.9000",
+        "status": "PASS (94.0% > 90%)"
+      }
+    },
+    "replay_detection": {
+      "engine": "Dual-stream 2D-FFT PAPR + Chromatic Moir\u00e9 Stdev",
+      "data_type": "SYNTHETIC-ONLY (Display subpixel simulation)",
+      "n_samples": 100,
+      "roc_auc": 0.9284,
+      "tpr_at_threshold": 0.86,
+      "fpr_at_threshold": 0.06,
+      "status": "PASS (SYNTHETIC-ONLY)"
+    },
+    "indian_specimens": {
+      "physical_specimens": "NOT MEASURED",
+      "reason": "data/indian_specimens_photos/ absent; waiting for owner photo session",
+      "synthetic_phone_photo_proxy": {
+        "mode": "SYNTHETIC-ONLY PROXY",
+        "n_samples": 50,
+        "card_recall": 1.0,
+        "status": "PASS (Proxy)"
+      }
+    }
+  }
+}

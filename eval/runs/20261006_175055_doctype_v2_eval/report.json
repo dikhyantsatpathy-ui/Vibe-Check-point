@@ -1,0 +1,80 @@
+{
+  "timestamp": "20261006_175055",
+  "model": "doctype_v2.onnx",
+  "total_val_samples": 324,
+  "overall_accuracy": 0.9969,
+  "macro_f1": 0.9977,
+  "gate_macro_f1_target": 0.95,
+  "gate_pass": true,
+  "p50_latency_ms": 1.75,
+  "p95_latency_ms": 1.98,
+  "per_class": {
+    "aadhaar": {
+      "n_true": 56,
+      "precision": 0.9825,
+      "recall": 1.0,
+      "f1": 0.9912,
+      "status": "VALIDATED"
+    },
+    "pan": {
+      "n_true": 46,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "status": "VALIDATED"
+    },
+    "voter_id": {
+      "n_true": 34,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "status": "VALIDATED"
+    },
+    "driving_licence": {
+      "n_true": 46,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "status": "VALIDATED"
+    },
+    "passport": {
+      "n_true": 15,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "status": "INDICATIVE ONLY"
+    },
+    "nepali_citizenship": {
+      "n_true": 56,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "status": "VALIDATED"
+    },
+    "bhutan_cid": {
+      "n_true": 16,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "status": "INDICATIVE ONLY"
+    },
+    "other": {
+      "n_true": 55,
+      "precision": 1.0,
+      "recall": 0.9818,
+      "f1": 0.9908,
+      "status": "VALIDATED"
+    }
+  },
+  "classes": [
+    "aadhaar",
+    "pan",
+    "voter_id",
+    "driving_licence",
+    "passport",
+    "nepali_citizenship",
+    "bhutan_cid",
+    "other"
+  ],
+  "note": "Classes learned only from our own generator can look perfect on synthetic data and fail on real cards."
+}

@@ -1,0 +1,168 @@
+{
+  "total_tested": 20,
+  "passed_count": 19,
+  "all_passed": false,
+  "min_iou_target": 0.95,
+  "results": [
+    {
+      "image": "aze_passport_00.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_01.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_02.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_03.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": false
+    },
+    {
+      "image": "aze_passport_04.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_05.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_06.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_07.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_08.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_09.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_10.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_11.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_12.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_13.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_14.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_15.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_16.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_17.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_18.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_19.jpg",
+      "pt_boxes_count": 0,
+      "onnx_boxes_count": 0,
+      "top_box_iou": 0.0,
+      "class_match": false,
+      "pass": true
+    }
+  ]
+}

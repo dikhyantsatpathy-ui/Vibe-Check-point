@@ -1,0 +1,361 @@
+{
+  "timestamp": "20261006_164309",
+  "mode": "SYNTHETIC-ONLY PROXY",
+  "physical_specimens_status": "NOT MEASURED",
+  "reason": "data/indian_specimens_photos/ not populated by owner",
+  "n_samples": 50,
+  "card_detector_recall": 1.0,
+  "doctype_match_rate": 0.0,
+  "samples": [
+    {
+      "sample_id": 1,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.169
+    },
+    {
+      "sample_id": 2,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "voter_id",
+      "confidence": 0.167
+    },
+    {
+      "sample_id": 3,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1661
+    },
+    {
+      "sample_id": 4,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1578
+    },
+    {
+      "sample_id": 5,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1564
+    },
+    {
+      "sample_id": 6,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1651
+    },
+    {
+      "sample_id": 7,
+      "expected_type": "pan",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.166
+    },
+    {
+      "sample_id": 8,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1706
+    },
+    {
+      "sample_id": 9,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.164
+    },
+    {
+      "sample_id": 10,
+      "expected_type": "pan",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1784
+    },
+    {
+      "sample_id": 11,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1689
+    },
+    {
+      "sample_id": 12,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1603
+    },
+    {
+      "sample_id": 13,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1652
+    },
+    {
+      "sample_id": 14,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1559
+    },
+    {
+      "sample_id": 15,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1652
+    },
+    {
+      "sample_id": 16,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1611
+    },
+    {
+      "sample_id": 17,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1719
+    },
+    {
+      "sample_id": 18,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1692
+    },
+    {
+      "sample_id": 19,
+      "expected_type": "pan",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1692
+    },
+    {
+      "sample_id": 20,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1681
+    },
+    {
+      "sample_id": 21,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1588
+    },
+    {
+      "sample_id": 22,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1756
+    },
+    {
+      "sample_id": 23,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1769
+    },
+    {
+      "sample_id": 24,
+      "expected_type": "pan",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.18
+    },
+    {
+      "sample_id": 25,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "voter_id",
+      "confidence": 0.1742
+    },
+    {
+      "sample_id": 26,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1587
+    },
+    {
+      "sample_id": 27,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1715
+    },
+    {
+      "sample_id": 28,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1628
+    },
+    {
+      "sample_id": 29,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1687
+    },
+    {
+      "sample_id": 30,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1798
+    },
+    {
+      "sample_id": 31,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1704
+    },
+    {
+      "sample_id": 32,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1634
+    },
+    {
+      "sample_id": 33,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1619
+    },
+    {
+      "sample_id": 34,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "voter_id",
+      "confidence": 0.1615
+    },
+    {
+      "sample_id": 35,
+      "expected_type": "pan",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1805
+    },
+    {
+      "sample_id": 36,
+      "expected_type": "pan",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1662
+    },
+    {
+      "sample_id": 37,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1679
+    },
+    {
+      "sample_id": 38,
+      "expected_type": "pan",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1791
+    },
+    {
+      "sample_id": 39,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1771
+    },
+    {
+      "sample_id": 40,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1771
+    },
+    {
+      "sample_id": 41,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1811
+    },
+    {
+      "sample_id": 42,
+      "expected_type": "voter_id",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1758
+    },
+    {
+      "sample_id": 43,
+      "expected_type": "pan",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1657
+    },
+    {
+      "sample_id": 44,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "voter_id",
+      "confidence": 0.1641
+    },
+    {
+      "sample_id": 45,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "voter_id",
+      "confidence": 0.1756
+    },
+    {
+      "sample_id": 46,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1604
+    },
+    {
+      "sample_id": 47,
+      "expected_type": "aadhaar",
+      "detected_card": true,
+      "predicted_type": "voter_id",
+      "confidence": 0.1714
+    },
+    {
+      "sample_id": 48,
+      "expected_type": "driving_licence",
+      "detected_card": true,
+      "predicted_type": "voter_id",
+      "confidence": 0.1796
+    },
+    {
+      "sample_id": 49,
+      "expected_type": "pan",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1734
+    },
+    {
+      "sample_id": 50,
+      "expected_type": "pan",
+      "detected_card": true,
+      "predicted_type": "nepali_citizenship",
+      "confidence": 0.1637
+    }
+  ]
+}

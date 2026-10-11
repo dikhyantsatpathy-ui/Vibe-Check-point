@@ -1,0 +1,53 @@
+{
+  "timestamp": "20261006_095307",
+  "model": "rfdetr_card_int8.onnx",
+  "task2a_negatives": {
+    "total_negative_images": 160,
+    "confidence_threshold": 0.4,
+    "total_false_positives": 29,
+    "overall_fp_rate": 0.1812,
+    "provisional_gate_max_fp_rate": 0.05,
+    "gate_pass": false,
+    "breakdown_by_source": {
+      "test_photo_background": {
+        "total_images": 100,
+        "false_positives": 6,
+        "fp_rate": 0.06
+      },
+      "synth_noise_texture": {
+        "total_images": 25,
+        "false_positives": 0,
+        "fp_rate": 0.0
+      },
+      "synth_receipt": {
+        "total_images": 11,
+        "false_positives": 11,
+        "fp_rate": 1.0
+      },
+      "synth_plain_color": {
+        "total_images": 12,
+        "false_positives": 12,
+        "fp_rate": 1.0
+      },
+      "synth_lined_paper": {
+        "total_images": 12,
+        "false_positives": 0,
+        "fp_rate": 0.0
+      }
+    }
+  },
+  "task2b_scale_stress": {
+    "scale_2x": {
+      "total_tested": 300,
+      "detected_tp": 196,
+      "recall": 0.6533,
+      "label": "SYNTHETIC DIAGNOSTIC"
+    },
+    "scale_3x": {
+      "total_tested": 300,
+      "detected_tp": 62,
+      "recall": 0.2067,
+      "label": "SYNTHETIC DIAGNOSTIC"
+    }
+  }
+}

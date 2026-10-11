@@ -1,0 +1,9 @@
+{
+  "runs": 30,
+  "model": "card.onnx",
+  "cpu_threads": 2,
+  "before_fix_inflated_postprocess_p50_ms": 181.17,
+  "before_fix_inflated_postprocess_mean_ms": 187.69,
+  "after_fix_isolated_postprocess_p50_ms": 0.48,
+  "after_fix_isolated_postprocess_mean_ms": 0.48
+}

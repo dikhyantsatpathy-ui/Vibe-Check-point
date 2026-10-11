@@ -1,0 +1,46 @@
+{
+  "timestamp_utc": "2026-10-06T13:33:35.525364Z",
+  "cpu_threads": 2,
+  "gate_budget_ms": 900.0,
+  "all_chains_passed": true,
+  "ram_initial_mb": 49.42,
+  "ram_final_mb": 123.3,
+  "chains": {
+    "passport_mrz_chain": {
+      "chain_name": "passport_mrz_chain",
+      "runs": 30,
+      "p50_ms": 657.53,
+      "p95_ms": 707.23,
+      "p99_ms": 728.93,
+      "mean_ms": 657.09,
+      "min_ms": 607.42,
+      "max_ms": 736.06,
+      "budget_ms": 900.0,
+      "passed": true
+    },
+    "aadhaar_field_chain": {
+      "chain_name": "aadhaar_field_chain",
+      "runs": 30,
+      "p50_ms": 503.25,
+      "p95_ms": 554.63,
+      "p99_ms": 560.0,
+      "mean_ms": 510.51,
+      "min_ms": 478.22,
+      "max_ms": 560.16,
+      "budget_ms": 900.0,
+      "passed": true
+    },
+    "generic_id_chain": {
+      "chain_name": "generic_id_chain",
+      "runs": 30,
+      "p50_ms": 321.85,
+      "p95_ms": 353.17,
+      "p99_ms": 357.17,
+      "mean_ms": 325.21,
+      "min_ms": 295.7,
+      "max_ms": 358.74,
+      "budget_ms": 900.0,
+      "passed": true
+    }
+  }
+}

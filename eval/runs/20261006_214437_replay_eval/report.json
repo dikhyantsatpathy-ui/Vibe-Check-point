@@ -1,0 +1,15 @@
+{
+  "timestamp": "20261006_214437",
+  "evaluation_type": "SYNTHETIC-ONLY (simulated display moire and subpixel grid recaptures)",
+  "detector": "app/replay_detector.py (2D-FFT PAPR + chromatic moire)",
+  "total_genuine_evaluated": 50,
+  "total_simulated_replays_evaluated": 50,
+  "roc_auc": 0.9284,
+  "threshold": 0.63,
+  "tpr_at_threshold": 0.86,
+  "fpr_at_threshold": 0.06,
+  "mean_genuine_replay_score": 0.4884,
+  "mean_recapture_replay_score": 0.729,
+  "gate_pass": true,
+  "status": "PASS (SYNTHETIC-ONLY)"
+}

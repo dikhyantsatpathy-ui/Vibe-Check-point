@@ -1,0 +1,36 @@
+{
+  "phase": "V5",
+  "audit_target": "SIH26188_ENGINEERING_BLUEPRINT.md Section 27.1",
+  "claims": {
+    "S1_secret_hygiene": {
+      "claim": "Zero live plaintext tokens, credentials, or private keys present in repository history or working tree.",
+      "status": "FALSE",
+      "evidence_path": "eval/runs/20261011_reverify_v1/secrets_scan.json",
+      "reason": "Working tree is clean, but git commit 3724e9e3 in history historically embedded a Neon database connection string. Logged as S1-01 in AUDIT_V7.md and OWNER_TODO Item 8."
+    },
+    "S2_multi_environment_isolation": {
+      "claim": "Production and test environments utilize isolated Neon PostgreSQL branches (main vs stage_test) and disjoint cryptographic vault keys.",
+      "status": "UNVERIFIABLE",
+      "evidence_path": "docs/OWNER_TODO.md Item 6",
+      "reason": "Vercel environment variables cannot be audited without active owner Vercel session credentials. Logged in OWNER_TODO."
+    },
+    "S3_constant_time_auth_and_serialization": {
+      "claim": "X-ML-Secret-Key verified using hmac.compare_digest; streaming byte limits and decompression-bomb caps; ban on unsafe object serialization.",
+      "status": "VERIFIED",
+      "evidence_path": "tests/test_ml_service_contract.py, tests/test_upload_limits.py",
+      "reason": "Passing tests confirm hmac.compare_digest timing attack resistance, 413 caps on streaming bodies, Pillow decompression bomb limits, and absence of pickle/eval deserialization."
+    },
+    "S4_supply_chain_and_copyleft_isolation": {
+      "claim": "All runtime packages pinned to exact release tags. Zero vulnerabilities via pip-audit and npm audit. Complete AGPL copyleft isolation for production runtime.",
+      "status": "FALSE",
+      "evidence_path": "eval/runs/20261011_reverify_v1/dependency_audit.json",
+      "reason": "Exact version pinning and npm audit (0 vulns) verified, but pip-audit detected 8 known CVEs in pypdf==6.16.2. Ultralytics is verified absent from runtime requirements, with AGPL tooling derivative question referred to counsel."
+    },
+    "Rule_12_fail_safe_auth_invariant": {
+      "claim": "Unauthenticated or unauthorized calls fail closed with immediate HTTP 401/403 status codes and zero operational telemetry leakage.",
+      "status": "VERIFIED",
+      "evidence_path": "eval/runs/20261011_reverify_v1/auth_reverification.json, tests/test_authz.py",
+      "reason": "All 60 enumerated application routes reject unauthenticated requests with 401/403/422; tampered and expired session tokens fail closed."
+    }
+  }
+}

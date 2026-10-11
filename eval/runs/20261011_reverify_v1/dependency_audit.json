@@ -1,0 +1,30 @@
+{
+  "phase": "V2",
+  "pip_audit_root": {
+    "target": "requirements.txt",
+    "vulnerabilities_count": 8,
+    "packages_affected": ["pypdf (6.16.2 -> fix in 6.19.0)"],
+    "cves": [
+      "CVE-2026-102994", "CVE-2026-102995", "CVE-2026-103000",
+      "CVE-2026-102999", "CVE-2026-102997", "CVE-2026-102996",
+      "CVE-2026-102993", "CVE-2026-102998"
+    ]
+  },
+  "pip_audit_ml_service": {
+    "target": "ml_service/requirements.txt",
+    "vulnerabilities_count": 8,
+    "packages_affected": ["pypdf (6.16.2 -> fix in 6.19.0)"]
+  },
+  "npm_audit_frontend": {
+    "target": "frontend/package.json",
+    "vulnerabilities_count": 0,
+    "summary": "0 critical, 0 high, 0 moderate, 0 low"
+  },
+  "ultralytics_runtime_presence": {
+    "in_runtime_requirements": false,
+    "imported_in_app": false,
+    "imported_in_ml_service": false,
+    "imported_in_api": false
+  },
+  "agpl_tooling_status": "Documented as legal question for intellectual property counsel in docs/OWNER_TODO.md Item 9"
+}

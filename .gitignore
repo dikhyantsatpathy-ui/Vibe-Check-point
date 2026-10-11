@@ -34,7 +34,7 @@ chat_transcripts/
 
 # ---- Data & Training corpora (local GPU runs, datasets, fallback sqlite) ----
 data/
-runs/
+/runs/
 training/runs/
 weights/
 *.parquet
@@ -69,6 +69,9 @@ scripts/*
 !scripts/skill_router.py
 !scripts/verify_blueprint_claims.py
 !scripts/render_blueprint.py
+!scripts/audit_independent_secrets.py
+!scripts/reverify_auth_v3.py
+!scripts/reverify_logs_v4.py
 
 # ---- Rollback snapshots (local only, never pushed) ----
 _backup/

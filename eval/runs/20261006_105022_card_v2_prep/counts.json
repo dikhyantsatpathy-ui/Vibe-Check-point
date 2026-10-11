@@ -1,0 +1,16 @@
+{
+  "total_train_images": 3039,
+  "total_train_annotations": 2482,
+  "breakdown": {
+    "base_positives": 1839,
+    "multiscale_positives": 600,
+    "negatives_background": 300,
+    "negatives_non_id_rectangles": 300,
+    "total_negatives": 600
+  },
+  "contact_sheets": {
+    "negatives": "eval\\runs\\20261006_105022_card_v2_prep\\negatives_contact_sheet.jpg",
+    "small_cards": "eval\\runs\\20261006_105022_card_v2_prep\\small_card_contact_sheet.jpg"
+  },
+  "output_dataset_dir": "data\\coco_card_v2"
+}

@@ -1,0 +1,168 @@
+{
+  "total_tested": 20,
+  "passed_count": 20,
+  "all_passed": true,
+  "min_iou_target": 0.95,
+  "results": [
+    {
+      "image": "aze_passport_00.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9816,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_01.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9818,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_02.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9782,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_03.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9826,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_04.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9844,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_05.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9829,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_06.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.983,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_07.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9855,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_08.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9799,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_09.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.985,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_10.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.983,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_11.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9837,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_12.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9748,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_13.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9841,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_14.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9829,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_15.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.978,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_16.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9788,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_17.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9684,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_18.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9741,
+      "class_match": true,
+      "pass": true
+    },
+    {
+      "image": "aze_passport_19.jpg",
+      "pt_boxes_count": 1,
+      "onnx_boxes_count": 1,
+      "top_box_iou": 0.9841,
+      "class_match": true,
+      "pass": true
+    }
+  ]
+}

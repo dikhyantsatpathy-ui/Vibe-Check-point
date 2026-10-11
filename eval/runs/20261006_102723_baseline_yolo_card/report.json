@@ -1,0 +1,129 @@
+{
+  "dataset": {
+    "samples": 84,
+    "card_ground_truths": 0,
+    "aadhaar_ground_truths": 303
+  },
+  "card_detector": {
+    "model": "YOLOv8s-Card (card.onnx)",
+    "backend": "yolov8",
+    "model_size_mb": 42.67,
+    "operating_threshold": 0.4,
+    "test_source": "data/coco_card/test (MIDV-2020 300 photos)",
+    "metrics": {
+      "overall": {
+        "mAP50": 0.0,
+        "mAP50_95": 0.0
+      },
+      "classes": {
+        "Card": {
+          "mAP50": 0.0,
+          "mAP50_95": 0.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "ground_truths": 0,
+          "detections": 0
+        }
+      }
+    },
+    "optimal_thresholds": {
+      "Card": 0.35
+    },
+    "per_document_type_recall": {},
+    "per_capture_condition_recall": {},
+    "latency": {
+      "runs": 30,
+      "p50_ms": 183.83,
+      "p95_ms": 193.8,
+      "mean_ms": 183.84,
+      "min_ms": 172.11,
+      "max_ms": 208.24,
+      "breakdown": {
+        "preprocess_ms": 12.6,
+        "inference_ms": 170.56,
+        "postprocess_ms": 0.68
+      },
+      "cpu_model": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "thread_count": 16
+    }
+  },
+  "aadhaar_fields_detector": {
+    "model": "YOLOv8s-Aadhaar (aadhaar_fields.onnx)",
+    "metrics": {
+      "overall": {
+        "mAP50": 0.992,
+        "mAP50_95": 0.838
+      },
+      "classes": {
+        "Aadhaar_No": {
+          "mAP50": 0.9802,
+          "mAP50_95": 0.8228,
+          "precision": 1.0,
+          "recall": 0.9873,
+          "f1": 0.9936,
+          "ground_truths": 79,
+          "detections": 78
+        },
+        "DOB": {
+          "mAP50": 1.0,
+          "mAP50_95": 0.8146,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "ground_truths": 73,
+          "detections": 73
+        },
+        "Gender": {
+          "mAP50": 0.9997,
+          "mAP50_95": 0.794,
+          "precision": 0.9867,
+          "recall": 1.0,
+          "f1": 0.9933,
+          "ground_truths": 74,
+          "detections": 75
+        },
+        "Name": {
+          "mAP50": 0.9802,
+          "mAP50_95": 0.8166,
+          "precision": 1.0,
+          "recall": 0.9863,
+          "f1": 0.9931,
+          "ground_truths": 73,
+          "detections": 72
+        },
+        "Photo": {
+          "mAP50": 1.0,
+          "mAP50_95": 0.9422,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "ground_truths": 4,
+          "detections": 4
+        }
+      }
+    },
+    "optimal_thresholds": {
+      "Aadhaar_No": 0.15,
+      "DOB": 0.15,
+      "Gender": 0.15,
+      "Name": 0.15,
+      "Photo": 0.15
+    },
+    "latency": {
+      "runs": 30,
+      "p50_ms": 187.12,
+      "p95_ms": 211.99,
+      "mean_ms": 189.86,
+      "min_ms": 177.82,
+      "max_ms": 222.1,
+      "breakdown": {
+        "preprocess_ms": 12.35,
+        "inference_ms": 176.66,
+        "postprocess_ms": 0.84
+      },
+      "cpu_model": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+      "thread_count": 16
+    }
+  }
+}

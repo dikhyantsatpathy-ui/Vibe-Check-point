@@ -1,0 +1,26 @@
+{
+  "label": "SYNTHETIC DIAGNOSTIC, NOT A GATE, model has seen composite artefacts in training",
+  "timestamp": "20261006_170920",
+  "num_samples": 150,
+  "models": {
+    "rf_detr_candidate": {
+      "tp": 130,
+      "detections": 164,
+      "recall": 0.8667,
+      "precision": 0.7927,
+      "per_design_recall": {
+        "aadhaar_pvc": 0.9,
+        "aadhaar_letter": 0.8667,
+        "pan_card": 0.9,
+        "voter_id": 0.8,
+        "driving_licence": 0.8667
+      }
+    },
+    "yolo_baseline": {
+      "tp": 0,
+      "detections": 8,
+      "recall": 0.0,
+      "precision": 0.0
+    }
+  }
+}

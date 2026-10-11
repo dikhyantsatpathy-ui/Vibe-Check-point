@@ -1,0 +1,81 @@
+{
+  "timestamp": "20261006_184931",
+  "model": "rfdetr_id_fields_int8.onnx",
+  "test_dataset": "data/coco_id_fields/test (held-out designs 36..39)",
+  "total_test_images": 192,
+  "total_ground_truth_boxes": 1344,
+  "mean_recall_at_0_5": 0.5583,
+  "gate_recall_target": 0.9,
+  "p50_latency_ms": 332.02,
+  "p95_latency_ms": 355.56,
+  "gate_latency_target_ms": 400.0,
+  "gate_pass": false,
+  "per_class": {
+    "Photo": {
+      "n_gt": 192,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    "Name": {
+      "n_gt": 192,
+      "recall": 0.7865,
+      "precision": 1.0
+    },
+    "ID_No": {
+      "n_gt": 192,
+      "recall": 0.7083,
+      "precision": 1.0
+    },
+    "DOB": {
+      "n_gt": 192,
+      "recall": 0.1042,
+      "precision": 1.0
+    },
+    "Gender": {
+      "n_gt": 128,
+      "recall": 0.0312,
+      "precision": 1.0
+    },
+    "Address": {
+      "n_gt": 128,
+      "recall": 0.6875,
+      "precision": 1.0
+    },
+    "Father_Name": {
+      "n_gt": 96,
+      "recall": 0.3854,
+      "precision": 1.0
+    },
+    "Issue_Date": {
+      "n_gt": 96,
+      "recall": 0.6146,
+      "precision": 1.0
+    },
+    "Expiry_Date": {
+      "n_gt": 64,
+      "recall": 0.3906,
+      "precision": 1.0
+    },
+    "Signature": {
+      "n_gt": 64,
+      "recall": 0.875,
+      "precision": 1.0
+    }
+  },
+  "classes": [
+    "Photo",
+    "Name",
+    "ID_No",
+    "DOB",
+    "Gender",
+    "Address",
+    "Father_Name",
+    "Issue_Date",
+    "Expiry_Date",
+    "Signature"
+  ],
+  "notes": [
+    "Nepali Nagarikta and Bhutanese CID are UNVALIDATED ON REAL DOCUMENTS (procedural/synthetic only).",
+    "PAN, Voter ID, Driving Licence tested on held-out design composites."
+  ]
+}

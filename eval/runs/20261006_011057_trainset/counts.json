@@ -1,0 +1,12 @@
+{
+  "sources": {
+    "midv2020_train_photos": 500,
+    "idcard_train": 39,
+    "card_synth_sampled": 300,
+    "composites": 1000
+  },
+  "total_images": 1839,
+  "total_annotations": 1882,
+  "seed": 42,
+  "no_flips": true
+}

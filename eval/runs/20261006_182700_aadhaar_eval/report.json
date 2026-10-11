@@ -1,0 +1,70 @@
+{
+  "timestamp": "20261006_182700",
+  "model": "rfdetr_aadhaar_int8.onnx",
+  "test_dataset": "data/coco_aadhaar/test",
+  "total_test_images": 79,
+  "total_ground_truth_boxes": 303,
+  "mAP50": 0.991,
+  "mAP50_95": 0.7678,
+  "per_class_recall": {
+    "Aadhaar_No": 0.9873,
+    "DOB": 0.9863,
+    "Gender": 1.0,
+    "Name": 1.0,
+    "Photo": 1.0
+  },
+  "per_class_map": {
+    "Aadhaar_No": {
+      "mAP50": 0.9802,
+      "mAP50_95": 0.7583,
+      "precision": 0.9873,
+      "recall": 0.9873,
+      "f1": 0.9873,
+      "ground_truths": 79,
+      "detections": 79
+    },
+    "DOB": {
+      "mAP50": 0.9746,
+      "mAP50_95": 0.7419,
+      "precision": 0.9863,
+      "recall": 0.9863,
+      "f1": 0.9863,
+      "ground_truths": 73,
+      "detections": 73
+    },
+    "Gender": {
+      "mAP50": 1.0,
+      "mAP50_95": 0.7636,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "ground_truths": 74,
+      "detections": 74
+    },
+    "Name": {
+      "mAP50": 1.0,
+      "mAP50_95": 0.7498,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "ground_truths": 73,
+      "detections": 73
+    },
+    "Photo": {
+      "mAP50": 1.0,
+      "mAP50_95": 0.8252,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "ground_truths": 4,
+      "detections": 4
+    }
+  },
+  "yolo_baseline": {
+    "map50": 0.992,
+    "map50_95": 0.838,
+    "min_recall": 0.97
+  },
+  "gate_pass": false,
+  "recommendation": "KEEP YOLO FOR FIELDS (no regression rule)"
+}

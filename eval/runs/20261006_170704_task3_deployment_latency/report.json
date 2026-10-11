@@ -1,0 +1,261 @@
+{
+  "timestamp": "20261006_170704",
+  "environment": {
+    "cpu_model": "AMD64 Family 25 Model 116 Stepping 1, AuthenticAMD",
+    "target_space_spec": "Small CPU Space (~2 vCPU, marked UNVERIFIED)"
+  },
+  "benchmarks": {
+    "yolo_card": {
+      "1_thread": {
+        "threads": 1,
+        "runs": 30,
+        "p50_total_ms": 319.64,
+        "p95_total_ms": 346.85,
+        "mean_total_ms": 323.78,
+        "breakdown_ms": {
+          "preprocess_mean": 12.9,
+          "inference_mean": 309.6,
+          "postprocess_mean": 1.28
+        },
+        "peak_ram_mb": 15.26
+      },
+      "2_thread": {
+        "threads": 2,
+        "runs": 30,
+        "p50_total_ms": 191.49,
+        "p95_total_ms": 229.86,
+        "mean_total_ms": 194.2,
+        "breakdown_ms": {
+          "preprocess_mean": 12.88,
+          "inference_mean": 180.23,
+          "postprocess_mean": 1.09
+        },
+        "peak_ram_mb": 15.25
+      }
+    },
+    "rfdetr_fp32": {
+      "1_thread": {
+        "threads": 1,
+        "runs": 30,
+        "p50_total_ms": 755.24,
+        "p95_total_ms": 799.64,
+        "mean_total_ms": 760.02,
+        "breakdown_ms": {
+          "preprocess_mean": 18.39,
+          "inference_mean": 740.02,
+          "postprocess_mean": 1.6
+        },
+        "peak_ram_mb": 12.04
+      },
+      "2_thread": {
+        "threads": 2,
+        "runs": 30,
+        "p50_total_ms": 449.83,
+        "p95_total_ms": 508.13,
+        "mean_total_ms": 454.09,
+        "breakdown_ms": {
+          "preprocess_mean": 17.61,
+          "inference_mean": 435.1,
+          "postprocess_mean": 1.39
+        },
+        "peak_ram_mb": 12.04
+      }
+    },
+    "rfdetr_int8": {
+      "1_thread": {
+        "threads": 1,
+        "runs": 30,
+        "p50_total_ms": 559.13,
+        "p95_total_ms": 580.72,
+        "mean_total_ms": 559.19,
+        "breakdown_ms": {
+          "preprocess_mean": 14.89,
+          "inference_mean": 542.93,
+          "postprocess_mean": 1.38
+        },
+        "peak_ram_mb": 12.04
+      },
+      "2_thread": {
+        "threads": 2,
+        "runs": 30,
+        "p50_total_ms": 332.96,
+        "p95_total_ms": 383.09,
+        "mean_total_ms": 338.43,
+        "breakdown_ms": {
+          "preprocess_mean": 16.56,
+          "inference_mean": 320.4,
+          "postprocess_mean": 1.47
+        },
+        "peak_ram_mb": 12.04
+      }
+    }
+  },
+  "parity_int8_iou95": {
+    "total_tested": 20,
+    "passed_count": 19,
+    "all_passed": false,
+    "min_iou_target": 0.95,
+    "results": [
+      {
+        "image": "aze_passport_00.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9881,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_01.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9891,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_02.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9818,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_03.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9787,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_04.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9829,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_05.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9871,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_06.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.989,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_07.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9895,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_08.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9755,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_09.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9907,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_10.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9802,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_11.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.982,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_12.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9819,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_13.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9849,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_14.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.991,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_15.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9859,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_16.jpg",
+        "pt_boxes_count": 2,
+        "onnx_boxes_count": 2,
+        "top_box_iou": 0.9794,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_17.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.8521,
+        "class_match": true,
+        "pass": false
+      },
+      {
+        "image": "aze_passport_18.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9853,
+        "class_match": true,
+        "pass": true
+      },
+      {
+        "image": "aze_passport_19.jpg",
+        "pt_boxes_count": 1,
+        "onnx_boxes_count": 1,
+        "top_box_iou": 0.9855,
+        "class_match": true,
+        "pass": true
+      }
+    ]
+  }
+}

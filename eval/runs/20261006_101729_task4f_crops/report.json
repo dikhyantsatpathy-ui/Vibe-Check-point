@@ -1,0 +1,908 @@
+{
+  "timestamp": "20261006_101729",
+  "backend": "rf_detr",
+  "num_crops": 30,
+  "crops": [
+    {
+      "image": "alb_id_81.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.034,
+        "y": 0.4187,
+        "w": 0.8656,
+        "h": 0.2956,
+        "box": [
+          0.034,
+          0.4187,
+          0.8656,
+          0.2956
+        ],
+        "confidence": 0.968,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "alb_id_14.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.2072,
+        "y": 0.3112,
+        "w": 0.6971,
+        "h": 0.2276,
+        "box": [
+          0.2072,
+          0.3112,
+          0.6971,
+          0.2276
+        ],
+        "confidence": 0.975,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "alb_id_03.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0,
+        "y": 0.3055,
+        "w": 0.8553,
+        "h": 0.2769,
+        "box": [
+          0.0,
+          0.3055,
+          0.8553,
+          0.2769
+        ],
+        "confidence": 0.97,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "alb_id_94.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1365,
+        "y": 0.4716,
+        "w": 0.7455,
+        "h": 0.2637,
+        "box": [
+          0.1365,
+          0.4716,
+          0.7455,
+          0.2637
+        ],
+        "confidence": 0.975,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "alb_id_35.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1246,
+        "y": 0.6072,
+        "w": 0.8278,
+        "h": 0.2591,
+        "box": [
+          0.1246,
+          0.6072,
+          0.8278,
+          0.2591
+        ],
+        "confidence": 0.976,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "alb_id_31.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.2743,
+        "y": 0.4462,
+        "w": 0.5366,
+        "h": 0.1969,
+        "box": [
+          0.2743,
+          0.4462,
+          0.5366,
+          0.1969
+        ],
+        "confidence": 0.968,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "alb_id_28.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.212,
+        "y": 0.3377,
+        "w": 0.5898,
+        "h": 0.1975,
+        "box": [
+          0.212,
+          0.3377,
+          0.5898,
+          0.1975
+        ],
+        "confidence": 0.973,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "alb_id_17.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1033,
+        "y": 0.2853,
+        "w": 0.7418,
+        "h": 0.3153,
+        "box": [
+          0.1033,
+          0.2853,
+          0.7418,
+          0.3153
+        ],
+        "confidence": 0.969,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "alb_id_13.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1232,
+        "y": 0.2778,
+        "w": 0.7361,
+        "h": 0.2423,
+        "box": [
+          0.1232,
+          0.2778,
+          0.7361,
+          0.2423
+        ],
+        "confidence": 0.978,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "alb_id_86.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0452,
+        "y": 0.3692,
+        "w": 0.885,
+        "h": 0.3246,
+        "box": [
+          0.0452,
+          0.3692,
+          0.885,
+          0.3246
+        ],
+        "confidence": 0.972,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "srb_passport_94.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0738,
+        "y": 0.4253,
+        "w": 0.6607,
+        "h": 0.2528,
+        "box": [
+          0.0738,
+          0.4253,
+          0.6607,
+          0.2528
+        ],
+        "confidence": 0.974,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "srb_passport_69.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1157,
+        "y": 0.3127,
+        "w": 0.7478,
+        "h": 0.3048,
+        "box": [
+          0.1157,
+          0.3127,
+          0.7478,
+          0.3048
+        ],
+        "confidence": 0.978,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "srb_passport_11.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0136,
+        "y": 0.1893,
+        "w": 0.8904,
+        "h": 0.3188,
+        "box": [
+          0.0136,
+          0.1893,
+          0.8904,
+          0.3188
+        ],
+        "confidence": 0.975,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "srb_passport_75.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0065,
+        "y": 0.1465,
+        "w": 0.9133,
+        "h": 0.3588,
+        "box": [
+          0.0065,
+          0.1465,
+          0.9133,
+          0.3588
+        ],
+        "confidence": 0.971,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "srb_passport_54.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0796,
+        "y": 0.6518,
+        "w": 0.8459,
+        "h": 0.2725,
+        "box": [
+          0.0796,
+          0.6518,
+          0.8459,
+          0.2725
+        ],
+        "confidence": 0.975,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "srb_passport_04.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0151,
+        "y": 0.2365,
+        "w": 0.8488,
+        "h": 0.3326,
+        "box": [
+          0.0151,
+          0.2365,
+          0.8488,
+          0.3326
+        ],
+        "confidence": 0.974,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "srb_passport_03.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0388,
+        "y": 0.3822,
+        "w": 0.8158,
+        "h": 0.4038,
+        "box": [
+          0.0388,
+          0.3822,
+          0.8158,
+          0.4038
+        ],
+        "confidence": 0.975,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "srb_passport_27.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0374,
+        "y": 0.2366,
+        "w": 0.8547,
+        "h": 0.3196,
+        "box": [
+          0.0374,
+          0.2366,
+          0.8547,
+          0.3196
+        ],
+        "confidence": 0.98,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "srb_passport_29.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0407,
+        "y": 0.3541,
+        "w": 0.8312,
+        "h": 0.4028,
+        "box": [
+          0.0407,
+          0.3541,
+          0.8312,
+          0.4028
+        ],
+        "confidence": 0.979,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "srb_passport_64.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1101,
+        "y": 0.382,
+        "w": 0.8485,
+        "h": 0.3242,
+        "box": [
+          0.1101,
+          0.382,
+          0.8485,
+          0.3242
+        ],
+        "confidence": 0.973,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "svk_id_77.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1151,
+        "y": 0.4149,
+        "w": 0.7171,
+        "h": 0.2511,
+        "box": [
+          0.1151,
+          0.4149,
+          0.7171,
+          0.2511
+        ],
+        "confidence": 0.969,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "svk_id_03.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1061,
+        "y": 0.2262,
+        "w": 0.8172,
+        "h": 0.4364,
+        "box": [
+          0.1061,
+          0.2262,
+          0.8172,
+          0.4364
+        ],
+        "confidence": 0.975,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "svk_id_71.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0296,
+        "y": 0.3328,
+        "w": 0.8152,
+        "h": 0.2951,
+        "box": [
+          0.0296,
+          0.3328,
+          0.8152,
+          0.2951
+        ],
+        "confidence": 0.978,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "svk_id_25.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1946,
+        "y": 0.0678,
+        "w": 0.643,
+        "h": 0.2488,
+        "box": [
+          0.1946,
+          0.0678,
+          0.643,
+          0.2488
+        ],
+        "confidence": 0.975,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "svk_id_91.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.0389,
+        "y": 0.3295,
+        "w": 0.7877,
+        "h": 0.2895,
+        "box": [
+          0.0389,
+          0.3295,
+          0.7877,
+          0.2895
+        ],
+        "confidence": 0.974,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "svk_id_83.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.026,
+        "y": 0.5436,
+        "w": 0.9622,
+        "h": 0.3119,
+        "box": [
+          0.026,
+          0.5436,
+          0.9622,
+          0.3119
+        ],
+        "confidence": 0.981,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "svk_id_89.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1108,
+        "y": 0.4409,
+        "w": 0.8458,
+        "h": 0.2812,
+        "box": [
+          0.1108,
+          0.4409,
+          0.8458,
+          0.2812
+        ],
+        "confidence": 0.979,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "svk_id_69.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1663,
+        "y": 0.3443,
+        "w": 0.6797,
+        "h": 0.2132,
+        "box": [
+          0.1663,
+          0.3443,
+          0.6797,
+          0.2132
+        ],
+        "confidence": 0.976,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "svk_id_53.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.3806,
+        "y": 0.5015,
+        "w": 0.5975,
+        "h": 0.2045,
+        "box": [
+          0.3806,
+          0.5015,
+          0.5975,
+          0.2045
+        ],
+        "confidence": 0.976,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    },
+    {
+      "image": "svk_id_28.jpg",
+      "card_box": {
+        "label": "Card",
+        "class_id": 0,
+        "class_name": "Card",
+        "x": 0.1247,
+        "y": 0.3467,
+        "w": 0.6568,
+        "h": 0.2032,
+        "box": [
+          0.1247,
+          0.3467,
+          0.6568,
+          0.2032
+        ],
+        "confidence": 0.964,
+        "source": "model",
+        "backend": "rf_detr",
+        "model_version": "rfdetr-v1",
+        "stage": "card",
+        "card_backend": "rf_detr",
+        "effective_backend": "rf_detr"
+      },
+      "crop_meta": null,
+      "crop_size": [
+        720,
+        1280
+      ]
+    }
+  ],
+  "contact_sheet": "eval\\runs\\20261006_101729_task4f_crops\\contact_sheet_crops.jpg"
+}

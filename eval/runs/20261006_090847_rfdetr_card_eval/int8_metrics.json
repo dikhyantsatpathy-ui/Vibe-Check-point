@@ -1,0 +1,7 @@
+{
+  "model": "rfdetr_card_int8.onnx",
+  "mAP50": 1.0,
+  "mAP50_95": 0.9925,
+  "precision": 1.0,
+  "recall": 1.0
+}

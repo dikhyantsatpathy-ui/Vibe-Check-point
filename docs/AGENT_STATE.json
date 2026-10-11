@@ -1,6 +1,6 @@
 {
-  "phase": "V",
-  "task": "V1",
+  "phase": "T",
+  "task": "T1",
   "done": [
     "0.1",
     "0.2",
@@ -31,21 +31,24 @@
     "A6",
     "A7",
     "A8",
-    "A9"
+    "A9",
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5"
   ],
   "blocked": [
     "F-13",
     "F-14"
   ],
   "findings_open": [
-    "C-02",
     "C-03",
     "C-04",
-    "C-05",
     "C-08",
     "C-11",
-    "C-13",
     "C-15",
+    "S1-01",
     "EP-GET-/api/sessions/open",
     "EP-GET-/api/reports/{id}",
     "EP-GET-/api/ledger/blocks",
@@ -53,7 +56,7 @@
     "EP-GET-/api/ledger/cert/65b/{id}",
     "EP-POST-/api/ledger/anchor"
   ],
-  "last_commit": "eb294ff",
-  "last_evidence": "Phase A completed (A1 through A9 implemented, fail-safe contract enforced, full suite green 323 passed)",
-  "notes": "Transitioning to Phase V (Security Re-verification)"
+  "last_commit": "0fac786",
+  "last_evidence": "Phase V completed (V1-V5 verified with evidence in eval/runs/20261011_reverify_v1/)",
+  "notes": "Transitioning to Phase T (Test Hardening T1-T8)"
 }

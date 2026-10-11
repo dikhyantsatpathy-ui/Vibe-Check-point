@@ -1,0 +1,36 @@
+{
+  "model_path": "ml_service\\models\\rfdetr_card.onnx",
+  "file_size_bytes": 123212318,
+  "inputs": [
+    {
+      "name": "input",
+      "shape": [
+        1,
+        3,
+        512,
+        512
+      ],
+      "type": "tensor(float)"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "dets",
+      "shape": [
+        1,
+        300,
+        4
+      ],
+      "type": "tensor(float)"
+    },
+    {
+      "name": "labels",
+      "shape": [
+        1,
+        300,
+        2
+      ],
+      "type": "tensor(float)"
+    }
+  ]
+}

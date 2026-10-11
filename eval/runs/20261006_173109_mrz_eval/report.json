@@ -1,0 +1,19 @@
+{
+  "timestamp": "20261006_173109",
+  "model": "rfdetr_mrz_int8.onnx",
+  "test_dataset": "data/coco_mrz/test (srb_passport, alb_id, svk_id)",
+  "total_test_images": 300,
+  "total_ground_truth_mrz": 300,
+  "true_positives": 300,
+  "recall_at_0_5": 1.0,
+  "precision_at_0_5": 0.9772,
+  "gate_recall_target": 0.95,
+  "gate_recall_pass": true,
+  "ocr_end_to_end": {
+    "baseline_bottom20_valid_rate": 0.02,
+    "detector_crop_valid_rate": 0.2067,
+    "gate_ocr_beats_baseline": true
+  },
+  "gate_pass": true,
+  "note": "Mock document fonts and print resolution in MIDV-2020 differ from real physical passports."
+}

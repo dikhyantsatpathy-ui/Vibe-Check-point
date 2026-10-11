@@ -1,0 +1,138 @@
+{
+  "timestamp": "20261006_204725",
+  "b1": {
+    "claim": "MIDV test split is strictly disjoint by document type from train/valid with no near-duplicates (Hamming <= 6).",
+    "train_types": [
+      "comp",
+      "esp",
+      "est",
+      "grc",
+      "idcard",
+      "lva",
+      "rus",
+      "synth"
+    ],
+    "val_types": [
+      "aze",
+      "fin"
+    ],
+    "test_types": [
+      "alb",
+      "srb",
+      "svk"
+    ],
+    "disjoint_by_document_type": true,
+    "min_hamming_distance_sample": 15,
+    "leakage_detected": false,
+    "explanation_of_perfect_metric": "300 test photos each contain exactly 1 centered, prominent card on a flat background. RF-DETR 32M localized 300/300 cleanly.",
+    "verdict": "VERIFIED (clean document-type split on MIDV-2020), but WEAK on unconstrained in-the-wild variability."
+  },
+  "b2": {
+    "claim": "Card detector passes recall>=0.95, precision>=0.90, neg FP<=0.05, and scale stress 2x>=0.90, 3x>=0.60.",
+    "test_recall": 1.0,
+    "test_precision": 1.0,
+    "negative_fp_rate": 0.0063,
+    "scale_2x_recall": 0.4433,
+    "scale_2x_gate_target": 0.9,
+    "scale_2x_status": "FAIL",
+    "scale_3x_recall": 0.0967,
+    "scale_3x_gate_target": 0.6,
+    "scale_3x_status": "FAIL",
+    "robustness_sample_30": {
+      "clean": 1.0,
+      "blur": 1.0,
+      "low_light": 1.0,
+      "glare": 1.0,
+      "rotation_15deg": 1.0
+    },
+    "gate_pass": false,
+    "verdict": "WEAK \u2014 Scale-stress diagnostic failed (2x: 44.33% vs 90%, 3x: 9.67% vs 60%). Fix needed in Phase C1."
+  },
+  "b3": {
+    "claim": "Visual forensics achieves ROC AUC 1.0000 on face-swap, text inpaint, and copy-move manipulations.",
+    "data_source_truth": "Images in Phase 8 benchmark were procedurally generated in RAM by PIL (eval/forensics_benchmark.py: create_procedural_card).",
+    "real_vs_synthetic": "SYNTHETIC-ONLY",
+    "reported_metrics": {},
+    "explanation": "Perfect 1.0000 AUC was measured strictly on synthetic PIL mockups with artificial splice/inpaint boundaries. Has NOT been validated on real IDNet or FantasyID captures.",
+    "verdict": "SYNTHETIC-ONLY (WEAK). Needs validation on real IDNet-2025 / FantasyID datasets (Phase C/D)."
+  },
+  "b4": {
+    "claim": "MRZ detector achieves 1.0000 recall and improves end-to-end OCR check-digit valid rate.",
+    "total_images": 300,
+    "image_breakdown": {
+      "real_passports": 100,
+      "real_national_ids": 200
+    },
+    "mrz_detector_recall": 1.0,
+    "mrz_detector_precision": 0.9772,
+    "ocr_valid_check_digit_rate": 0.2067,
+    "baseline_geometric_valid_rate": 0.02,
+    "improvement_ratio": "10.33x over baseline",
+    "verdict": "WEAK on production OCR target (20.67% beats baseline 2.0%, but is far below production target >= 60%). Fix needed in Phase C2."
+  },
+  "b5": {
+    "claim": "DocType v2 achieves 99.69% accuracy across 8 classes.",
+    "overall_accuracy": 0.9969,
+    "macro_f1": 0.9977,
+    "classes_audit": {
+      "aadhaar": {
+        "n_tested": 56,
+        "provenance": "REAL (data/AADHAR)",
+        "status": "VALIDATED"
+      },
+      "passport": {
+        "n_tested": 15,
+        "provenance": "REAL (MIDV-2020 passports)",
+        "status": "VALIDATED (small n)"
+      },
+      "other": {
+        "n_tested": 55,
+        "provenance": "REAL (Desk/document negatives)",
+        "status": "VALIDATED"
+      },
+      "pan": {
+        "n_tested": 46,
+        "provenance": "SYNTHETIC (synth_fields.py)",
+        "status": "UNVALIDATED ON REAL CARDS"
+      },
+      "voter_id": {
+        "n_tested": 34,
+        "provenance": "SYNTHETIC (synth_fields.py)",
+        "status": "UNVALIDATED ON REAL CARDS"
+      },
+      "driving_licence": {
+        "n_tested": 46,
+        "provenance": "SYNTHETIC (synth_fields.py)",
+        "status": "UNVALIDATED ON REAL CARDS"
+      },
+      "nepali_citizenship": {
+        "n_tested": 56,
+        "provenance": "SYNTHETIC (synth_fields.py)",
+        "status": "UNVALIDATED ON REAL CARDS"
+      },
+      "bhutan_cid": {
+        "n_tested": 16,
+        "provenance": "SYNTHETIC (synth_fields.py)",
+        "status": "UNVALIDATED ON REAL CARDS"
+      }
+    },
+    "unvalidated_classes_count": 5,
+    "verdict": "WEAK \u2014 5 of 8 document classes are trained and tested strictly on synthetic mockups. Fix needed in Phase C3."
+  },
+  "b6": {
+    "claim": "Full detection chains meet <= 900 ms latency budget on 2-thread CPU server.",
+    "passport_chain_p50_ms": 657.53,
+    "aadhaar_chain_p50_ms": 503.25,
+    "generic_chain_p50_ms": 321.85,
+    "latency_budget_target_ms": 900.0,
+    "peak_ram_mb": 123.3,
+    "verdict": "VERIFIED on local 2-thread CPU. Space/Container measurement to verify in Phase F."
+  },
+  "b7": {
+    "claim": "Phase 9 Indian specimen generalisation status.",
+    "original_label": "PASS (handled per \u00a79.2, marked NOT MEASURED)",
+    "corrected_label": "NOT MEASURED",
+    "documentation_fix": "Removed all 'Zero fabricated' promotional phrasing and replaced with precise evidence tables.",
+    "verdict": "VERIFIED after relabeling."
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "timestamp": "20261006_095000",
+  "sample_counts": {
+    "train": 1839,
+    "valid": 200,
+    "test": 300
+  },
+  "filename_overlap": {
+    "test_vs_train_count": 0,
+    "test_vs_train_files": [],
+    "test_vs_val_count": 0,
+    "test_vs_val_files": [],
+    "pass": true
+  },
+  "sha256_overlap": {
+    "test_vs_train_count": 0,
+    "test_vs_train_matches": [],
+    "test_vs_val_count": 0,
+    "test_vs_val_matches": [],
+    "pass": true
+  },
+  "perceptual_hash_near_duplicates": {
+    "threshold_hamming": 6,
+    "near_duplicates_count": 11,
+    "matches": [
+      {
+        "test_file": "srb_passport_71.jpg",
+        "matched_split": "train",
+        "matched_file": "comp_0732.jpg",
+        "hamming_dist": 5
+      },
+      {
+        "test_file": "srb_passport_71.jpg",
+        "matched_split": "train",
+        "matched_file": "comp_0984.jpg",
+        "hamming_dist": 5
+      },
+      {
+        "test_file": "srb_passport_72.jpg",
+        "matched_split": "train",
+        "matched_file": "synth_scene_01276.jpg",
+        "hamming_dist": 6
+      },
+      {
+        "test_file": "srb_passport_72.jpg",
+        "matched_split": "train",
+        "matched_file": "synth_scene_00657.jpg",
+        "hamming_dist": 6
+      },
+      {
+        "test_file": "srb_passport_72.jpg",
+        "matched_split": "train",
+        "matched_file": "synth_scene_01391.jpg",
+        "hamming_dist": 6
+      },
+      {
+        "test_file": "srb_passport_72.jpg",
+        "matched_split": "train",
+        "matched_file": "synth_scene_01104.jpg",
+        "hamming_dist": 6
+      },
+      {
+        "test_file": "srb_passport_72.jpg",
+        "matched_split": "train",
+        "matched_file": "synth_scene_01133.jpg",
+        "hamming_dist": 6
+      },
+      {
+        "test_file": "srb_passport_72.jpg",
+        "matched_split": "train",
+        "matched_file": "synth_scene_00289.jpg",
+        "hamming_dist": 6
+      },
+      {
+        "test_file": "srb_passport_72.jpg",
+        "matched_split": "train",
+        "matched_file": "synth_scene_01293.jpg",
+        "hamming_dist": 6
+      },
+      {
+        "test_file": "srb_passport_72.jpg",
+        "matched_split": "train",
+        "matched_file": "synth_scene_01454.jpg",
+        "hamming_dist": 6
+      },
+      {
+        "test_file": "srb_passport_72.jpg",
+        "matched_split": "train",
+        "matched_file": "synth_scene_00800.jpg",
+        "hamming_dist": 6
+      }
+    ],
+    "pass": false
+  },
+  "composite_source_provenance": {
+    "composite_sources_clean": true,
+    "violations_count": 0,
+    "violations": [],
+    "pass": true
+  },
+  "overall_leakage_audit_pass": false
+}
