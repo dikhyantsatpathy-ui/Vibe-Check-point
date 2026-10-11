@@ -1,0 +1,49 @@
+{
+  "phase": "X",
+  "timestamp": "20261012_reverify_v1",
+  "readability_census": {
+    "total_files": 13,
+    "readable_image_files": 7,
+    "document_pdf_files": 6,
+    "formats": {
+      "AVIF": 1,
+      "JPEG": 6,
+      "PDF": 6
+    }
+  },
+  "pipeline_smoke": {
+    "exceptions_count": 0,
+    "invariant_fs_holds": true,
+    "never_clears": true,
+    "all_can_clear_false": true,
+    "outcomes_aggregate": {
+      "FLAGGED": 7
+    }
+  },
+  "card_detector": {
+    "hit_rate_aggregate": 1.0,
+    "zero_detection_share": 0.0
+  },
+  "face_verification": {
+    "embedding_dimension": 512,
+    "fail_safe_maintained": true
+  },
+  "perturbation_stability": {
+    "tested_perturbations": [
+      "jpeg_q30",
+      "gaussian_blur_r2",
+      "brightness_plus_40",
+      "rotation_10deg"
+    ],
+    "flips_to_clear_count": 0
+  },
+  "leakage_aggregate": {
+    "near_duplicates_found": 0
+  },
+  "privacy_guarantee": {
+    "zero_personal_names": true,
+    "zero_filenames_logged": true,
+    "zero_pii_persisted": true
+  },
+  "status": "PASSED"
+}

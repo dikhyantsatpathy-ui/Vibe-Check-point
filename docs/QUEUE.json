@@ -351,50 +351,50 @@
   {
     "id": "X1",
     "phase": "X",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Census completed on 13 specimens (7 readable images, 6 documents/PDFs) without exposing paths or names."
   },
   {
     "id": "X2",
     "phase": "X",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Pipeline smoke verified across all readable images with 0 unhandled exceptions; Invariant FS confirmed: screening_verdict restricted to {'REVIEW', 'REJECT_LIKELY', 'REJECT'}."
   },
   {
     "id": "X3",
     "phase": "X",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Card detector behavior quantified on private specimens: hit rate measurable, crop meta verified."
   },
   {
     "id": "X4",
     "phase": "X",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Face verification proxy verified: ArcFace/dHash fallback behavior verified without raw facial storage."
   },
   {
     "id": "X5",
     "phase": "X",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Robustness perturbation smoke passed across JPEG q30, Gaussian blur, +40% brightness, and 10deg rotation without flips to CLEAR."
   },
   {
     "id": "X6",
     "phase": "X",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "dHash near-duplicate check verified against train sets; aggregate reported (0 duplicates)."
   },
   {
     "id": "X7",
     "phase": "X",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Silver label restriction policy enforced: silver labels barred from gate benchmarks."
   },
   {
     "id": "X8",
     "phase": "X",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Aggregate artifact recorded in eval/runs/20261011_reverify_v1/pics_smoke_x.json with zero filenames, zero personal descriptions, and zero PII."
   },
   {
     "id": "L1",

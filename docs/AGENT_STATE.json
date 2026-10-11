@@ -1,6 +1,6 @@
 {
-  "phase": "X",
-  "task": "X1",
+  "phase": "L",
+  "task": "L1",
   "done": [
     "0.1",
     "0.2",
@@ -57,7 +57,15 @@
     "M5",
     "M6",
     "M7",
-    "P1"
+    "P1",
+    "X1",
+    "X2",
+    "X3",
+    "X4",
+    "X5",
+    "X6",
+    "X7",
+    "X8"
   ],
   "blocked": [
     "F-13",
@@ -69,6 +77,6 @@
     "S1-01"
   ],
   "last_commit": "ml/blueprint-sync-v7",
-  "last_evidence": "Phase P completed (P1 verified across 120 synthetic layout variants, 3 OCR noise levels, 0.0 DL FAR on 10k strings, and cross-field checks routing to REVIEW in eval/runs/20261011_reverify_v1/parser_hardening_p.json)",
-  "notes": "Phase P complete. Transitioning to Phase X (Pics Smoke: X1-X8)."
+  "last_evidence": "Phase X completed (X1-X8 verified with 8/8 passing tests in tests/test_phase_x_pics_smoke.py; zero filenames or PII leaked; aggregate artifact in eval/runs/20261011_reverify_v1/pics_smoke_x.json)",
+  "notes": "Phase X complete. Transitioning to Phase L (Convergence Loop: L1)."
 }
