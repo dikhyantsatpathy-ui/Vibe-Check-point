@@ -232,15 +232,24 @@ def _find_aadhaar_robust(source: str) -> str | None:
 
 def _find_dl_robust(source: str) -> str | None:
     """Extract Indian Driving Licence number across all state RTO formats."""
-    # Standard format: State(2) + RTO(2) + Year(4 opt) + Serial(7)
-    m = re.search(r"\b([A-Za-z]{2})[- /]*(\d{2})[- /]*((?:19|20)\d{2})?[- /]*(\d{7})\b", source)
+    # Standard format: State(2) + RTO(2) + Year(4 opt) + Serial(4-7 digits)
+    m = re.search(r"\b([A-Za-z]{2})[- /]*(\d{2})[- /]*((?:19|20)\d{2})?[- /]*(\d{4,7})\b", source)
     if m:
         st, rto, yr, num = m.groups()
         if yr:
             return f"{st.upper()}{rto}{yr}{num}"
         return f"{st.upper()}{rto}{num}"
-    # Generic DL match: 2 letters + 13-14 digits
-    m2 = re.search(r"\b([A-Za-z]{2})[- /]*(\d{13,14})\b", source)
+    # Form-7 format with spaced group: State(2)+RTO(2) + Year(4) + Serial(7) e.g. OD02 20060001234
+    m_f7 = re.search(r"\b([A-Za-z]{2}\d{2})\s+((?:19|20)\d{2})\s*(\d{7})\b", source)
+    if m_f7:
+        return f"{m_f7.group(1).upper()}{m_f7.group(2)}{m_f7.group(3)}"
+    # Older legacy format with year at end: e.g. DL/04/12345/1999
+    m_old = re.search(r"\b([A-Za-z]{2})[- /]*(\d{2})[- /]*(\d{4,7})[- /]*((?:19|20)\d{2})\b", source)
+    if m_old:
+        st, rto, num, yr = m_old.groups()
+        return f"{st.upper()}{rto}{yr}{num}"
+    # Generic DL match: 2 letters + 11-15 digits
+    m2 = re.search(r"\b([A-Za-z]{2})[- /]*(\d{11,15})\b", source)
     if m2:
         return f"{m2.group(1).upper()}{m2.group(2)}"
     return None

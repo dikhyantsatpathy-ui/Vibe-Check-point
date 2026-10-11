@@ -1,0 +1,21 @@
+{
+  "phase": "P",
+  "timestamp": "20261012_reverify_v1",
+  "total_synthetic_variants": 120,
+  "noise_levels_evaluated": [
+    "clean",
+    "moderate",
+    "heavy"
+  ],
+  "dl_loosened_rule_far": 0.0,
+  "cross_field_rules_enforced": [
+    "issue_date < expiry_date",
+    "plausible_dob_and_age",
+    "printed_name_vs_mrz_names",
+    "verhoeff_checksum",
+    "mrz_check_digits"
+  ],
+  "cross_field_verdict_routing": "REVIEW (never silent pass, fails closed toward human inspection)",
+  "zero_real_pii_used": true,
+  "status": "PASSED"
+}

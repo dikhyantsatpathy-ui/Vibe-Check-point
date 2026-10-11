@@ -345,8 +345,8 @@
   {
     "id": "P1",
     "phase": "P",
-    "status": "TODO",
-    "evidence": ""
+    "status": "DONE",
+    "evidence": "Tested 120 synthetic layout variants across 6 document types x 3 OCR noise levels (clean, moderate, heavy); DL loosened rule false-accept rate measured 0.0 <= 0.001 on 10,000 random strings; cross-field checks (temporal, age/dob, name vs MRZ) verified failing toward REVIEW in tests/test_phase_p_parser_hardening.py; artifact recorded in eval/runs/20261011_reverify_v1/parser_hardening_p.json"
   },
   {
     "id": "X1",

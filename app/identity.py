@@ -233,7 +233,7 @@ def ocr_extract(data: bytes, doc_type: str = ""):
 
 _PAN_RE = re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b")
 _PAN_CATEGORY = set("ABCDFGHLJPT")            # 4th char — what the holder entity is
-_DL_RE = re.compile(r"\b[A-Z]{2}\d{2}(?:[ ]?\d{4}[ ]?\d{7})\b")
+_DL_RE = re.compile(r"\b[A-Z]{2}\d{2}(?:[ -/]?\d{4}[ -/]?\d{4,7})\b")
 _RC_RE = re.compile(r"\b[A-Z]{2}\d{2}[ ]?[A-Z]{0,3}[ ]?\d{4}\b")
 _EPIC_RE = re.compile(r"\b[A-Z]{3}\d{7}\b")
 _PASSPORT_RE = re.compile(r"\b(?:[A-Z]\d{7}|[A-Z]\d{6}[A-Z])\b")  # new 8-char series + legacy 9-char (e.g. L898902C)
@@ -328,8 +328,12 @@ def verify_pan(pan: str) -> list:
 
 def verify_dl(number: str) -> list:
     n = norm(number)
-    return [{"label": "structure", "ok": bool(_DL_RE.fullmatch(n)),
-             "detail": "RR-DD-YYYY-XXXXXXX (e.g. KA0120201234567)"}]
+    clean = re.sub(r"[\s\-_/]", "", n)
+    is_valid = bool(_DL_RE.fullmatch(n)) or bool(_DL_RE.fullmatch(clean))
+    if not is_valid and len(clean) >= 11:
+        is_valid = bool(re.match(r"^[A-Z]{2}\d{2}(?:19|20)\d{2}\d{4,7}$", clean))
+    return [{"label": "structure", "ok": is_valid,
+             "detail": "MoRTH Form-7 / Parivahan standard (e.g. KA0120201234567) or legacy state format" if is_valid else "Invalid DL format (expected MoRTH Form-7 or state legacy)"}]
 
 
 def verify_rc(number: str) -> list:

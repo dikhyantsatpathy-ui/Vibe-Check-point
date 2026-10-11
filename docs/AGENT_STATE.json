@@ -1,6 +1,6 @@
 {
-  "phase": "P",
-  "task": "P1",
+  "phase": "X",
+  "task": "X1",
   "done": [
     "0.1",
     "0.2",
@@ -56,7 +56,8 @@
     "M4",
     "M5",
     "M6",
-    "M7"
+    "M7",
+    "P1"
   ],
   "blocked": [
     "F-13",
@@ -68,6 +69,6 @@
     "S1-01"
   ],
   "last_commit": "ml/blueprint-sync-v7",
-  "last_evidence": "Phase M completed (M1-M7 verified with frozen manifest card_v7.json, detector truth reconciliation, MRZ validity, DocType real/synth breakdown, field detector routing, latency reconciliation in eval/runs/20261011_reverify_v1/model_facts_m.json)",
-  "notes": "Phase M complete. Transitioning to Phase P (Parser Hardening: P1)."
+  "last_evidence": "Phase P completed (P1 verified across 120 synthetic layout variants, 3 OCR noise levels, 0.0 DL FAR on 10k strings, and cross-field checks routing to REVIEW in eval/runs/20261011_reverify_v1/parser_hardening_p.json)",
+  "notes": "Phase P complete. Transitioning to Phase X (Pics Smoke: X1-X8)."
 }

@@ -10,6 +10,8 @@ means "not verifiable here — inspect by eye", never a silent pass. This is the
 same contract build_identity_report used, folded into the MHA screening desk.
 """
 
+import re
+
 VALIDATORS = {
     "aadhaar": ("verify_aadhaar", "Aadhaar"),
     "aadhaar_card": ("verify_aadhaar", "Aadhaar"),
@@ -157,6 +159,88 @@ def validate_document(
         checks.append({"label": "expiry", "ok": None,
                        "detail": f"Expiry '{exp}' unparseable — verify by eye."})
 
+    # ---- Cross-field checks (temporal, age/dob, name vs MRZ) --------------
+    # 1. Temporal sequence: Issue date < Expiry date
+    issue_date_str = (declared.get("issue_date") or fields.get("issue_date") or fields.get("issue") or "").strip()
+    if issue_date_str and exp:
+        issue_parsed = _parse_date(issue_date_str)
+        if issue_parsed and exp_parsed:
+            if issue_parsed >= exp_parsed:
+                checks.append({
+                    "label": "cross-field-temporal",
+                    "ok": False,
+                    "detail": f"Issue date ({issue_date_str}) is not before expiry date ({exp}) (temporal paradox) — flagged for officer REVIEW.",
+                })
+            else:
+                checks.append({
+                    "label": "cross-field-temporal",
+                    "ok": True,
+                    "detail": f"Temporal sequence valid: issue date ({issue_date_str}) precedes expiry date ({exp}).",
+                })
+
+    # 2. DOB and plausible age
+    dob_str = (declared.get("dob") or fields.get("dob") or fields.get("date_of_birth") or "").strip()
+    if dob_str:
+        dob_parsed = _parse_date(dob_str)
+        if dob_parsed:
+            today_t = tuple(int(x) for x in _today().split("-"))
+            if dob_parsed > today_t:
+                checks.append({
+                    "label": "cross-field-dob",
+                    "ok": False,
+                    "detail": f"Date of birth ({dob_str}) is in the future — flagged for officer REVIEW.",
+                })
+            else:
+                age_calc = today_t[0] - dob_parsed[0]
+                if age_calc > 125 or age_calc < 0:
+                    checks.append({
+                        "label": "cross-field-dob",
+                        "ok": False,
+                        "detail": f"Implausible calculated age ({age_calc} years) — flagged for officer REVIEW.",
+                    })
+                else:
+                    checks.append({
+                        "label": "cross-field-dob",
+                        "ok": True,
+                        "detail": f"Plausible age verified ({age_calc} years).",
+                    })
+        else:
+            checks.append({
+                "label": "cross-field-dob",
+                "ok": False,
+                "detail": f"Invalid or implausible DOB format / year out of range ({dob_str}) — flagged for officer REVIEW.",
+            })
+
+    # 3. Name vs MRZ (for passport/visa)
+    declared_name = (declared.get("name") or fields.get("name") or "").strip()
+    mrz_name = (fields.get("mrz_names") or fields.get("mrz_name") or "").strip()
+    if not mrz_name and mrz_text:
+        try:
+            from app.mrz import parse_mrz
+            parsed_m = parse_mrz(mrz_text)
+            if parsed_m:
+                full_mrz = f"{parsed_m.get('surname', '')} {parsed_m.get('given_names', '')}".strip()
+                mrz_name = full_mrz or parsed_m.get("names", "")
+        except Exception:
+            pass
+
+    if declared_name and mrz_name:
+        dec_tokens = set(re.findall(r"[A-Za-z]{2,}", declared_name.upper()))
+        mrz_tokens = set(re.findall(r"[A-Za-z]{2,}", mrz_name.upper()))
+        if dec_tokens and mrz_tokens:
+            if dec_tokens.isdisjoint(mrz_tokens):
+                checks.append({
+                    "label": "cross-field-name-mrz",
+                    "ok": False,
+                    "detail": f"Printed/declared name ('{declared_name}') conflicts with MRZ name ('{mrz_name}') — flagged for officer REVIEW.",
+                })
+            else:
+                checks.append({
+                    "label": "cross-field-name-mrz",
+                    "ok": True,
+                    "detail": f"Name tokens agree between document field and MRZ ('{mrz_name}').",
+                })
+
     # ---- Watchlist (hash-only, privacy-preserving) -------------------------
     # Absence from the watchlist is the GOOD outcome: identifiers found on the
     # watchlist are ALWAYS flagged to a supervisor regardless of checksum.
@@ -179,5 +263,9 @@ def validate_document(
         verdict = "REVIEW"
     else:
         verdict = "UNVERIFIED"
+
+    # Cross-field check failures always fail toward REVIEW
+    if any(c.get("label", "").startswith("cross-field") and c.get("ok") is False for c in checks):
+        verdict = "REVIEW"
 
     return {"checks": checks, "verdict": verdict, "watchlist_hits": hits}
