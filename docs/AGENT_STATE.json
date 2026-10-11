@@ -1,6 +1,6 @@
 {
-  "phase": "A",
-  "task": "A1",
+  "phase": "V",
+  "task": "V1",
   "done": [
     "0.1",
     "0.2",
@@ -22,7 +22,16 @@
     "F-09",
     "F-10",
     "F-11",
-    "F-12"
+    "F-12",
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "A6",
+    "A7",
+    "A8",
+    "A9"
   ],
   "blocked": [
     "F-13",
@@ -44,7 +53,7 @@
     "EP-GET-/api/ledger/cert/65b/{id}",
     "EP-POST-/api/ledger/anchor"
   ],
-  "last_commit": "",
-  "last_evidence": "Phase F completed (F-01 through F-14 verified/tested or blocked)",
-  "notes": "Transitioning to Phase A (Face Matching / ArcFace)"
+  "last_commit": "eb294ff",
+  "last_evidence": "Phase A completed (A1 through A9 implemented, fail-safe contract enforced, full suite green 323 passed)",
+  "notes": "Transitioning to Phase V (Security Re-verification)"
 }

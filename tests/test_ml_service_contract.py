@@ -33,6 +33,7 @@ from ml_service.main import app  # noqa: E402
 def client(monkeypatch):
     monkeypatch.setenv("ML_ALLOW_NO_AUTH", "true")
     monkeypatch.setenv("FAIL_CLOSED_ON_DEGRADED", "false")
+    monkeypatch.delenv("ML_SERVICE_URL", raising=False)
     return TestClient(app)
 
 

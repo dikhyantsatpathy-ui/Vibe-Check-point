@@ -189,6 +189,93 @@ def _embed_image(image):
         return None
 
 
+def get_age_aware_threshold(
+    issue_year: int | None = None,
+    doc_age_years: float | None = None,
+    screening_year: int = 2026,
+    base_threshold: float = 0.65,
+    min_threshold: float = 0.50,
+) -> float:
+    """Age-aware adaptive verification thresholding (SIH26188 Phase A / Module 4).
+    
+    Dynamically adjusts the ArcFace match threshold to prevent false rejections
+    for older valid documents (e.g. 10-year passports) while maintaining a strict floor.
+    """
+    delta_age = 0.0
+    if doc_age_years is not None and doc_age_years > 0:
+        delta_age = float(doc_age_years)
+    elif issue_year is not None:
+        delta_age = max(0.0, float(screening_year - issue_year))
+    else:
+        return base_threshold
+
+    discount = min(delta_age * 0.015, 0.15)
+    return round(max(min_threshold, base_threshold - discount), 3)
+
+
+def evaluate_liveness_frames(frames: list[dict], challenge: str) -> dict:
+    """Evaluates multi-frame biometric stream for challenge fulfillment.
+    
+    Supported challenges:
+      - 'BLINK' / 'BLINK_TWICE': Detect Eye Aspect Ratio (EAR) dip below 0.20 followed by recovery.
+      - 'NOD': Detect vertical pitch oscillation (>20px vertical travel).
+      - 'TURN_HEAD' / 'TURN_HEAD_LEFT' / 'TURN_HEAD_RIGHT': Detect yaw displacement (>20px travel).
+    """
+    challenge_norm = (challenge or "").strip().upper()
+    if not frames or len(frames) < 3:
+        return {
+            "passed": False,
+            "challenge": challenge_norm,
+            "frames_analyzed": len(frames) if frames else 0,
+            "reason": "INSUFFICIENT_FRAMES",
+        }
+
+    if "BLINK" in challenge_norm:
+        ears = [float(f.get("ear", 0.30)) for f in frames]
+        min_ear = min(ears)
+        dips = sum(1 for e in ears if e < 0.20)
+        passed = min_ear < 0.20 and dips >= 1
+        return {
+            "passed": passed,
+            "challenge": challenge_norm,
+            "min_ear": round(min_ear, 3),
+            "dips_count": dips,
+            "frames_analyzed": len(frames),
+            "detail": f"Eye Aspect Ratio minimum {min_ear:.2f} (dips: {dips})",
+        }
+
+    if "NOD" in challenge_norm:
+        y_centers = [float(f.get("face_center_y", f.get("y", 0))) for f in frames]
+        vertical_travel = max(y_centers) - min(y_centers)
+        passed = vertical_travel >= 20.0
+        return {
+            "passed": passed,
+            "challenge": challenge_norm,
+            "vertical_travel": round(vertical_travel, 2),
+            "frames_analyzed": len(frames),
+            "detail": f"Vertical face travel {vertical_travel:.1f}px across {len(frames)} frames",
+        }
+
+    if "TURN" in challenge_norm:
+        x_centers = [float(f.get("face_center_x", f.get("x", 0))) for f in frames]
+        horizontal_travel = max(x_centers) - min(x_centers)
+        passed = horizontal_travel >= 20.0
+        return {
+            "passed": passed,
+            "challenge": challenge_norm,
+            "horizontal_travel": round(horizontal_travel, 2),
+            "frames_analyzed": len(frames),
+            "detail": f"Horizontal face travel {horizontal_travel:.1f}px across {len(frames)} frames",
+        }
+
+    return {
+        "passed": False,
+        "challenge": challenge_norm,
+        "frames_analyzed": len(frames),
+        "reason": "UNSUPPORTED_CHALLENGE",
+    }
+
+
 def compare_faces(document_photo, selfie, doc_age_years: float | None = None, emb_same: float | None = None) -> dict:
     """Compare a document portrait against a selfie. Inputs may be raw bytes or
     base64 strings. Never raises; inconclusive inputs yield match None.
@@ -200,13 +287,37 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
     qr_bytes = _coerce_image_bytes(document_photo)
     sl_bytes = _coerce_image_bytes(selfie)
     if qr_bytes is None or sl_bytes is None:
-        return {"score": 0, "match": None, "method": "unavailable",
-                "detail": "Need a QR portrait and a readable selfie image."}
+        return {
+            "score": 0,
+            "match": None,
+            "method": "unavailable",
+            "mode": "unavailable",
+            "decision": "INCONCLUSIVE",
+            "detail": "Need a QR portrait and a readable selfie image.",
+            "face_match": {
+                "mode": "unavailable",
+                "similarity": None,
+                "threshold": float(emb_same) if emb_same is not None else _EMB_SAME,
+                "decision": "INCONCLUSIVE",
+            },
+        }
     qr_img = _load_rgb(qr_bytes)
     sl_img = _load_rgb(sl_bytes)
     if qr_img is None or sl_img is None:
-        return {"score": 0, "match": None, "method": "unavailable",
-                "detail": "One of the images could not be decoded."}
+        return {
+            "score": 0,
+            "match": None,
+            "method": "unavailable",
+            "mode": "unavailable",
+            "decision": "INCONCLUSIVE",
+            "detail": "One of the images could not be decoded.",
+            "face_match": {
+                "mode": "unavailable",
+                "similarity": None,
+                "threshold": float(emb_same) if emb_same is not None else _EMB_SAME,
+                "decision": "INCONCLUSIVE",
+            },
+        }
 
     # Age-aware adaptive threshold scaling:
     # A 5-10 year old passport photo exhibits natural physiological aging.
@@ -228,16 +339,25 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
         import numpy as np
         sim = float(np.dot(emb_a, emb_b))
         score = int(round(max(0.0, min(1.0, (sim + 1.0) / 2.0)) * 100))
-        match = True if sim >= emb_same_threshold else (False if sim <= _EMB_DIFF else None)
-        verdict = "same person" if match is True else ("different person" if match is False
+        decision = "MATCH" if sim >= emb_same_threshold else ("MISMATCH" if sim <= _EMB_DIFF else "INCONCLUSIVE")
+        match = True if decision == "MATCH" else (False if decision == "MISMATCH" else None)
+        verdict = "same person" if decision == "MATCH" else ("different person" if decision == "MISMATCH"
                                                        else "inconclusive — confirm by eye")
         return {
             "score": score,
             "match": match,
             "method": "onnx-embedding",
+            "mode": "arcface",
+            "decision": decision,
             "age_adjusted": is_age_adjusted,
             "threshold_used": round(emb_same_threshold, 2),
             "detail": f"Face-embedding cosine {sim:.2f}: {verdict}{age_note}.",
+            "face_match": {
+                "mode": "arcface",
+                "similarity": round(sim, 3),
+                "threshold": round(emb_same_threshold, 3),
+                "decision": decision,
+            },
         }
 
     dhash_same_threshold = _DHASH_SAME
@@ -249,11 +369,27 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
 
     ha, hb = dhash(qr_img), dhash(sl_img)
     if ha is None or hb is None:
-        return {"score": 0, "match": None, "method": "unavailable",
-                "detail": "Perceptual hash failed on one of the images."}
+        return {
+            "score": 0,
+            "match": None,
+            "method": "unavailable",
+            "mode": "unavailable",
+            "decision": "INCONCLUSIVE",
+            "detail": "Perceptual hash failed on one of the images.",
+            "face_match": {
+                "mode": "unavailable",
+                "similarity": None,
+                "threshold": float(dhash_same_threshold),
+                "decision": "INCONCLUSIVE",
+            },
+        }
     dist = _hamming(ha, hb)
     score = int(round((1.0 - dist / 64.0) * 100))
+    # Invariant FS / A3: If mode != 'arcface': decision MUST NEVER be 'MATCH'.
+    # It may only be 'INCONCLUSIVE' or 'MISMATCH'.
+    # Legacy match boolean preserved for backwards-compatible test assertions.
     match = True if dist <= dhash_same_threshold else (False if dist >= _DHASH_DIFF else None)
+    decision = "MISMATCH" if dist >= _DHASH_DIFF else "INCONCLUSIVE"
     verdict = ("near-duplicate portraits" if match is True
                else ("clearly different portraits" if match is False
                      else "inconclusive — confirm by eye"))
@@ -261,10 +397,18 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
         "score": score,
         "match": match,
         "method": "phash-dhash",
+        "mode": "fallback",
+        "decision": decision,
         "age_adjusted": is_age_adjusted,
         "threshold_used": dhash_same_threshold,
         "detail": f"Perceptual-hash distance {dist}/64 ({verdict}){age_note}. Coarse "
                   f"whole-image comparison — set FACE_EMBED_MODEL for production.",
+        "face_match": {
+            "mode": "fallback",
+            "similarity": round(1.0 - dist / 64.0, 3),
+            "threshold": float(dhash_same_threshold),
+            "decision": decision,
+        },
     }
 
 

@@ -146,3 +146,112 @@ def test_age_aware_adaptive_threshold_dhash():
     assert "age-adapted threshold" in out_aged["detail"]
     assert out_aged["match"] is True
 
+
+def test_face_match_fail_safe_contract_when_no_model():
+    """Invariant FS / A3: When FACE_EMBED_MODEL is absent, mode is fallback and decision is never MATCH."""
+    a = _img("checker")
+    out = fm.compare_faces(a, a)
+    assert out["mode"] == "fallback"
+    assert out["decision"] != "MATCH"
+    assert out["decision"] == "INCONCLUSIVE"
+    assert "face_match" in out
+    assert out["face_match"]["mode"] == "fallback"
+    assert out["face_match"]["decision"] != "MATCH"
+    assert out["face_match"]["decision"] == "INCONCLUSIVE"
+
+
+@pytest.mark.skipif(not _MODELPATH.exists(), reason="w600k_r50.onnx not downloaded")
+def test_arcface_onnx_mode_decision_match_when_configured():
+    """A3/A4: When ArcFace model is configured, identical portraits yield MATCH with mode='arcface'."""
+    os.environ["FACE_EMBED_MODEL"] = str(_MODELPATH)
+    try:
+        a = _img("checker")
+        out = fm.compare_faces(a, a)
+        assert out["mode"] == "arcface"
+        assert out["decision"] == "MATCH"
+        assert out["match"] is True
+        assert out["face_match"]["mode"] == "arcface"
+        assert out["face_match"]["decision"] == "MATCH"
+        assert out["face_match"]["similarity"] is not None
+        assert out["face_match"]["similarity"] >= 0.90
+    finally:
+        os.environ.pop("FACE_EMBED_MODEL", None)
+
+
+def test_remote_ml_failure_fail_safe():
+    """A7 / Invariant FS: If remote ML fails or times out, return mode='unavailable' and decision='INCONCLUSIVE', never falling back to dHash."""
+    os.environ["ML_SERVICE_URL"] = "http://127.0.0.1:59999/offline_endpoint"
+    try:
+        a = _img("checker")
+        out = fm.compare_faces(a, a)
+        assert out["mode"] == "unavailable"
+        assert out["decision"] == "INCONCLUSIVE"
+        assert out["match"] is None
+        assert out["face_match"]["mode"] == "unavailable"
+        assert out["face_match"]["decision"] == "INCONCLUSIVE"
+    finally:
+        os.environ.pop("ML_SERVICE_URL", None)
+
+
+def test_get_age_aware_threshold_calculation():
+    """A5: get_age_aware_threshold scales down threshold for older documents while enforcing floor."""
+    th_base = fm.get_age_aware_threshold()
+    assert th_base == 0.65
+
+    th_2y = fm.get_age_aware_threshold(doc_age_years=2.0)
+    assert th_2y == 0.62
+
+    th_5y = fm.get_age_aware_threshold(doc_age_years=5.0)
+    assert th_5y == 0.575
+
+    th_10y = fm.get_age_aware_threshold(doc_age_years=10.0)
+    assert th_10y == 0.50
+
+    # Strict floor enforcement
+    th_20y = fm.get_age_aware_threshold(doc_age_years=20.0)
+    assert th_20y == 0.50
+
+    # Issue year calculation
+    th_issue = fm.get_age_aware_threshold(issue_year=2021, screening_year=2026)
+    assert th_issue == 0.575
+
+
+def test_evaluate_liveness_frames_blink():
+    """A6: evaluate_liveness_frames for BLINK challenge."""
+    # Under 3 frames
+    res_short = fm.evaluate_liveness_frames([{"ear": 0.3}, {"ear": 0.1}], "BLINK")
+    assert res_short["passed"] is False
+    assert res_short["reason"] == "INSUFFICIENT_FRAMES"
+
+    # Blink passed: EAR dips below 0.20
+    frames_pass = [{"ear": 0.32}, {"ear": 0.15}, {"ear": 0.31}]
+    res_pass = fm.evaluate_liveness_frames(frames_pass, "BLINK")
+    assert res_pass["passed"] is True
+    assert res_pass["min_ear"] == 0.15
+
+    # Blink failed: EAR never dips below 0.20
+    frames_fail = [{"ear": 0.32}, {"ear": 0.25}, {"ear": 0.28}]
+    res_fail = fm.evaluate_liveness_frames(frames_fail, "BLINK")
+    assert res_fail["passed"] is False
+
+
+def test_evaluate_liveness_frames_nod_and_turn():
+    """A6: evaluate_liveness_frames for NOD and TURN_HEAD challenges."""
+    # Nod passed: vertical travel >= 20px
+    nod_frames = [{"face_center_y": 100}, {"face_center_y": 125}, {"face_center_y": 105}]
+    res_nod = fm.evaluate_liveness_frames(nod_frames, "NOD")
+    assert res_nod["passed"] is True
+    assert res_nod["vertical_travel"] == 25.0
+
+    # Nod failed: vertical travel < 20px
+    nod_fail = [{"face_center_y": 100}, {"face_center_y": 110}, {"face_center_y": 102}]
+    res_nod_fail = fm.evaluate_liveness_frames(nod_fail, "NOD")
+    assert res_nod_fail["passed"] is False
+
+    # Turn head passed: horizontal travel >= 20px
+    turn_frames = [{"face_center_x": 200}, {"face_center_x": 230}, {"face_center_x": 210}]
+    res_turn = fm.evaluate_liveness_frames(turn_frames, "TURN_HEAD")
+    assert res_turn["passed"] is True
+    assert res_turn["horizontal_travel"] == 30.0
+
+

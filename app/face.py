@@ -72,10 +72,28 @@ def face_verification(document_bytes: bytes | None = None,
         result["checks"][0]["detail"] = result["detail"]
         return result
 
-    result.update({k: fm.get(k) for k in ("score", "match", "method", "detail")})
+    for k in ("score", "match", "method", "detail", "mode", "decision", "face_match"):
+        if k in fm:
+            result[k] = fm[k]
+
+    # Invariant FS / A3: verdict="PASS" ONLY when decision == "MATCH" and mode == "arcface".
+    # If mode != "arcface", verdict MUST be "REVIEW" (or "FAIL" if mismatch).
+    f_match_struct = fm.get("face_match") or {}
+    f_mode = fm.get("mode") or f_match_struct.get("mode") or "fallback"
+    f_dec = fm.get("decision") or f_match_struct.get("decision") or (
+        "MATCH" if fm.get("match") is True else ("MISMATCH" if fm.get("match") is False else "INCONCLUSIVE")
+    )
+
+    if f_dec == "MISMATCH" or fm.get("match") is False:
+        verdict = "FAIL"
+    elif f_dec == "MATCH" and f_mode == "arcface":
+        verdict = "PASS"
+    else:
+        verdict = "REVIEW"
+
     checks = [{
         "label": "face-match",
-        "ok": fm.get("match"),
+        "ok": True if verdict == "PASS" else (False if verdict == "FAIL" else None),
         "detail": (f"Document portrait vs live capture "
                    f"({fm.get('method')}, score {fm.get('score')}): {fm.get('detail')}"),
     }]
@@ -84,8 +102,7 @@ def face_verification(document_bytes: bytes | None = None,
                        "detail": (f"{'; '.join(signals)} (photo ~{photo_age:.1f}y old; "
                                   f"arcface threshold 0.60 -> {emb_same:.2f}).")})
     result["checks"] = checks
-    result["verdict"] = ("PASS" if fm.get("match") is True else
-                         ("FAIL" if fm.get("match") is False else "REVIEW"))
+    result["verdict"] = verdict
     return result
 
 

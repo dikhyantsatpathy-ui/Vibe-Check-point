@@ -1394,19 +1394,33 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         elif mod_key == "tampering" and mod_verdict == "REVIEW":
             reasons.append("Forensic check advisory: Module 3 (tampering) returned REVIEW — see tampering module.")
             risk = max(risk, 25)
-        elif mod_key == "face" and mod_res.get("match") is False:
+        elif mod_key == "face" and (mod_res.get("match") is False or mod_res.get("verdict") == "FAIL" or mod_res.get("decision") == "MISMATCH"):
             reasons.append("CRITICAL BIOMETRIC ALERT: Module 4 reports the document portrait does NOT match the "
                            "captured holder — a very strong fraud signal.")
             risk = max(risk + 55, 82)
             hard_flag = True
             can_clear = False
 
-    # Finding A3: Degraded mode — system never autonomously clears when model degraded to heuristics
+    # Finding A3 / Invariant FS: Degraded mode — system never autonomously clears when models degraded to heuristics
     crop_meta = (tamper_res or {}).get("crop_meta") or {}
     if crop_meta.get("is_fallback") or crop_meta.get("source") == "heuristic":
         reasons.append("DEGRADED MODE ADVISORY: Document card boundary detected via fallback heuristics (ML detector unavailable). Manual desk review required before clearing.")
         can_clear = False
         risk = max(risk, 30)
+
+    face_mode = face_res.get("mode") or (face_res.get("face_match") or {}).get("mode")
+    if live_frame is not None:
+        if face_mode and face_mode != "arcface":
+            reasons.append(
+                f"DEGRADED BIOMETRIC MODE: Face verification ran in {face_mode} mode (ArcFace model unavailable). "
+                "Manual biometric comparison required before clearing."
+            )
+            can_clear = False
+            risk = max(risk, 30)
+        elif face_res.get("verdict") == "REVIEW":
+            reasons.append("BIOMETRIC REVIEW REQUIRED: Face match inconclusive — confirm identity by eye before clearing.")
+            can_clear = False
+            risk = max(risk, 30)
 
     # Watchlist contributed by Module 2 (hash query above the Analyze pass).
     if hits:

@@ -18,8 +18,12 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.append(_HERE)
 
-from yolo_roi import extract_roi_boxes
-from face_match import compare_faces
+try:
+    from ml_service.yolo_roi import extract_roi_boxes
+    from ml_service.face_match import compare_faces
+except ImportError:
+    from yolo_roi import extract_roi_boxes
+    from face_match import compare_faces
 
 app = FastAPI(title="ML Microservice")
 
@@ -394,7 +398,11 @@ async def api_yolo_roi(file: UploadFile = File(...)):
     return boxes
 
 
-from yolo_roi import extract_aadhaar_fields
+try:
+    from ml_service.yolo_roi import extract_aadhaar_fields
+except ImportError:
+    from yolo_roi import extract_aadhaar_fields
+
 @app.post("/api/ml/aadhaar_fields", dependencies=[Depends(verify_ml_auth)])
 @app.post("/detect/fields", dependencies=[Depends(verify_ml_auth)])
 async def api_aadhaar_fields(file: UploadFile = File(...)):
@@ -424,7 +432,11 @@ async def api_detect_image(file: UploadFile = File(...)):
     return result
 
 
-from doctype_cls import classify_document
+try:
+    from ml_service.doctype_cls import classify_document
+except ImportError:
+    from doctype_cls import classify_document
+
 @app.post("/api/ml/doctype", dependencies=[Depends(verify_ml_auth)])
 @app.post("/classify/doctype", dependencies=[Depends(verify_ml_auth)])
 async def api_doctype(file: UploadFile = File(...)):
@@ -434,7 +446,11 @@ async def api_doctype(file: UploadFile = File(...)):
     return result or {"doc_type": "other", "confidence": 0.0, "scores": {}, "engine": "none"}
 
 
-from doc_forgery import analyze_doc_forgery
+try:
+    from ml_service.doc_forgery import analyze_doc_forgery
+except ImportError:
+    from doc_forgery import analyze_doc_forgery
+
 @app.post("/api/ml/doc_forgery", dependencies=[Depends(verify_ml_auth)])
 async def api_doc_forgery(file: UploadFile = File(...)):
     raw_data = await read_stream_capped(file)
@@ -444,7 +460,10 @@ async def api_doc_forgery(file: UploadFile = File(...)):
 
 
 import base64
-from media_processor import process_pdf_document, process_live_photo
+try:
+    from ml_service.media_processor import process_pdf_document, process_live_photo
+except ImportError:
+    from media_processor import process_pdf_document, process_live_photo
 
 @app.post("/api/ml/media/process_pdf", dependencies=[Depends(verify_ml_auth)])
 async def api_process_pdf(file: UploadFile = File(...), max_pages: int = 5):
