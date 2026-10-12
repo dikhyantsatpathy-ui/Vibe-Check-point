@@ -206,10 +206,10 @@
       "phase": "T",
       "title": "Invariant FS with face states",
       "verify": "python -m pytest tests/test_v8_invariants.py -q",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_invariants.py -q",
+      "updated": "2026-10-12T21:01:51Z"
     },
     {
       "id": "T2",
