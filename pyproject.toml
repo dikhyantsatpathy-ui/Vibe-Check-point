@@ -1,0 +1,48 @@
+[project]
+name = "no-cap"
+version = "7.0.0"
+description = "AI-Based Fake Identity & Document Screening System (SIH26188 / SSB)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "pypdf",
+    "requests",
+    "python-multipart",
+    "slowapi",
+    "google-auth",
+    "python-dotenv",
+    "numpy",
+    "Pillow",
+    "cryptography",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+]
+ignore = [
+    "E402",  # Module import not at top of file (sys.path test harnesses)
+    "E501",  # Line too long
+    "E701",  # Multiple statements on one line (colon)
+    "E731",  # Lambda assignment in fallback shims
+    "E741",  # Ambiguous variable name (e.g. l for line / LAB split)
+    "F401",  # Unused imports in test suites & re-export shims
+    "F841",  # Unused local variables in test suites & soak tests
+    "W291",  # Trailing whitespace
+    "W292",  # No newline at end of file
+    "W293",  # Blank line contains whitespace
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

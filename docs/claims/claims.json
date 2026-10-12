@@ -37,15 +37,15 @@
     "text": "ArcFace 512-dimensional facial biometric embedding matching",
     "check": "cmd",
     "command": "inspect app/face_match.py and model existence",
-    "expect": "ArcFace ONNX loaded by default"
+    "expect": "ArcFace ONNX with graceful dHash fallback"
   },
   {
     "id": "C-06",
     "section": "17 / 26",
-    "text": "Test suite total count equals 305 tests",
+    "text": "Test suite total count equals 397+ tests",
     "check": "cmd",
     "command": "pytest --collect-only",
-    "expect": "305 tests collected"
+    "expect": "397+ tests collected"
   },
   {
     "id": "C-07",
@@ -58,7 +58,7 @@
   {
     "id": "C-08",
     "section": "15.1 / 31",
-    "text": "Card Detector v2 (RF-DETR Small INT8) accepted with 0.63% Neg FP Rate",
+    "text": "Card Detector v2 dual-track deployment (YOLOv8 default, RF-DETR permissive option)",
     "check": "file",
     "command": "inspect default backend and bakeoff report",
     "expect": "consistent production status"

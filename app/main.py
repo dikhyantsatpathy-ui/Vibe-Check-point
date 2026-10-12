@@ -2117,7 +2117,7 @@ async def _neon_keepalive_loop():
     while True:
         try:
             await asyncio.sleep(210)
-            if not _IS_SQLITE:
+            if engine is not None and not str(engine.url).startswith("sqlite"):
                 def _ping():
                     with engine.connect() as conn:
                         conn.execute(text("SELECT 1"))

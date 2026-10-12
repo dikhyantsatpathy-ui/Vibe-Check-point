@@ -54,7 +54,7 @@ def test_convert_yolo_split_to_coco(tmp_path: Path):
 
         # Label: class 0, centered box
         lbl_path = lbl_dir / f"sample_{i}.txt"
-        lbl_path.write_text(f"0 0.5 0.5 0.5 0.5\n", encoding="utf-8")
+        lbl_path.write_text("0 0.5 0.5 0.5 0.5\n", encoding="utf-8")
 
     class_names = ["Card"]
     result = convert_yolo_split_to_coco(img_dir, lbl_dir, class_names, out_json, category_id_start=1)
