@@ -63,3 +63,8 @@
 {"t": "2026-10-12T19:48:02Z", "event": "resume", "session": 22}
 {"t": "2026-10-12T19:48:20Z", "event": "start", "id": "P11", "attempt": 1}
 {"t": "2026-10-12T19:51:23Z", "event": "done", "id": "P11", "evidence": "verify OK: python scripts/count_tests.py"}
+{"t": "2026-10-12T19:51:58Z", "event": "checkpoint", "note": "P11 complete; next P12 coverage ratchet"}
+{"t": "2026-10-12T19:52:05Z", "event": "resume", "session": 23}
+{"t": "2026-10-12T19:52:12Z", "event": "start", "id": "P12", "attempt": 1}
+{"t": "2026-10-12T20:04:03Z", "event": "resume", "session": 24}
+{"t": "2026-10-12T20:08:34Z", "event": "done", "id": "P12", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k coverage_ci"}

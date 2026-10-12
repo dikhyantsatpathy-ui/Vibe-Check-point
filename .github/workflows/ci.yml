@@ -48,6 +48,11 @@ jobs:
         run: |
           pytest -v -m "not slow"
 
+      - name: Code Coverage Ratchet Gate
+        run: |
+          pytest --cov=app --cov=ml_service --cov-report=json
+          python scripts/check_coverage.py
+
       - name: Model Card Validation
         run: |
           python -c "import os; assert os.path.exists('docs/MODEL_CARD.md'), 'docs/MODEL_CARD.md must exist'"

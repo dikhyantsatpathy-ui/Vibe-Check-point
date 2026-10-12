@@ -193,3 +193,56 @@ def test_fake_secrets_redaction_behavior_verified():
     for res in data.get("redaction_sanitizer_tests", []):
         assert res.get("secret_leaked") is False
 
+
+# ---------------------------------------------------------------------------
+# Task P12: Coverage Ratchet Gate and CI Step
+# ---------------------------------------------------------------------------
+
+
+def test_coverage_ci_workflow_has_coverage_commands():
+    """P12: .github/workflows/ci.yml runs pytest --cov and scripts/check_coverage.py."""
+    ci_path = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+    assert ci_path.exists(), "CI workflow file .github/workflows/ci.yml must exist"
+    content = ci_path.read_text(encoding="utf-8")
+
+    assert "pytest --cov=app --cov=ml_service --cov-report=json" in content, (
+        "CI workflow must run pytest --cov=app --cov=ml_service --cov-report=json"
+    )
+    assert "python scripts/check_coverage.py" in content, (
+        "CI workflow must run python scripts/check_coverage.py"
+    )
+
+
+def test_coverage_ci_stability_docstring_notice():
+    """P12: tests/test_coverage_stability_t7.py has non-gating smoke test notice."""
+    test_path = REPO_ROOT / "tests" / "test_coverage_stability_t7.py"
+    assert test_path.exists(), "tests/test_coverage_stability_t7.py must exist"
+    content = test_path.read_text(encoding="utf-8")
+
+    expected_notice = "non-gating smoke test; the coverage gate is scripts/check_coverage.py"
+    assert expected_notice in content, (
+        f"tests/test_coverage_stability_t7.py must contain '{expected_notice}' in docstring"
+    )
+
+
+def test_coverage_ci_thresholds_file_and_check_script():
+    """P12: docs/coverage_thresholds.json exists with target 85, and scripts/check_coverage.py passes."""
+    thresh_path = REPO_ROOT / "docs" / "coverage_thresholds.json"
+    assert thresh_path.exists(), "docs/coverage_thresholds.json must exist"
+
+    with open(thresh_path, "r", encoding="utf-8") as f:
+        thresh = json.load(f)
+
+    assert thresh.get("target_coverage") == 85, "target_coverage must be documented as 85"
+    modules = thresh.get("modules", {})
+    assert len(modules) >= 10, "Must contain module ratchet thresholds"
+
+    script_path = REPO_ROOT / "scripts" / "check_coverage.py"
+    assert script_path.exists(), "scripts/check_coverage.py must exist"
+
+    cov_file = REPO_ROOT / "coverage.json"
+    if cov_file.exists():
+        from scripts.check_coverage import check_coverage
+        success, report = check_coverage(cov_file, thresh_path)
+        assert success, f"Coverage check failed:\n{report}"
+

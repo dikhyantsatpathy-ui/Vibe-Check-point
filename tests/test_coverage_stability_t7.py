@@ -1,5 +1,7 @@
 """Phase T7 — Test Hardening: Coverage & Suite Stability Verification.
 
+non-gating smoke test; the coverage gate is scripts/check_coverage.py
+
 Validates:
 1. Stability of security & invariant tests across repeated execution (zero flaky tests).
 2. Code coverage profiling for core security, biometric, and fail-safe modules:
