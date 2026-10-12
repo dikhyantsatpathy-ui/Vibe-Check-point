@@ -306,10 +306,10 @@
       "phase": "G",
       "title": "Commit and push the branch",
       "verify": "-",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "git push origin ml/patch-v8 succeeded; new branch pushed clean",
+      "updated": "2026-10-12T22:26:55Z"
     },
     {
       "id": "G3",
