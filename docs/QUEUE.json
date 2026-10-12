@@ -166,10 +166,10 @@
       "phase": "A",
       "title": "Face proxy evaluation script",
       "verify": "python -m eval.eval_face_proxy --selftest",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m eval.eval_face_proxy --selftest",
+      "updated": "2026-10-12T20:13:54Z"
     },
     {
       "id": "A2",

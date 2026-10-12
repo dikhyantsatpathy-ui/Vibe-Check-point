@@ -72,3 +72,7 @@
 {"t": "2026-10-12T20:09:16Z", "event": "resume", "session": 25}
 {"t": "2026-10-12T20:09:20Z", "event": "start", "id": "P13", "attempt": 1}
 {"t": "2026-10-12T20:11:30Z", "event": "done", "id": "P13", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k owner_script"}
+{"t": "2026-10-12T20:11:50Z", "event": "checkpoint", "note": "P13 complete (Phase P finished); next Phase A"}
+{"t": "2026-10-12T20:11:54Z", "event": "resume", "session": 26}
+{"t": "2026-10-12T20:12:04Z", "event": "start", "id": "A1", "attempt": 1}
+{"t": "2026-10-12T20:13:54Z", "event": "done", "id": "A1", "evidence": "verify OK: python -m eval.eval_face_proxy --selftest"}
