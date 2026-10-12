@@ -47,3 +47,7 @@
 {"t": "2026-10-12T19:29:46Z", "event": "resume", "session": 18}
 {"t": "2026-10-12T19:29:50Z", "event": "start", "id": "P7", "attempt": 1}
 {"t": "2026-10-12T19:35:51Z", "event": "done", "id": "P7", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k readiness"}
+{"t": "2026-10-12T19:36:55Z", "event": "checkpoint", "note": "P7 complete; next P8 honest CSP"}
+{"t": "2026-10-12T19:37:04Z", "event": "resume", "session": 19}
+{"t": "2026-10-12T19:37:10Z", "event": "start", "id": "P8", "attempt": 1}
+{"t": "2026-10-12T19:41:27Z", "event": "done", "id": "P8", "evidence": "verify OK: python -m pytest tests/test_v8_csp.py -q"}

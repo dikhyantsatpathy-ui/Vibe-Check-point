@@ -138,5 +138,23 @@ $env:DEMO_PASS_ENABLED = "1"
   # huggingface-cli upload koropanda/no-cap-detectors data/models/w600k_r50.onnx w600k_r50.onnx --token $env:HF_TOKEN
   ```
 
+---
+
+## 6. CSP ENFORCEMENT VERIFICATION (PHASE P8)
+
+### Item 11: CSP Strict Enforce Verification
+- **Status**: **ACTION REQUIRED (Browser DevTools Audit)**
+- **Detail**: Security headers now send the baseline policy as `Content-Security-Policy` and the hash-based strict policy as `Content-Security-Policy-Report-Only`. Setting `CSP_STRICT_ENFORCE=1` switches the enforced policy to strict mode.
+- **Owner Action**:
+  1. Open the running deployment in a web browser.
+  2. Open DevTools Console (`F12` -> Console).
+  3. Navigate through the UI workflows (Scan & Verify, Needs Review, Log & History, Alert List, Officers).
+  4. Verify that no CSP violation reports (`Content-Security-Policy-Report-Only`) appear in the browser console.
+  5. Once verified clean, enable strict enforcement in the deployment environment:
+     ```powershell
+     $env:CSP_STRICT_ENFORCE = "1"
+     ```
+
+
 
 

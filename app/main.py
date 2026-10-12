@@ -30,10 +30,12 @@ except ImportError:
     except ImportError:
         pass
 
+import base64
 import hashlib
 import io
 import json
 import logging
+import pathlib
 import re
 import threading
 import time
@@ -2207,18 +2209,69 @@ async def global_exception_handler(request: Request, exc: Exception):
         },
     )
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()"
-        csp_val = (
+_STATIC_INDEX_PATH = pathlib.Path(STATIC_DIR) / "index.html"
+_CACHED_INDEX_MTIME: float | None = None
+_CACHED_STRICT_CSP: str | None = None
+_CACHED_SCRIPT_HASHES: list[str] = []
+
+
+def get_inline_script_hashes(html_path: pathlib.Path | None = None) -> list[str]:
+    """Computes sha256 hashes of all inline <script> tags in the given HTML file."""
+    path = html_path or _STATIC_INDEX_PATH
+    if not path.exists():
+        return []
+    try:
+        content = path.read_text(encoding="utf-8")
+        pattern = re.compile(r"<script(?![^>]*\bsrc\b)[^>]*>(.*?)</script>", re.DOTALL | re.IGNORECASE)
+        hashes = []
+        for m in pattern.finditer(content):
+            body = m.group(1)
+            digest = hashlib.sha256(body.encode("utf-8")).digest()
+            b64 = base64.b64encode(digest).decode("ascii")
+            hashes.append(f"'sha256-{b64}'")
+        return hashes
+    except Exception:
+        return []
+
+
+def get_csp_policies() -> tuple[str, str]:
+    """Returns (enforced_csp, report_only_csp).
+
+    Baseline policy is documented as 'baseline: script-src allows unsafe-inline'.
+    Strict policy replaces 'unsafe-inline' with inline script sha256 hashes,
+    prohibits 'unsafe-eval', and recomputes hashes if static/index.html mtime changes.
+    Env CSP_STRICT_ENFORCE=1 switches the enforced policy to the strict one.
+    """
+    global _CACHED_INDEX_MTIME, _CACHED_STRICT_CSP, _CACHED_SCRIPT_HASHES
+
+    # baseline: script-src allows unsafe-inline
+    baseline_csp = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://accounts.google.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com data:; "
+        "img-src 'self' data: blob: https:; "
+        "connect-src 'self' https://accounts.google.com; "
+        "frame-src https://accounts.google.com; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self';"
+    )
+
+    current_mtime = None
+    if _STATIC_INDEX_PATH.exists():
+        try:
+            current_mtime = _STATIC_INDEX_PATH.stat().st_mtime
+        except Exception:
+            current_mtime = None
+
+    if _CACHED_STRICT_CSP is None or current_mtime != _CACHED_INDEX_MTIME:
+        _CACHED_INDEX_MTIME = current_mtime
+        _CACHED_SCRIPT_HASHES = get_inline_script_hashes(_STATIC_INDEX_PATH)
+        hash_str = (" " + " ".join(_CACHED_SCRIPT_HASHES)) if _CACHED_SCRIPT_HASHES else ""
+        _CACHED_STRICT_CSP = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://accounts.google.com; "
+            f"script-src 'self'{hash_str} https://accounts.google.com; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com data:; "
             "img-src 'self' data: blob: https:; "
@@ -2228,8 +2281,28 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "base-uri 'self'; "
             "form-action 'self';"
         )
-        response.headers["Content-Security-Policy"] = csp_val
-        response.headers["Content-Security-Policy-Report-Only"] = csp_val
+
+    strict_csp = _CACHED_STRICT_CSP
+    strict_enforce = os.getenv("CSP_STRICT_ENFORCE", "0").lower() in ("1", "true", "yes")
+
+    enforced_csp = strict_csp if strict_enforce else baseline_csp
+    report_only_csp = strict_csp
+
+    return enforced_csp, report_only_csp
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()"
+        enforced_csp, report_only_csp = get_csp_policies()
+        response.headers["Content-Security-Policy"] = enforced_csp
+        response.headers["Content-Security-Policy-Report-Only"] = report_only_csp
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0, private"
             response.headers["Pragma"] = "no-cache"

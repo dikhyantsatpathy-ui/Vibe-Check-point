@@ -106,10 +106,10 @@
       "phase": "P",
       "title": "Honest CSP",
       "verify": "python -m pytest tests/test_v8_csp.py -q",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_csp.py -q",
+      "updated": "2026-10-12T19:41:27Z"
     },
     {
       "id": "P9",
