@@ -216,10 +216,10 @@
       "phase": "T",
       "title": "Merkle root independent check",
       "verify": "python -m pytest tests/test_v8_merkle.py -q",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_merkle.py -q",
+      "updated": "2026-10-12T21:03:36Z"
     },
     {
       "id": "T3",

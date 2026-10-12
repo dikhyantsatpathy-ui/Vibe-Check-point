@@ -92,3 +92,7 @@
 {"t": "2026-10-12T20:55:30Z", "event": "resume", "session": 30}
 {"t": "2026-10-12T20:55:45Z", "event": "start", "id": "T1", "attempt": 1}
 {"t": "2026-10-12T21:01:51Z", "event": "done", "id": "T1", "evidence": "verify OK: python -m pytest tests/test_v8_invariants.py -q"}
+{"t": "2026-10-12T21:02:15Z", "event": "checkpoint", "note": "T1 complete; next T2 Merkle recomputation"}
+{"t": "2026-10-12T21:02:20Z", "event": "resume", "session": 31}
+{"t": "2026-10-12T21:02:27Z", "event": "start", "id": "T2", "attempt": 1}
+{"t": "2026-10-12T21:03:36Z", "event": "done", "id": "T2", "evidence": "verify OK: python -m pytest tests/test_v8_merkle.py -q"}
