@@ -137,3 +137,5 @@
 {"t": "2026-10-12T22:27:30Z", "event": "resume", "session": 42}
 {"t": "2026-10-12T22:27:37Z", "event": "start", "id": "G3", "attempt": 1}
 {"t": "2026-10-12T22:27:52Z", "event": "done", "id": "G3", "evidence": "final message prepared with verdict, owner blockers, residual risks, and Appendix G questions"}
+{"t": "2026-10-12T22:28:17Z", "event": "checkpoint", "note": "v8 complete"}
+{"t": "2026-10-12T22:28:23Z", "event": "resume", "session": 43}
