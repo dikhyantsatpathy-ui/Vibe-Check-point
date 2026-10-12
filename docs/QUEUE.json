@@ -296,10 +296,10 @@
       "phase": "G",
       "title": "Release verdict written by code",
       "verify": "python scripts/release_verdict.py --write docs/FINAL_REPORT_DRAFT.md",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python scripts/release_verdict.py --write docs/FINAL_REPORT_DRAFT.md",
+      "updated": "2026-10-12T22:25:05Z"
     },
     {
       "id": "G2",

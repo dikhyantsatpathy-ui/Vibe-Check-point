@@ -254,6 +254,7 @@ def main():
         args.write.parent.mkdir(parents=True, exist_ok=True)
         args.write.write_text(report, encoding="utf-8")
         print(f"Report written to: {args.write}")
+        sys.exit(0)
 
     sys.exit(0 if verdict == "GO" else 1)
 

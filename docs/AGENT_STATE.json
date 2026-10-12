@@ -82,14 +82,14 @@
   "findings_open": [
     "S1-01"
   ],
-  "last_commit": "4c21f3e",
+  "last_commit": "8e40133",
   "last_evidence": "Phase R completed (Full release test suite passed 133/133; release_readiness_r.json generated with READY_FOR_RELEASE; FINAL_REPORT_DRAFT.md completed across all phases 0..R)",
   "notes": "Work Order v7 fully executed to completion across Phase 0 through Phase R. Ready for merge to main.",
-  "session": 39,
-  "resumed_at": "2026-10-12T22:18:37Z",
-  "current_task": "K4",
-  "updated": "2026-10-12T22:18:43Z",
-  "last_checkpoint": "K3 complete; next K4 blueprint and handoff check",
-  "checkpoint_at": "2026-10-12T22:18:32Z",
+  "session": 40,
+  "resumed_at": "2026-10-12T22:21:08Z",
+  "current_task": "G1",
+  "updated": "2026-10-12T22:21:30Z",
+  "last_checkpoint": "K4 complete (Phase K finished); next Phase G verdict and close-out",
+  "checkpoint_at": "2026-10-12T22:21:02Z",
   "branch": "ml/patch-v8"
 }
