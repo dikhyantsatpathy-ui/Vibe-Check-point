@@ -33,7 +33,10 @@ def face_verification(document_bytes: bytes | None = None,
     through `signals` ('Age Drift Compensation Active') so the desk — and the
     explainable reasons array — can see exactly why the threshold moved.
     """
-    from face_match import compare_faces
+    try:
+        from app.face_match import compare_faces
+    except ImportError:
+        from face_match import compare_faces
     result = {
         "score": 0,
         "match": None,
@@ -52,9 +55,9 @@ def face_verification(document_bytes: bytes | None = None,
 
     # Age-drift compensation: react to an aged document photo BEFORE matching.
     try:
-        from app.face_policy import effective_threshold, AGED_PHOTO_YEARS
+        from app.face_policy import effective_threshold, AGED_PHOTO_YEARS, BASE_SAME
     except ImportError:
-        from face_policy import effective_threshold, AGED_PHOTO_YEARS
+        from face_policy import effective_threshold, AGED_PHOTO_YEARS, BASE_SAME
 
     photo_age = _photo_age_years(dob, issue_date)
     signals = []
@@ -80,18 +83,25 @@ def face_verification(document_bytes: bytes | None = None,
         if k in fm:
             result[k] = fm[k]
 
-    # Invariant FS / A3: verdict="PASS" ONLY when decision == "MATCH" and mode == "arcface".
-    # If mode != "arcface", verdict MUST be "REVIEW" (or "FAIL" if mismatch).
+    # Invariant FS / A3: verdict="PASS" ONLY when decision == "MATCH" and mode == "arcface" and similarity >= BASE_SAME.
+    # A match at a relaxed threshold (AGED_SAME <= similarity < BASE_SAME) becomes verdict="REVIEW".
     f_match_struct = fm.get("face_match") or {}
     f_mode = fm.get("mode") or f_match_struct.get("mode") or "fallback"
     f_dec = fm.get("decision") or f_match_struct.get("decision") or (
         "MATCH" if fm.get("match") is True else ("MISMATCH" if fm.get("match") is False else "INCONCLUSIVE")
     )
+    sim = f_match_struct.get("similarity")
 
     if f_dec == "MISMATCH" or fm.get("match") is False:
         verdict = "FAIL"
     elif f_dec == "MATCH" and f_mode == "arcface":
-        verdict = "PASS"
+        if sim is not None and sim < BASE_SAME:
+            verdict = "REVIEW"
+            rel_sig = "Aged-photo match at relaxed threshold — officer to confirm"
+            if rel_sig not in signals:
+                signals.append(rel_sig)
+        else:
+            verdict = "PASS"
     else:
         verdict = "REVIEW"
 
@@ -104,8 +114,9 @@ def face_verification(document_bytes: bytes | None = None,
     if signals:
         checks.append({"label": "age-drift", "ok": True,
                        "detail": (f"{'; '.join(signals)} (photo ~{photo_age:.1f}y old; "
-                                  f"arcface threshold 0.60 -> {emb_same:.2f}).")})
+                                  f"arcface threshold {BASE_SAME:.2f} -> {emb_same:.2f}).")})
     result["checks"] = checks
+    result["signals"] = signals
     result["verdict"] = verdict
     return result
 

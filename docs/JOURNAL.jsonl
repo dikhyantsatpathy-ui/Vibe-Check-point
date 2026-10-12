@@ -18,3 +18,8 @@
 {"t": "2026-10-12T07:19:56Z", "event": "start", "id": "P1", "attempt": 1}
 {"t": "2026-10-12T16:05:38Z", "event": "resume", "session": 8}
 {"t": "2026-10-12T16:06:14Z", "event": "done", "id": "P1", "evidence": "verify OK: python -m pytest tests/test_v8_face_policy.py -q -k policy"}
+{"t": "2026-10-12T16:07:04Z", "event": "checkpoint", "note": "P1 complete; next P2 relaxed-threshold match can never auto-PASS"}
+{"t": "2026-10-12T16:07:11Z", "event": "resume", "session": 9}
+{"t": "2026-10-12T16:07:20Z", "event": "start", "id": "P2", "attempt": 1}
+{"t": "2026-10-12T16:11:51Z", "event": "resume", "session": 10}
+{"t": "2026-10-12T16:12:13Z", "event": "done", "id": "P2", "evidence": "verify OK: python -m pytest tests/test_v8_face_policy.py -q -k cap"}
