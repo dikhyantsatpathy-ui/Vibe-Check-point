@@ -573,7 +573,7 @@ Under Section 8 of the **Digital Personal Data Protection Act, 2023**, personal 
   - Evaluates row-wise horizontal gradient differences $I(x, y) > I(x+1, y)$ to assemble a 64-bit integer hash.
   - Computes bitwise XOR Hamming distance $d_H(h_1, h_2) = \operatorname{popcount}(h_1 \oplus h_2)$.
   - Baseline tolerances: $d_H \le 8$ (likely match), $d_H \ge 20$ (clear mismatch), $8 < d_H < 20$ (inconclusive).
-- **Challenge-Response Anti-Spoofing & Liveness (`evaluate_liveness_frames`):**
+- **Challenge-Response Anti-Spoofing & Liveness (`evaluate_liveness_frames` — prototype, not integrated into active screening routes):**
   - Real-time webcam capture streams consecutive frames across interactive challenges:
     1. **Blink Detection (`BLINK` / `BLINK_TWICE`):** Computes Eye Aspect Ratio:
        $$\text{EAR} = \frac{\|p_2 - p_6\| + \|p_3 - p_5\|}{2 \|p_1 - p_4\|}$$

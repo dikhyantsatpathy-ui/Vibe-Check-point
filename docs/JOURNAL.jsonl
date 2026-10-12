@@ -39,3 +39,7 @@
 {"t": "2026-10-12T19:22:47Z", "event": "resume", "session": 16}
 {"t": "2026-10-12T19:23:31Z", "event": "verify_failed", "id": "P5", "rc": 1}
 {"t": "2026-10-12T19:25:29Z", "event": "done", "id": "P5", "evidence": "verify OK: python -m pytest tests/test_v8_face_policy.py -q -k health"}
+{"t": "2026-10-12T19:25:48Z", "event": "checkpoint", "note": "P5 complete; next P6 liveness route check"}
+{"t": "2026-10-12T19:25:54Z", "event": "resume", "session": 17}
+{"t": "2026-10-12T19:26:02Z", "event": "start", "id": "P6", "attempt": 1}
+{"t": "2026-10-12T19:29:22Z", "event": "done", "id": "P6", "evidence": "verify OK: python -m pytest tests/test_v8_face_policy.py -q -k liveness"}

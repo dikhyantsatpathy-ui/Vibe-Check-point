@@ -263,7 +263,12 @@ def _embed_image(image):
 
 def evaluate_liveness_frames(frames: list[dict], challenge: str) -> dict:
     """Evaluates multi-frame biometric stream for challenge fulfillment.
-    
+
+    WARNING: Inputs must be computed server-side from raw frames. Client-supplied
+    metrics (such as eye aspect ratio, pitch, or yaw) must not be trusted in
+    production to prevent client spoofing. This function is currently a prototype
+    and not integrated into active screening routes.
+
     Supported challenges:
       - 'BLINK' / 'BLINK_TWICE': Detect Eye Aspect Ratio (EAR) dip below 0.20 followed by recovery.
       - 'NOD': Detect vertical pitch oscillation (>20px vertical travel).

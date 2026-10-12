@@ -467,5 +467,58 @@ def test_screening_response_face_match_health_fields(monkeypatch):
     assert "auto_download" in fm_mod and isinstance(fm_mod["auto_download"], bool)
 
 
+def test_liveness_docstring_server_side_warning():
+    """P6: evaluate_liveness_frames docstring warns that inputs must be server-side."""
+    import app.face_match as app_fm
+    import ml_service.face_match as ml_fm
+
+    for mod, name in ((app_fm, "app.face_match"), (ml_fm, "ml_service.face_match")):
+        doc = getattr(mod, "evaluate_liveness_frames").__doc__ or ""
+        assert "server-side" in doc.lower(), f"{name}.evaluate_liveness_frames docstring must warn about server-side computation"
+        assert "not integrated" in doc.lower(), f"{name}.evaluate_liveness_frames docstring must state not integrated"
+
+
+def test_liveness_not_routed_in_apps():
+    """P6: No route in app/main.py or ml_service/main.py references evaluate_liveness_frames."""
+    app_main_path = REPO_ROOT / "app" / "main.py"
+    ml_main_path = REPO_ROOT / "ml_service" / "main.py"
+
+    assert app_main_path.exists()
+    assert ml_main_path.exists()
+
+    app_main_code = app_main_path.read_text(encoding="utf-8")
+    ml_main_code = ml_main_path.read_text(encoding="utf-8")
+
+    assert "evaluate_liveness_frames" not in app_main_code, "app/main.py must not reference evaluate_liveness_frames"
+    assert "evaluate_liveness_frames" not in ml_main_code, "ml_service/main.py must not reference evaluate_liveness_frames"
+
+    # Also inspect actual registered routes on the FastAPI app instances
+    import app.main as main_mod
+    from ml_service.main import app as ml_fastapi_app
+
+    for route in main_mod.app.routes:
+        endpoint = getattr(route, "endpoint", None)
+        endpoint_name = getattr(endpoint, "__name__", "")
+        assert endpoint_name != "evaluate_liveness_frames"
+        assert getattr(endpoint, "__wrapped__", endpoint) != "evaluate_liveness_frames"
+
+    for route in ml_fastapi_app.routes:
+        endpoint = getattr(route, "endpoint", None)
+        endpoint_name = getattr(endpoint, "__name__", "")
+        assert endpoint_name != "evaluate_liveness_frames"
+        assert getattr(endpoint, "__wrapped__", endpoint) != "evaluate_liveness_frames"
+
+
+def test_liveness_blueprint_wording():
+    """P6: Blueprint notes that evaluate_liveness_frames is not integrated."""
+    blueprint_path = REPO_ROOT / "SIH26188_ENGINEERING_BLUEPRINT.md"
+    assert blueprint_path.exists()
+    content = blueprint_path.read_text(encoding="utf-8")
+    assert "evaluate_liveness_frames" in content
+    # Wording requires 'not integrated'
+    assert "not integrated" in content
+
+
+
 
 

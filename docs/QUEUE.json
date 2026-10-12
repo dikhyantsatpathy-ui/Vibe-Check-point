@@ -86,10 +86,10 @@
       "phase": "P",
       "title": "Liveness not routed",
       "verify": "python -m pytest tests/test_v8_face_policy.py -q -k liveness",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_face_policy.py -q -k liveness",
+      "updated": "2026-10-12T19:29:22Z"
     },
     {
       "id": "P7",
