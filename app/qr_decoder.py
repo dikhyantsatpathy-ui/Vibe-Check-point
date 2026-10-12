@@ -13,12 +13,16 @@ Supports:
 
 import base64
 import gzip
+import io
 import json
 import re
 import xml.etree.ElementTree as ET
 import zlib
 
-import cv2
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 import numpy as np
 
 try:
@@ -33,7 +37,7 @@ UIDAI_SIGNATURE_LENGTH = 256  # 2048 bits = 256 bytes
 
 
 def decode_barcodes(image_bytes: bytes) -> list[dict]:
-    """Scan all 1D/2D barcodes from an image using zxingcpp and OpenCV preprocessing.
+    """Scan all 1D/2D barcodes from an image using zxingcpp and OpenCV/Pillow preprocessing.
     Returns a list of decoded barcode records.
     """
     if not image_bytes or zxingcpp is None:
@@ -41,21 +45,32 @@ def decode_barcodes(image_bytes: bytes) -> list[dict]:
 
     results = []
     try:
-        # Load image into cv2 numpy array
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        if img is None:
-            return []
+        candidates = []
+        if cv2 is not None:
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img is not None:
+                candidates.append(img)
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                candidates.append(gray)
+                clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+                enhanced = clahe.apply(gray)
+                candidates.append(enhanced)
 
-        # Try multiple variations (raw, grayscale, enhanced contrast)
-        candidates = [img]
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        candidates.append(gray)
-
-        # Autocontrast / CLAHE for difficult camera lighting
-        clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
-        enhanced = clahe.apply(gray)
-        candidates.append(enhanced)
+        if not candidates:
+            try:
+                from PIL import Image, ImageOps
+                img = Image.open(io.BytesIO(image_bytes))
+                candidates = [img]
+                if img.mode != "L":
+                    gray = img.convert("L")
+                    candidates.append(gray)
+                else:
+                    gray = img
+                enhanced = ImageOps.autocontrast(gray)
+                candidates.append(enhanced)
+            except Exception:
+                pass
 
         seen_texts = set()
 

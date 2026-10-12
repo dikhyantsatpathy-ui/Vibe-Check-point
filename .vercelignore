@@ -25,3 +25,8 @@ node_modules
 *.pt
 app/models/card.onnx
 app/models/aadhaar_fields.onnx
+app/models/*.onnx
+eval/
+training/
+*.zip
+*.tar.gz
