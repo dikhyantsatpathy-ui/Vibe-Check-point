@@ -965,7 +965,7 @@ d:\mos\crypto\
 │   ├── audit_secrets_s1.py            # Phase S automated secret hygiene & git history scanner
 │   ├── export_test_metrics.py         # Test metrics exporter and JUnit XML synthesizer
 │   └── verify_blueprint_claims.py     # Deterministic verification harness for all blueprint claims
-├── tests/                             # 40 automated test suites (397+ tests, 100% active passing)
+├── tests/                             # 51 automated test suites (436 tests, 100% active passing)
 └── training/
     ├── convert_yolo_to_coco.py        # Dataset conversion utilities
     ├── make_composites.py             # Multi-scale composite dataset generator

@@ -123,14 +123,14 @@ def run_checks():
             match = re.search(r"(\d+) tests collected", res.stdout)
             if match:
                 count = int(match.group(1))
-                if count >= 397:
+                if count >= 436:
                     return "VERIFIED", f"{count} tests collected across suite"
                 return "FALSE", f"Collected {count} tests, blueprint claims 397+ tests"
             return "UNVERIFIABLE", "Could not parse pytest output"
         except Exception as e:
             return "UNVERIFIABLE", str(e)
 
-    add("C-06", "17 / 26", "Test suite total count equals 397+ tests", "cmd", "pytest --collect-only", "397+ tests collected", check_c06)
+    add("C-06", "17 / 26", "Test suite total count equals 436 tests", "cmd", "pytest --collect-only", "436 tests collected", check_c06)
 
     # C-07: Temp video file zero-raw-storage
     def check_c07():

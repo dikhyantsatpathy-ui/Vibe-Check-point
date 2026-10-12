@@ -59,3 +59,7 @@
 {"t": "2026-10-12T19:45:12Z", "event": "resume", "session": 21}
 {"t": "2026-10-12T19:45:19Z", "event": "start", "id": "P10", "attempt": 1}
 {"t": "2026-10-12T19:47:31Z", "event": "done", "id": "P10", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k fake"}
+{"t": "2026-10-12T19:47:56Z", "event": "checkpoint", "note": "P10 complete; next P11 one source for test counts"}
+{"t": "2026-10-12T19:48:02Z", "event": "resume", "session": 22}
+{"t": "2026-10-12T19:48:20Z", "event": "start", "id": "P11", "attempt": 1}
+{"t": "2026-10-12T19:51:23Z", "event": "done", "id": "P11", "evidence": "verify OK: python scripts/count_tests.py"}

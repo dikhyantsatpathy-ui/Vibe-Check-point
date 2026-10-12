@@ -77,6 +77,7 @@ scripts/*
 !scripts/reverify_auth_v3.py
 !scripts/reverify_logs_v4.py
 !scripts/render_switch_readiness.py
+!scripts/count_tests.py
 
 # ---- Rollback snapshots (local only, never pushed) ----
 _backup/

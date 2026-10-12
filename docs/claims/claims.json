@@ -42,10 +42,10 @@
   {
     "id": "C-06",
     "section": "17 / 26",
-    "text": "Test suite total count equals 397+ tests",
+    "text": "Test suite total count equals 436 tests",
     "check": "cmd",
     "command": "pytest --collect-only",
-    "expect": "397+ tests collected"
+    "expect": "436 tests collected"
   },
   {
     "id": "C-07",

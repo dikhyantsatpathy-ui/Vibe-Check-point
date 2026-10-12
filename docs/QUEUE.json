@@ -136,10 +136,10 @@
       "phase": "P",
       "title": "Single source for test counts",
       "verify": "python scripts/count_tests.py",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python scripts/count_tests.py",
+      "updated": "2026-10-12T19:51:23Z"
     },
     {
       "id": "P12",
