@@ -84,3 +84,7 @@
 {"t": "2026-10-12T20:17:19Z", "event": "resume", "session": 28}
 {"t": "2026-10-12T20:17:24Z", "event": "start", "id": "A3", "attempt": 1}
 {"t": "2026-10-12T20:51:57Z", "event": "done", "id": "A3", "evidence": "eval/runs/20261012_203519_suite/result.json passed: runs=1, passed=1, failed=0"}
+{"t": "2026-10-12T20:52:27Z", "event": "checkpoint", "note": "A3 complete; next A4 skills"}
+{"t": "2026-10-12T20:52:32Z", "event": "resume", "session": 29}
+{"t": "2026-10-12T20:52:38Z", "event": "start", "id": "A4", "attempt": 1}
+{"t": "2026-10-12T20:55:01Z", "event": "done", "id": "A4", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k skills"}

@@ -289,3 +289,58 @@ def test_owner_script_exists_and_safe():
     # Must clean up temporary files
     assert "Remove-Item" in content, "owner_check_isolation.ps1 must clean up temporary files with Remove-Item"
 
+
+# ---------------------------------------------------------------------------
+# Task A4: Skills Updates and Router Verification
+# ---------------------------------------------------------------------------
+
+
+def test_skills_routing_and_appendix_e():
+    """A4: Appendix E skills exist, and skill router accurately routes tasks and unrelated input."""
+    import subprocess
+    import sys
+
+    skills_dir = REPO_ROOT / "docs" / "agent_skills"
+    assert skills_dir.exists(), "docs/agent_skills directory must exist"
+
+    # Required Appendix E skill files
+    expected_skills = [
+        "agent-ctl.md",
+        "csp-hardening.md",
+        "face-embedding.md",
+        "face-policy.md",
+    ]
+    for skill_name in expected_skills:
+        skill_file = skills_dir / skill_name
+        assert skill_file.exists(), f"Skill file {skill_name} must exist"
+        lines = skill_file.read_text(encoding="utf-8").splitlines()[:6]
+        has_name = any(line.startswith("name:") for line in lines)
+        has_triggers = any(line.startswith("triggers:") for line in lines)
+        assert has_name, f"{skill_name} header must define name:"
+        assert has_triggers, f"{skill_name} header must define triggers:"
+
+    # Router query tests
+    router_script = REPO_ROOT / "scripts" / "skill_router.py"
+    assert router_script.exists(), "scripts/skill_router.py must exist"
+
+    def run_router(query: str) -> str:
+        res = subprocess.run(
+            [sys.executable, str(router_script), query],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return res.stdout.strip()
+
+    # Route checks
+    assert "agent-ctl.md" in run_router("agent_ctl resume task queue")
+    assert "csp-hardening.md" in run_router("content-security-policy script-src unsafe-inline")
+    assert "face-embedding.md" in run_router("arcface biometric landmark embedding")
+    assert "face-policy.md" in run_router("face threshold age relax effective_threshold")
+    assert "secret-scan.md" in run_router("secret scan credentials audit")
+    assert "vercel-isolation.md" in run_router("vercel env pull project isolation")
+
+    # Unrelated task must return NONE
+    unrelated_out = run_router("baking a chocolate cake in an oven")
+    assert "NONE" in unrelated_out, f"Unrelated query must return NONE, got: {unrelated_out}"
+
