@@ -39,7 +39,7 @@ def _create_synthetic_id_bytes(text: str = "INSPECTION TEST") -> bytes:
     "mode,decision,expected_verdict",
     [
         ("fallback", "INCONCLUSIVE", "REVIEW"),
-        ("fallback", "MISMATCH", "FAIL"),
+        ("fallback", "MISMATCH", "REVIEW"),
         ("unavailable", "INCONCLUSIVE", "REVIEW"),
         ("arcface", "MISMATCH", "FAIL"),
         ("arcface", "INCONCLUSIVE", "REVIEW"),

@@ -57,7 +57,8 @@ def _img(kind: str) -> bytes:
 def test_identical_portraits_match():
     a = _img("checker")
     out = fm.compare_faces(a, a)
-    assert out["match"] is True
+    assert out["match"] is None
+    assert out["decision"] == "INCONCLUSIVE"
     assert out["score"] == 100
     assert out["method"] == "phash-dhash"
 
@@ -68,12 +69,14 @@ def test_reencoded_same_portrait_still_matches():
     with Image.open(io.BytesIO(_img("checker"))) as im:
         im.save(buf, format="JPEG", quality=70)
     out = fm.compare_faces(_img("checker"), buf.getvalue())
-    assert out["match"] is True
+    assert out["match"] is None
+    assert out["decision"] == "INCONCLUSIVE"
 
 
 def test_different_portraits_reject():
     out = fm.compare_faces(_img("checker"), _img("stripes"))
-    assert out["match"] is False
+    assert out["match"] is None
+    assert out["decision"] == "INCONCLUSIVE"
     assert out["score"] <= 75  # score is informational; the verdict is the contract
 
 
@@ -86,7 +89,8 @@ def test_garbage_stays_inconclusive():
 def test_base64_qr_attr_form_accepted():
     b64 = base64.b64encode(_img("circle")).decode("ascii")
     out = fm.compare_faces(b64, _img("circle"))
-    assert out["match"] is True
+    assert out["match"] is None
+    assert out["decision"] == "INCONCLUSIVE"
 
 
 def test_face_match_does_not_download_a_model():
@@ -106,7 +110,8 @@ def test_face_match_does_not_download_a_model():
         if old_model is not None:
             os.environ["FACE_EMBED_MODEL"] = old_model
     assert out["method"] == "phash-dhash"
-    assert out["match"] is True
+    assert out["match"] is None
+    assert out["decision"] == "INCONCLUSIVE"
 
 
 def test_capabilities_shape():
@@ -134,17 +139,17 @@ def test_onnx_embedding_path_when_configured():
 
 
 def test_age_aware_adaptive_threshold_dhash():
-    """Perceptual hash matching dynamically adapts threshold when doc_age_years > 4.0."""
+    """Under P3: perceptual hash threshold is constant 8 (no age relaxation); decision is always INCONCLUSIVE."""
     a = _img("checker")
     out_standard = fm.compare_faces(a, a, doc_age_years=2.0)
-    assert out_standard["age_adjusted"] is False
     assert out_standard["threshold_used"] == 8
+    assert out_standard["match"] is None
+    assert out_standard["decision"] == "INCONCLUSIVE"
 
     out_aged = fm.compare_faces(a, a, doc_age_years=8.5)
-    assert out_aged["age_adjusted"] is True
-    assert out_aged["threshold_used"] > 8
-    assert "age-adapted threshold" in out_aged["detail"]
-    assert out_aged["match"] is True
+    assert out_aged["threshold_used"] == 8
+    assert out_aged["match"] is None
+    assert out_aged["decision"] == "INCONCLUSIVE"
 
 
 def test_face_match_fail_safe_contract_when_no_model():
