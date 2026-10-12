@@ -96,10 +96,10 @@
       "phase": "P",
       "title": "Readiness table from evidence only",
       "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q -k readiness",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k readiness",
+      "updated": "2026-10-12T19:35:51Z"
     },
     {
       "id": "P8",

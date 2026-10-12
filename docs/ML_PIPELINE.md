@@ -95,4 +95,4 @@ All metrics below originate strictly from measured test reports on un-seen split
 | **MRZ Valid Rate**| Multi-variant + ICAO repair| **74.0% check-digit valid** (100 real MIDV) | 94.0% check-digit valid | 45 ms | **PASS (Gate >=60% met)** |
 | **Forensics ELA** | Heuristic ELA / PRNU | **UNVALIDATED** (Real forgeries pending) | Synthetic AUC: 0.963 | 12 ms | **SYNTHETIC-ONLY** |
 | **Screen Replay** | 2D-FFT PAPR + Moiré | **UNVALIDATED** (Physical screens pending) | Synthetic Recapture AUC: **0.9284** | 15 ms | **SYNTHETIC-ONLY (PASS)** |
-| **Biometrics** | MobileFaceNet / Cosine | **Accuracy: 98.4%** | Accuracy: 99.1% | 18 ms | **PASS** |
+| **Biometrics** | ArcFace w600k_r50 / Cosine | **UNMEASURED** (Pending A1 benchmark) | UNMEASURED | Pending | **UNMEASURED** |

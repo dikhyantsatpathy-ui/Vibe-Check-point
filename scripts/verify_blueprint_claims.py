@@ -225,14 +225,14 @@ def run_checks():
 
     add("C-15", "28 / 31", "Statutory compliance and legal admissibility claims", "file", "inspect Section 28 and 31 wording", "qualified as technical evidence support subject to counsel review", check_c15)
 
-    # C-16: Face accuracy 98.4% / 99.1%
+    # C-16: Face accuracy ungrounded claims removed
     def check_c16():
         bp = (REPO_ROOT / "SIH26188_ENGINEERING_BLUEPRINT.md").read_text(encoding="utf-8")
         if "98.4%" in bp or "99.1%" in bp:
             return "FALSE", "Face matching accuracy claims of 98.4%/99.1% are ungrounded by any local script or labelled test set"
         return "VERIFIED", "No unproven face accuracy metrics in blueprint"
 
-    add("C-16", "15.4", "Face matching accuracy figures (98.4% / 99.1%)", "file", "inspect Section 15.4", "backed by script or removed", check_c16)
+    add("C-16", "15.4", "Face matching accuracy figures (unverified face metrics removed)", "file", "inspect Section 15.4", "backed by script or removed", check_c16)
 
     # Section 22: REST Endpoints verification
     routes = get_routes()

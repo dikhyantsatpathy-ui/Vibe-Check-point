@@ -24,7 +24,7 @@
 | C-13 | 27 / A10 | 15MB request payload boundary enforced | file | **VERIFIED** | 15MB request limit enforced in code |
 | C-14 | 9 / 15 / 31 | End-to-end and detector pipeline latency budgets | file | **VERIFIED** | Consistent latency budget |
 | C-15 | 28 / 31 | Statutory compliance and legal admissibility claims | file | **VERIFIED** | Qualified legal statements |
-| C-16 | 15.4 | Face matching accuracy figures (98.4% / 99.1%) | file | **VERIFIED** | No unproven face accuracy metrics in blueprint |
+| C-16 | 15.4 | Face matching accuracy figures (unverified face metrics removed) | file | **VERIFIED** | No unproven face accuracy metrics in blueprint |
 | EP-POST-/api/admin/login | 22 | Endpoint POST /api/admin/login implemented | cmd | **VERIFIED** | Route registered: POST /api/admin/login |
 | EP-POST-/api/admin/demo_login | 22 | Endpoint POST /api/admin/demo_login implemented | cmd | **VERIFIED** | Route registered: POST /api/admin/demo_login |
 | EP-GET-/api/admin/me | 22 | Endpoint GET /api/admin/me implemented | cmd | **VERIFIED** | Route registered: GET /api/admin/me |

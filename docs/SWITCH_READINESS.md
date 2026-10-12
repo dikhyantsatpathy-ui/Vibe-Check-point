@@ -23,7 +23,7 @@ Every number in this document originates strictly from measured report JSON file
 | **MRZ Extraction** | `bottom20` + Enhancer | **Valid Rate: 74.0%** (74/100 real MIDV)<br>(Gate: $\ge 60\%$) | **Valid Rate: 94.0%** (94/100 synth)<br>(Gate: $\ge 90\%$) | **45.2 ms** (CPU) | Rule-based (`app/mrz_enhancer.py` + `app/mrz.py`) | **SHIP (PASS)** |
 | **Forensics ELA** | Heuristic Suite | **UNVALIDATED** (Real forgeries pending) | Synthetic AUC: 0.963 | **12.5 ms** (CPU) | In-process heuristic (`app/tampering.py`) | **SHIP-WITH-REVIEW** (Labeled SYNTHETIC-ONLY) |
 | **Screen Replay** | 2D-FFT PAPR + Moiré | **UNVALIDATED** (Physical screens pending) | Synthetic Recapture **AUC: 0.9284**<br>TPR@0.63: 0.86, FPR: 0.06 | **15.1 ms** (CPU) | In-process heuristic (`app/replay_detector.py`) | **SHIP-WITH-REVIEW** (Labeled SYNTHETIC-ONLY) |
-| **Face Biometrics** | MobileFaceNet / Cosine | **Accuracy: 98.4%** | Accuracy: 99.1% | **18.0 ms** (CPU) | `ml_service/models/arcface.onnx` | **SHIP (PASS)** |
+| **Face Biometrics** | `w600k_r50` (ArcFace) | **UNMEASURED** | **UNMEASURED** | Pending benchmark | `ml_service/models/w600k_r50.onnx` | **UNMEASURED** |
 | **Indian Specimens** | Physical Specimen Test | **NOT MEASURED** | Synthetic Proxy Recall: 1.0000 | **32.0 ms** (CPU) | [`eval/eval_indian_specimens.py`](../eval/eval_indian_specimens.py) | **NOT MEASURED** (Awaiting photos) |
 
 ---

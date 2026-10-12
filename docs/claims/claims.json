@@ -122,7 +122,7 @@
   {
     "id": "C-16",
     "section": "15.4",
-    "text": "Face matching accuracy figures (98.4% / 99.1%)",
+    "text": "Face matching accuracy figures (unverified face metrics removed)",
     "check": "file",
     "command": "inspect Section 15.4",
     "expect": "backed by script or removed"
