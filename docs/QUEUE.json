@@ -276,10 +276,10 @@
       "phase": "K",
       "title": "Claude handoff document",
       "verify": "python scripts/render_handoff.py --check",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python scripts/render_handoff.py --check",
+      "updated": "2026-10-12T22:17:45Z"
     },
     {
       "id": "K4",

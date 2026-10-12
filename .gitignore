@@ -83,6 +83,7 @@ scripts/*
 !scripts/owner_check_isolation.ps1
 !scripts/release_verdict.py
 !scripts/run_suite_n.py
+!scripts/render_handoff.py
 
 # ---- Rollback snapshots (local only, never pushed) ----
 _backup/

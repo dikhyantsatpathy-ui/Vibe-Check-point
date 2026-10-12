@@ -117,3 +117,7 @@
 {"t": "2026-10-12T22:05:54Z", "event": "resume", "session": 37}
 {"t": "2026-10-12T22:05:59Z", "event": "start", "id": "K2", "attempt": 1}
 {"t": "2026-10-12T22:14:33Z", "event": "done", "id": "K2", "evidence": "verify OK: python scripts/render_blueprint.py --check"}
+{"t": "2026-10-12T22:15:00Z", "event": "checkpoint", "note": "K2 complete; next K3 Claude handoff generator"}
+{"t": "2026-10-12T22:15:08Z", "event": "resume", "session": 38}
+{"t": "2026-10-12T22:15:14Z", "event": "start", "id": "K3", "attempt": 1}
+{"t": "2026-10-12T22:17:45Z", "event": "done", "id": "K3", "evidence": "verify OK: python scripts/render_handoff.py --check"}
