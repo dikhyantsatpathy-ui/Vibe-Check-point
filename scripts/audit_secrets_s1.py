@@ -24,6 +24,8 @@ PATTERNS = {
     "private_key": re.compile(r"-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----"),
     "postgres_conn_uri": re.compile(r"postgres(?:ql)?://[^\s'\"]+:[^\s'\"@]+@"),
     "generic_assigned_secret": re.compile(r"(?i)(password|secret|api[_-]?key|token)\s*[:=]\s*['\"]([^'\"]{8,})['\"]"),
+    "credential_prefix_ellipsis": re.compile(r"\b[a-z]{2,8}_[A-Za-z0-9_]{6,}(?:\.{3}|…)"),
+    "pcsk_prefix": re.compile(r"pcsk_"),
 }
 
 # Ignore false-positive examples or placeholders

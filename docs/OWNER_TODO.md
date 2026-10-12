@@ -17,7 +17,7 @@ $env:DEMO_PASS_ENABLED = "1"
 
 ### Item 1: Roboflow API Key
 - **Current Status**: **BLOCKED (401 Unauthorized)**
-- **Detail**: The provided key (`pcsk_6P9BVB_...`) returned `401 Unauthorized` (`"This API key does not exist (or has been revoked)"`).
+- **Detail**: Roboflow API key (value not recorded) returned `401 Unauthorized` (`"This API key does not exist (or has been revoked)"`).
 - **Owner Action**:
   1. Log in to [Roboflow Dashboard](https://app.roboflow.com/).
   2. Navigate to **Account Settings** $\rightarrow$ **Roboflow Keys** (or **API Keys**).

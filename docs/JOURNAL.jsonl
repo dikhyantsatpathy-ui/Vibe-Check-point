@@ -51,3 +51,7 @@
 {"t": "2026-10-12T19:37:04Z", "event": "resume", "session": 19}
 {"t": "2026-10-12T19:37:10Z", "event": "start", "id": "P8", "attempt": 1}
 {"t": "2026-10-12T19:41:27Z", "event": "done", "id": "P8", "evidence": "verify OK: python -m pytest tests/test_v8_csp.py -q"}
+{"t": "2026-10-12T19:41:54Z", "event": "checkpoint", "note": "P8 complete; next P9 no credential prefixes in documents"}
+{"t": "2026-10-12T19:42:01Z", "event": "resume", "session": 20}
+{"t": "2026-10-12T19:42:09Z", "event": "start", "id": "P9", "attempt": 1}
+{"t": "2026-10-12T19:44:41Z", "event": "done", "id": "P9", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k secrets"}

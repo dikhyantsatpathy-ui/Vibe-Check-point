@@ -116,10 +116,10 @@
       "phase": "P",
       "title": "No credential prefixes in docs",
       "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q -k secrets",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k secrets",
+      "updated": "2026-10-12T19:44:41Z"
     },
     {
       "id": "P10",

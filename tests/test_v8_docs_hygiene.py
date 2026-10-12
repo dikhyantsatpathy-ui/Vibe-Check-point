@@ -96,3 +96,62 @@ def test_readiness_no_unsupported_face_accuracy_strings_in_docs_and_blueprint():
             pass
 
     assert not violators, f"Found ungrounded face accuracy strings '98.4' or '99.1' in: {violators}"
+
+
+def test_secrets_audit_patterns_flag_prefix_and_pcsk():
+    """P9: scripts/audit_secrets_s1.py flags short prefix + key + ellipsis and pcsk_."""
+    from scripts import audit_secrets_s1 as scanner
+
+    assert "credential_prefix_ellipsis" in scanner.PATTERNS
+    assert "pcsk_prefix" in scanner.PATTERNS
+
+    # Test detection of prefix with ellipsis
+    findings = scanner.scan_file_text(
+        REPO_ROOT / "docs" / "OWNER_TODO.md",
+        "docs/OWNER_TODO.md"
+    )
+    # The active OWNER_TODO.md must be clean
+    assert not any(f["type"] in ("credential_prefix_ellipsis", "pcsk_prefix") for f in findings)
+
+    # Synthetic check: ensure pattern actually matches prohibited string
+    pat_ellip = scanner.PATTERNS["credential_prefix_ellipsis"]
+    assert pat_ellip.search("pcsk_6P9BVB_...")
+    assert pat_ellip.search("key_ABC123xyz...")
+    assert pat_ellip.search("sk_live123456…")
+
+    pat_pcsk = scanner.PATTERNS["pcsk_prefix"]
+    assert pat_pcsk.search("pcsk_test")
+
+
+def test_secrets_no_credentials_in_tracked_docs():
+    """P9: Every tracked *.md, *.json, *.txt under docs/, eval/ and repo root is free of credentials and prefixes."""
+    import subprocess
+    from scripts import audit_secrets_s1 as scanner
+
+    cmd = [
+        "git", "ls-files",
+        "*.md", "*.json", "*.txt",
+        "docs/*.md", "docs/*.json", "docs/*.txt",
+        "eval/*.md", "eval/*.json", "eval/*.txt",
+    ]
+    res = subprocess.run(cmd, cwd=str(REPO_ROOT), capture_output=True, text=True, check=True)
+    tracked_files = [REPO_ROOT / line.strip() for line in res.stdout.splitlines() if line.strip()]
+
+    violators = []
+    for f in tracked_files:
+        if f.name == "WORK_ORDER_V8.md":
+            continue
+        findings = scanner.scan_file_text(f, str(f.relative_to(REPO_ROOT)))
+        if findings:
+            violators.extend(findings)
+
+    assert not violators, f"Found credential-looking strings or prefixes in tracked documents: {violators}"
+
+
+def test_secrets_owner_todo_roboflow_clean():
+    """P9: docs/OWNER_TODO.md uses 'Roboflow API key (value not recorded)' and has no pcsk_."""
+    owner_todo = REPO_ROOT / "docs" / "OWNER_TODO.md"
+    assert owner_todo.exists()
+    content = owner_todo.read_text(encoding="utf-8")
+    assert "Roboflow API key (value not recorded)" in content
+    assert "pcsk_" not in content

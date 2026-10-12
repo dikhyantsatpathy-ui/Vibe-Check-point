@@ -82,14 +82,14 @@
   "findings_open": [
     "S1-01"
   ],
-  "last_commit": "cdfeb68",
+  "last_commit": "ead7527",
   "last_evidence": "Phase R completed (Full release test suite passed 133/133; release_readiness_r.json generated with READY_FOR_RELEASE; FINAL_REPORT_DRAFT.md completed across all phases 0..R)",
   "notes": "Work Order v7 fully executed to completion across Phase 0 through Phase R. Ready for merge to main.",
-  "session": 19,
-  "resumed_at": "2026-10-12T19:37:04Z",
-  "current_task": "P8",
-  "updated": "2026-10-12T19:37:10Z",
-  "last_checkpoint": "P7 complete; next P8 honest CSP",
-  "checkpoint_at": "2026-10-12T19:36:55Z",
+  "session": 20,
+  "resumed_at": "2026-10-12T19:42:01Z",
+  "current_task": "P9",
+  "updated": "2026-10-12T19:42:09Z",
+  "last_checkpoint": "P8 complete; next P9 no credential prefixes in documents",
+  "checkpoint_at": "2026-10-12T19:41:54Z",
   "branch": "ml/patch-v8"
 }
