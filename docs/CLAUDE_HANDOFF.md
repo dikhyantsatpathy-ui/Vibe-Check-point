@@ -23,7 +23,7 @@
 - Claude cannot access the owner's machine, Vercel, Neon or Hugging Face.
 
 ### Known weak spots (as of this handoff; check the generated block for current state)
-- Face matching: no model shipped; earlier code auto-downloaded a third-party copy; three inconsistent age-relaxation rules; accuracy numbers 98.4 % / 99.1 % had no source. v8 patches P1 to P7.
+- Face matching: no model shipped; earlier code auto-downloaded a third-party copy; three inconsistent age-relaxation rules; accuracy numbers (unverified ~98% / ~99% figures) had no source. v8 patches P1 to P7.
 - CSP baseline allows inline scripts. Isolation of the test site from production secrets was never verified (needs the owner's Vercel login). Real Indian-card accuracy, real forgery and replay detection are NOT MEASURED. Court-admissibility wording needs a lawyer.
 - About 95 MB of ONNX weights are tracked in git on `main` (owner decision pending).
 
@@ -38,8 +38,8 @@
 ## Dynamic Repository Facts Block (Auto-Generated)
 
 - **Branch:** `ml/patch-v8`
-- **Last Commit:** `c68cb57 [K2] blueprint template and renderer supporting metric placeholders and check flag`
-- **Queue Task Statuses:** {"DONE": 27, "DOING": 1, "TODO": 4}
+- **Last Commit:** `4c21f3e [K3] Claude handoff generator with static narrative and dynamic facts block`
+- **Queue Task Statuses:** {"DONE": 28, "DOING": 1, "TODO": 3}
 - **Claims Ledger Verdicts:** {"UNKNOWN": 78}
 - **Test Suite Status:** **467 total tests** collected across **54 suites** (100% passing)
 
@@ -105,10 +105,6 @@
 - ### Item 11: CSP Strict Enforce Verification
 
 ### Last 20 Agent Journal Entries
-- `{"t": "2026-10-12T21:06:43Z", "event": "checkpoint", "note": "T3 complete; next T4 full suite three times"}`
-- `{"t": "2026-10-12T21:06:48Z", "event": "resume", "session": 33}`
-- `{"t": "2026-10-12T21:06:54Z", "event": "start", "id": "T4", "attempt": 1}`
-- `{"t": "2026-10-12T21:59:51Z", "event": "done", "id": "T4", "evidence": "eval/runs/20261012_210727_suite/result.json passed: runs=3, passed=3, failed=0, durations=[1037.999, 1039.824, 1034.873]"}`
 - `{"t": "2026-10-12T22:00:29Z", "event": "checkpoint", "note": "T4 complete; next T5 compileall and ruff check"}`
 - `{"t": "2026-10-12T22:00:34Z", "event": "resume", "session": 34}`
 - `{"t": "2026-10-12T22:00:41Z", "event": "start", "id": "T5", "attempt": 1}`
@@ -125,6 +121,10 @@
 - `{"t": "2026-10-12T22:15:00Z", "event": "checkpoint", "note": "K2 complete; next K3 Claude handoff generator"}`
 - `{"t": "2026-10-12T22:15:08Z", "event": "resume", "session": 38}`
 - `{"t": "2026-10-12T22:15:14Z", "event": "start", "id": "K3", "attempt": 1}`
+- `{"t": "2026-10-12T22:17:45Z", "event": "done", "id": "K3", "evidence": "verify OK: python scripts/render_handoff.py --check"}`
+- `{"t": "2026-10-12T22:18:32Z", "event": "checkpoint", "note": "K3 complete; next K4 blueprint and handoff check"}`
+- `{"t": "2026-10-12T22:18:37Z", "event": "resume", "session": 39}`
+- `{"t": "2026-10-12T22:18:43Z", "event": "start", "id": "K4", "attempt": 1}`
 
 ---
 

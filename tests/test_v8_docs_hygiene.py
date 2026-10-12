@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import json
 import pathlib
+import subprocess
+import sys
 import pytest
 
 from scripts.render_switch_readiness import evaluate_rows, get_nested_key, render_table, resolve_evidence_file
@@ -408,4 +410,39 @@ def test_work_order_queue_block_parity():
     assert parsed_ids == queue_ids, (
         f"Mismatch between WORK_ORDER_V8 queue block and QUEUE.json: {set(parsed_ids) ^ set(queue_ids)}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Task K4: Blueprint and Handoff Document Checks
+# ---------------------------------------------------------------------------
+
+
+def test_render_blueprint_check():
+    """K4: scripts/render_blueprint.py --check passes clean."""
+    res = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "scripts" / "render_blueprint.py"), "--check"],
+        capture_output=True,
+        text=True,
+        cwd=str(REPO_ROOT),
+    )
+    assert res.returncode == 0, f"render_blueprint --check failed:\n{res.stderr}\n{res.stdout}"
+
+
+def test_render_handoff_check():
+    """K4: scripts/render_handoff.py --check passes clean."""
+    res = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "scripts" / "render_handoff.py"), "--check"],
+        capture_output=True,
+        text=True,
+        cwd=str(REPO_ROOT),
+    )
+    assert res.returncode == 0, f"render_handoff --check failed:\n{res.stderr}\n{res.stdout}"
+
+
+def test_blueprint_template_validity():
+    """K4: docs/blueprint_template.md exists and contains metric placeholders."""
+    template_path = REPO_ROOT / "docs" / "blueprint_template.md"
+    assert template_path.exists(), "docs/blueprint_template.md must exist"
+    content = template_path.read_text(encoding="utf-8")
+    assert "{{metric:" in content, "docs/blueprint_template.md must contain {{metric:...}} placeholders"
 

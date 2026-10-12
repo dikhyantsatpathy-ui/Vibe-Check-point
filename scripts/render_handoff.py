@@ -185,7 +185,7 @@ def render_handoff() -> str:
 - Claude cannot access the owner's machine, Vercel, Neon or Hugging Face.
 
 ### Known weak spots (as of this handoff; check the generated block for current state)
-- Face matching: no model shipped; earlier code auto-downloaded a third-party copy; three inconsistent age-relaxation rules; accuracy numbers 98.4 % / 99.1 % had no source. v8 patches P1 to P7.
+- Face matching: no model shipped; earlier code auto-downloaded a third-party copy; three inconsistent age-relaxation rules; accuracy numbers (unverified ~98% / ~99% figures) had no source. v8 patches P1 to P7.
 - CSP baseline allows inline scripts. Isolation of the test site from production secrets was never verified (needs the owner's Vercel login). Real Indian-card accuracy, real forgery and replay detection are NOT MEASURED. Court-admissibility wording needs a lawyer.
 - About 95 MB of ONNX weights are tracked in git on `main` (owner decision pending).
 

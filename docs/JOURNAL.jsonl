@@ -121,3 +121,7 @@
 {"t": "2026-10-12T22:15:08Z", "event": "resume", "session": 38}
 {"t": "2026-10-12T22:15:14Z", "event": "start", "id": "K3", "attempt": 1}
 {"t": "2026-10-12T22:17:45Z", "event": "done", "id": "K3", "evidence": "verify OK: python scripts/render_handoff.py --check"}
+{"t": "2026-10-12T22:18:32Z", "event": "checkpoint", "note": "K3 complete; next K4 blueprint and handoff check"}
+{"t": "2026-10-12T22:18:37Z", "event": "resume", "session": 39}
+{"t": "2026-10-12T22:18:43Z", "event": "start", "id": "K4", "attempt": 1}
+{"t": "2026-10-12T22:20:21Z", "event": "done", "id": "K4", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q"}

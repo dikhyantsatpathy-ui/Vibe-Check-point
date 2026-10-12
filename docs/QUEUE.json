@@ -286,10 +286,10 @@
       "phase": "K",
       "title": "Docs hygiene final",
       "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q",
+      "updated": "2026-10-12T22:20:21Z"
     },
     {
       "id": "G1",
