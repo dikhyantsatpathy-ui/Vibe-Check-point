@@ -186,10 +186,10 @@
       "phase": "A",
       "title": "Three-run stability script",
       "verify": "python scripts/run_suite_n.py 1",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "eval/runs/20261012_203519_suite/result.json passed: runs=1, passed=1, failed=0",
+      "updated": "2026-10-12T20:51:57Z"
     },
     {
       "id": "A4",

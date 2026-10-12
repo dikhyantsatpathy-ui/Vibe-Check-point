@@ -21,6 +21,7 @@ ALLOWED_ML_DOMAINS = {
     "localhost",
     "127.0.0.1",
     "::1",
+    "test-ml-service",
     "hf.space",
     "huggingface.co",
     "ssb.gov.in",

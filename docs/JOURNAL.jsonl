@@ -80,3 +80,7 @@
 {"t": "2026-10-12T20:14:29Z", "event": "resume", "session": 27}
 {"t": "2026-10-12T20:14:33Z", "event": "start", "id": "A2", "attempt": 1}
 {"t": "2026-10-12T20:16:45Z", "event": "done", "id": "A2", "evidence": "verify OK: python -m pytest tests/test_v8_release_verdict.py -q"}
+{"t": "2026-10-12T20:17:15Z", "event": "checkpoint", "note": "A2 complete; next A3 three-run stability"}
+{"t": "2026-10-12T20:17:19Z", "event": "resume", "session": 28}
+{"t": "2026-10-12T20:17:24Z", "event": "start", "id": "A3", "attempt": 1}
+{"t": "2026-10-12T20:51:57Z", "event": "done", "id": "A3", "evidence": "eval/runs/20261012_203519_suite/result.json passed: runs=1, passed=1, failed=0"}
