@@ -33,3 +33,9 @@
 {"t": "2026-10-12T16:24:44Z", "event": "start", "id": "P4", "attempt": 1}
 {"t": "2026-10-12T19:12:05Z", "event": "resume", "session": 14}
 {"t": "2026-10-12T19:13:35Z", "event": "done", "id": "P4", "evidence": "verify OK: python -m pytest tests/test_v8_face_policy.py -q -k provisioning"}
+{"t": "2026-10-12T19:13:48Z", "event": "checkpoint", "note": "P4 complete; next P5 face metadata and health"}
+{"t": "2026-10-12T19:13:53Z", "event": "resume", "session": 15}
+{"t": "2026-10-12T19:14:00Z", "event": "start", "id": "P5", "attempt": 1}
+{"t": "2026-10-12T19:22:47Z", "event": "resume", "session": 16}
+{"t": "2026-10-12T19:23:31Z", "event": "verify_failed", "id": "P5", "rc": 1}
+{"t": "2026-10-12T19:25:29Z", "event": "done", "id": "P5", "evidence": "verify OK: python -m pytest tests/test_v8_face_policy.py -q -k health"}

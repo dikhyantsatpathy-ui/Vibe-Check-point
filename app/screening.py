@@ -17,6 +17,7 @@ reviewer, and stays open to every downstream model later swapped in.
 
 import hashlib
 import json
+import os
 import re
 import time
 import unicodedata
@@ -1648,8 +1649,22 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
                 "score": face_res.get("score"),
                 "method": face_res.get("method"),
                 "detail": face_res.get("detail"),
+                "mode": (face_res.get("face_match") or {}).get("mode") or face_res.get("mode"),
+                "decision": (face_res.get("face_match") or {}).get("decision") or face_res.get("decision"),
+                "face_match": face_res.get("face_match") or {
+                    "mode": face_res.get("mode") or "unavailable",
+                    "loaded": False,
+                    "model_sha256_prefix": None,
+                    "auto_download": os.getenv("AUTO_DOWNLOAD_MODELS", "false").lower() in ("1", "true", "yes"),
+                },
                 "checks": face_res.get("checks", []),
             },
+        },
+        "face_match": face_res.get("face_match") or {
+            "mode": face_res.get("mode") or "unavailable",
+            "loaded": False,
+            "model_sha256_prefix": None,
+            "auto_download": os.getenv("AUTO_DOWNLOAD_MODELS", "false").lower() in ("1", "true", "yes"),
         },
         "latency_ms": int((time.monotonic() - started) * 1000),
         "created_at": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),

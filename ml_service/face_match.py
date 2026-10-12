@@ -195,6 +195,32 @@ def _resolve_face_model_path() -> str | None:
     return None
 
 
+def get_face_health() -> dict:
+    """Return health/metadata dict for face matching (Task P5)."""
+    model_path = _resolve_face_model_path()
+    loaded = bool(model_path and os.path.exists(model_path))
+    auto_download = os.getenv("AUTO_DOWNLOAD_MODELS", "false").lower() in ("1", "true", "yes")
+
+    if loaded:
+        mode = "arcface"
+        try:
+            from ml_service.model_fetch import compute_sha256
+            full_sha = compute_sha256(model_path)
+            sha_prefix = full_sha[:12]
+        except Exception:
+            sha_prefix = None
+    else:
+        mode = "unavailable"
+        sha_prefix = None
+
+    return {
+        "mode": mode,
+        "loaded": loaded,
+        "model_sha256_prefix": sha_prefix,
+        "auto_download": auto_download,
+    }
+
+
 def _embed_image(image):
     """ONNX embedding path. Returns an L2-normalized vector or None (model
     missing/unloadable -> caller falls back to dHash, never crashes).
@@ -352,6 +378,7 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
     if is_age_adjusted:
         age_note = f" (age-adapted threshold: {emb_same_threshold:.2f} for older document portrait)"
 
+    fh = get_face_health()
     model_path = _resolve_face_model_path()
     if not model_path:
         return {
@@ -366,6 +393,9 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
                 "similarity": None,
                 "threshold": float(emb_same_threshold),
                 "decision": "INCONCLUSIVE",
+                "loaded": fh["loaded"],
+                "model_sha256_prefix": fh["model_sha256_prefix"],
+                "auto_download": fh["auto_download"],
             },
         }
 
@@ -392,6 +422,9 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
                 "similarity": round(sim, 3),
                 "threshold": round(emb_same_threshold, 3),
                 "decision": decision,
+                "loaded": fh["loaded"],
+                "model_sha256_prefix": fh["model_sha256_prefix"],
+                "auto_download": fh["auto_download"],
             },
         }
 
@@ -411,6 +444,9 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
                 "similarity": None,
                 "threshold": float(dhash_same_threshold),
                 "decision": "INCONCLUSIVE",
+                "loaded": fh["loaded"],
+                "model_sha256_prefix": fh["model_sha256_prefix"],
+                "auto_download": fh["auto_download"],
             },
         }
     dist = _hamming(ha, hb)
@@ -435,6 +471,9 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
             "similarity": round(1.0 - dist / 64.0, 3),
             "threshold": float(dhash_same_threshold),
             "decision": decision,
+            "loaded": fh["loaded"],
+            "model_sha256_prefix": fh["model_sha256_prefix"],
+            "auto_download": fh["auto_download"],
         },
     }
 

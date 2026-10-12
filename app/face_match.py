@@ -110,6 +110,32 @@ def _hamming(a: int, b: int) -> int:
     return bin(a ^ b).count("1")
 
 
+def get_face_health() -> dict:
+    """Return health/metadata dict for face matching (Task P5)."""
+    model_path = (os.getenv("FACE_EMBED_MODEL", "") or "").strip()
+    loaded = bool(model_path and os.path.exists(model_path))
+    auto_download = os.getenv("AUTO_DOWNLOAD_MODELS", "false").lower() in ("1", "true", "yes")
+
+    if loaded:
+        mode = "arcface"
+        try:
+            import hashlib
+            with open(model_path, "rb") as f:
+                sha_prefix = hashlib.sha256(f.read(1024 * 1024)).hexdigest()[:12]
+        except Exception:
+            sha_prefix = None
+    else:
+        mode = "fallback"
+        sha_prefix = None
+
+    return {
+        "mode": mode,
+        "loaded": loaded,
+        "model_sha256_prefix": sha_prefix,
+        "auto_download": auto_download,
+    }
+
+
 def _embed_image(image):
     """ONNX embedding path. Returns an L2-normalized vector or None (model
     missing/unloadable -> caller falls back to dHash, never crashes).
@@ -417,6 +443,7 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
     if is_age_adjusted:
         age_note = f" (age-adapted threshold: {emb_same_threshold:.2f} for older document portrait)"
 
+    fh = get_face_health()
     emb_a, emb_b = _embed_image(qr_img), _embed_image(sl_img)
     if emb_a is not None and emb_b is not None:
         import numpy as np
@@ -440,6 +467,9 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
                 "similarity": round(sim, 3),
                 "threshold": round(emb_same_threshold, 3),
                 "decision": decision,
+                "loaded": fh["loaded"],
+                "model_sha256_prefix": fh["model_sha256_prefix"],
+                "auto_download": fh["auto_download"],
             },
         }
 
@@ -459,6 +489,9 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
                 "similarity": None,
                 "threshold": float(dhash_same_threshold),
                 "decision": "INCONCLUSIVE",
+                "loaded": fh["loaded"],
+                "model_sha256_prefix": fh["model_sha256_prefix"],
+                "auto_download": fh["auto_download"],
             },
         }
     dist = _hamming(ha, hb)
@@ -483,6 +516,9 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
             "similarity": round(1.0 - dist / 64.0, 3),
             "threshold": float(dhash_same_threshold),
             "decision": decision,
+            "loaded": fh["loaded"],
+            "model_sha256_prefix": fh["model_sha256_prefix"],
+            "auto_download": fh["auto_download"],
         },
     }
 

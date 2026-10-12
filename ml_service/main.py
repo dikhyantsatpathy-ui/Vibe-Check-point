@@ -349,10 +349,16 @@ def ml_health_check():
     # If any active stage failed to load, mark degraded
     degraded = not (card_loaded and field_loaded and mrz_loaded and doctype_loaded)
 
+    try:
+        from ml_service.face_match import get_face_health
+    except ImportError:
+        from face_match import get_face_health
+
     response_payload = {
         "status": "degraded" if degraded else "online",
         "degraded": degraded,
         "service": "no-cap-ml-service",
+        "face_match": get_face_health(),
         "stages": stages,
         "env_contract": {
             "DETECTOR_BACKEND": os.getenv("DETECTOR_BACKEND", "yolov8"),
@@ -511,6 +517,7 @@ async def api_process_live_photo(file: UploadFile = File(...)):
     if raw_primary:
         res["primary_image_b64"] = base64.b64encode(raw_primary).decode("ascii")
     return res
+
 
 
 

@@ -82,14 +82,14 @@
   "findings_open": [
     "S1-01"
   ],
-  "last_commit": "d596e29",
+  "last_commit": "6d6cb4c",
   "last_evidence": "Phase R completed (Full release test suite passed 133/133; release_readiness_r.json generated with READY_FOR_RELEASE; FINAL_REPORT_DRAFT.md completed across all phases 0..R)",
   "notes": "Work Order v7 fully executed to completion across Phase 0 through Phase R. Ready for merge to main.",
-  "session": 14,
-  "resumed_at": "2026-10-12T19:12:05Z",
-  "current_task": "P4",
-  "updated": "2026-10-12T16:24:44Z",
-  "last_checkpoint": "P3 complete; next P4 face-model provisioning",
-  "checkpoint_at": "2026-10-12T16:24:32Z",
+  "session": 16,
+  "resumed_at": "2026-10-12T19:22:47Z",
+  "current_task": "P5",
+  "updated": "2026-10-12T19:14:00Z",
+  "last_checkpoint": "P4 complete; next P5 face metadata and health",
+  "checkpoint_at": "2026-10-12T19:13:48Z",
   "branch": "ml/patch-v8"
 }

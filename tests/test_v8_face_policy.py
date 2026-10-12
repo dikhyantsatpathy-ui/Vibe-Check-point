@@ -386,4 +386,86 @@ def test_face_model_provisioning_oversize_refuses(monkeypatch, tmp_path):
     assert not (tmp_path / "oversize_model.onnx").exists(), "Oversize file must be unlinked"
 
 
+def test_face_health_metadata_sidecar():
+    """P5: ml_service/models/face_embed.meta.json generated from real ONNX when present.
+    Contains input name/shape, output size, SHA-256, bytes, preprocessing text, preprocessing_verified: false.
+    """
+    import json
+    meta_path = REPO_ROOT / "ml_service" / "models" / "face_embed.meta.json"
+    assert meta_path.exists(), "ml_service/models/face_embed.meta.json must exist"
+
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    assert meta["model_name"] == "w600k_r50.onnx"
+    assert "input_name" in meta and meta["input_name"] == "input.1"
+    assert "input_shape" in meta and list(meta["input_shape"]) == [1, 3, 112, 112]
+    assert "output_size" in meta and meta["output_size"] == 512
+    assert "sha256" in meta and len(meta["sha256"]) == 64
+    assert "bytes" in meta and meta["bytes"] == 174383860
+    assert "preprocessing" in meta and "127.5" in meta["preprocessing"] and "128.0" in meta["preprocessing"]
+    assert meta["preprocessing_verified"] is False
+
+
+def test_ml_health_endpoint():
+    """P5: /ml/health and /health show face_match.mode, loaded, model_sha256_prefix, auto_download."""
+    from fastapi.testclient import TestClient
+    from ml_service.main import app as ml_app
+
+    client = TestClient(ml_app)
+    for endpoint in ("/ml/health", "/health"):
+        res = client.get(endpoint)
+        assert res.status_code == 200
+        body = res.json()
+        assert body.get("status") in ("ok", "online", "degraded")
+        fm = body.get("face_match")
+        assert isinstance(fm, dict), f"face_match must be a dict in {endpoint}"
+        assert "mode" in fm and fm["mode"] in ("arcface", "unavailable", "fallback")
+        assert "loaded" in fm and isinstance(fm["loaded"], bool)
+        assert "model_sha256_prefix" in fm
+        if fm["loaded"]:
+            assert isinstance(fm["model_sha256_prefix"], str)
+            assert len(fm["model_sha256_prefix"]) == 12
+        else:
+            assert fm["model_sha256_prefix"] is None
+        assert "auto_download" in fm and isinstance(fm["auto_download"], bool)
+
+
+def test_screening_response_face_match_health_fields(monkeypatch):
+    """P5: Screening response shows face_match.mode, loaded, model_sha256_prefix, auto_download."""
+    import io
+    from PIL import Image
+    import screening
+
+    img = Image.new("RGB", (100, 100), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    data = buf.getvalue()
+
+    # Run screening with image
+    report = screening.run_screening(
+        data=data,
+        filename="test.png",
+        doc_type="passport",
+        checkpoint="Raxaul",
+        declared={},
+    )
+
+    # Check top-level face_match
+    assert "face_match" in report, "Screening report must contain top-level face_match"
+    fm_top = report["face_match"]
+    assert "mode" in fm_top
+    assert "loaded" in fm_top and isinstance(fm_top["loaded"], bool)
+    assert "model_sha256_prefix" in fm_top
+    assert "auto_download" in fm_top and isinstance(fm_top["auto_download"], bool)
+
+    # Check modules.face.face_match
+    face_module = report.get("modules", {}).get("face", {})
+    assert "face_match" in face_module, "Screening report modules.face must contain face_match"
+    fm_mod = face_module["face_match"]
+    assert "mode" in fm_mod
+    assert "loaded" in fm_mod and isinstance(fm_mod["loaded"], bool)
+    assert "model_sha256_prefix" in fm_mod
+    assert "auto_download" in fm_mod and isinstance(fm_mod["auto_download"], bool)
+
+
+
 
