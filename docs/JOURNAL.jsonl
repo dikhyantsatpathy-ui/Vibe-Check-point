@@ -55,3 +55,7 @@
 {"t": "2026-10-12T19:42:01Z", "event": "resume", "session": 20}
 {"t": "2026-10-12T19:42:09Z", "event": "start", "id": "P9", "attempt": 1}
 {"t": "2026-10-12T19:44:41Z", "event": "done", "id": "P9", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k secrets"}
+{"t": "2026-10-12T19:45:05Z", "event": "checkpoint", "note": "P9 complete; next P10 fake secrets in reverify_logs_v4"}
+{"t": "2026-10-12T19:45:12Z", "event": "resume", "session": 21}
+{"t": "2026-10-12T19:45:19Z", "event": "start", "id": "P10", "attempt": 1}
+{"t": "2026-10-12T19:47:31Z", "event": "done", "id": "P10", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k fake"}

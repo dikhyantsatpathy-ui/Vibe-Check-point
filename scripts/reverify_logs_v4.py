@@ -16,10 +16,10 @@ sys.path.insert(0, str(ROOT / "app"))
 from main import sanitize_secret_text
 
 FAKE_SECRETS = [
-    "postgresql://testuser:supersecretpass123@ep-cool-db.neon.tech/neondb",
-    "sk-proj-FAKEOPENAISECRETKEY99887766554433",
-    "gsk-FAKEGROQSECRETKEY998877665544332211",
-    "AIzaSyFakeGoogleApiKey1234567890abcdef",
+    "postgresql://testuser:FAKE-PASSWORD-NOT-REAL-SECRET-123@ep-fake-db-not-real.neon.tech/neondb",
+    "sk-FAKE-TOKEN-NOT-REAL-OPENAI-KEY-123456789",
+    "gsk-FAKE-TOKEN-NOT-REAL-GROQ-KEY-1234567890",
+    "AIzaSyFAKE-TOKEN-NOT-REAL-GOOGLE-12345",
 ]
 
 def test_log_redaction():
@@ -30,7 +30,7 @@ def test_log_redaction():
     for sec in FAKE_SECRETS:
         sanitized = sanitize_secret_text(f"Connection error with {sec} occurred.")
         leaked = False
-        if "supersecretpass123" in sanitized or "FAKEOPENAI" in sanitized or "FAKEGROQ" in sanitized or "FakeGoogleApiKey" in sanitized:
+        if "FAKE-PASSWORD" in sanitized or "FAKE-TOKEN-NOT-REAL" in sanitized:
             leaked = True
             all_passed = False
         results.append({
@@ -49,11 +49,11 @@ def test_log_redaction():
     try:
         from screening import run_screening
         # Run screening with synthetic text containing a fake secret
-        fake_text = "Holder John Doe with API token sk-proj-FAKESECRETINPASSPORT123456"
+        fake_text = "Holder John Doe with API token sk-FAKE-TOKEN-NOT-REAL-PASSPORT-123456"
         res = run_screening(
             data=b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF",
             filename="fake_passport.pdf",
-            declared={"name": "John Doe", "notes": "sk-proj-FAKESECRETINPASSPORT123456"},
+            declared={"name": "John Doe", "notes": "sk-FAKE-TOKEN-NOT-REAL-PASSPORT-123456"},
             is_image=False,
             session_id="test-log-redaction"
         )
@@ -63,7 +63,7 @@ def test_log_redaction():
         logger.removeHandler(handler)
 
     captured_logs = log_stream.getvalue()
-    raw_token_leaked = "FAKESECRETINPASSPORT" in captured_logs
+    raw_token_leaked = "FAKE-TOKEN-NOT-REAL" in captured_logs
     if raw_token_leaked:
         all_passed = False
 

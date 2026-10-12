@@ -155,3 +155,41 @@ def test_secrets_owner_todo_roboflow_clean():
     content = owner_todo.read_text(encoding="utf-8")
     assert "Roboflow API key (value not recorded)" in content
     assert "pcsk_" not in content
+
+
+def test_fake_secrets_in_reverify_logs_unmistakably_fake():
+    """P10: Test secrets in scripts/reverify_logs_v4.py are unmistakably fake."""
+    from scripts import reverify_logs_v4 as rlog
+
+    assert hasattr(rlog, "FAKE_SECRETS")
+    for sec in rlog.FAKE_SECRETS:
+        assert ("FAKE-TOKEN-NOT-REAL" in sec or "FAKE-PASSWORD-NOT-REAL" in sec), (
+            f"Test secret '{sec}' must be unmistakably fake containing FAKE-TOKEN-NOT-REAL or FAKE-PASSWORD-NOT-REAL"
+        )
+
+    # Check script source file
+    script_path = REPO_ROOT / "scripts" / "reverify_logs_v4.py"
+    script_text = script_path.read_text(encoding="utf-8")
+    assert "supersecretpass123" not in script_text
+    assert "AIzaSyFakeGoogleApiKey1234567890abcdef" not in script_text
+    assert "sk-proj-FAKESECRETINPASSPORT123456" not in script_text
+
+
+def test_fake_secrets_redaction_behavior_verified():
+    """P10: Redaction test in scripts/reverify_logs_v4.py executes and passes."""
+    from scripts import reverify_logs_v4 as rlog
+
+    # Run test
+    rlog.test_log_redaction()
+
+    # Verify report JSON
+    report_file = REPO_ROOT / "eval" / "runs" / "20261011_reverify_v1" / "log_redaction_test.json"
+    assert report_file.exists()
+    with open(report_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    assert data.get("verdict") == "PASS"
+    assert data.get("pipeline_logger_leak_detected") is False
+    for res in data.get("redaction_sanitizer_tests", []):
+        assert res.get("secret_leaked") is False
+

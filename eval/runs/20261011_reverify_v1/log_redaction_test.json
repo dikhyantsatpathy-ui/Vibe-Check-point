@@ -7,17 +7,17 @@
       "secret_leaked": false
     },
     {
-      "pattern": "sk-proj-FA...",
+      "pattern": "sk-FAKE-TO...",
       "sanitized": "Connection error with [REDACTED_API_KEY] occurred.",
       "secret_leaked": false
     },
     {
-      "pattern": "gsk-FAKEGR...",
+      "pattern": "gsk-FAKE-T...",
       "sanitized": "Connection error with [REDACTED_API_KEY] occurred.",
       "secret_leaked": false
     },
     {
-      "pattern": "AIzaSyFake...",
+      "pattern": "AIzaSyFAKE...",
       "sanitized": "Connection error with [REDACTED_API_KEY] occurred.",
       "secret_leaked": false
     }
