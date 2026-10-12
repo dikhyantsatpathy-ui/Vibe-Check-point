@@ -133,3 +133,7 @@
 {"t": "2026-10-12T22:25:58Z", "event": "resume", "session": 41}
 {"t": "2026-10-12T22:26:08Z", "event": "start", "id": "G2", "attempt": 1}
 {"t": "2026-10-12T22:26:55Z", "event": "done", "id": "G2", "evidence": "git push origin ml/patch-v8 succeeded; new branch pushed clean"}
+{"t": "2026-10-12T22:27:23Z", "event": "checkpoint", "note": "G2 complete; next G3 final message to owner"}
+{"t": "2026-10-12T22:27:30Z", "event": "resume", "session": 42}
+{"t": "2026-10-12T22:27:37Z", "event": "start", "id": "G3", "attempt": 1}
+{"t": "2026-10-12T22:27:52Z", "event": "done", "id": "G3", "evidence": "final message prepared with verdict, owner blockers, residual risks, and Appendix G questions"}

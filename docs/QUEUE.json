@@ -316,10 +316,10 @@
       "phase": "G",
       "title": "Final message to the owner",
       "verify": "-",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "final message prepared with verdict, owner blockers, residual risks, and Appendix G questions",
+      "updated": "2026-10-12T22:27:52Z"
     }
   ]
 }
