@@ -104,3 +104,7 @@
 {"t": "2026-10-12T21:06:48Z", "event": "resume", "session": 33}
 {"t": "2026-10-12T21:06:54Z", "event": "start", "id": "T4", "attempt": 1}
 {"t": "2026-10-12T21:59:51Z", "event": "done", "id": "T4", "evidence": "eval/runs/20261012_210727_suite/result.json passed: runs=3, passed=3, failed=0, durations=[1037.999, 1039.824, 1034.873]"}
+{"t": "2026-10-12T22:00:29Z", "event": "checkpoint", "note": "T4 complete; next T5 compileall and ruff check"}
+{"t": "2026-10-12T22:00:34Z", "event": "resume", "session": 34}
+{"t": "2026-10-12T22:00:41Z", "event": "start", "id": "T5", "attempt": 1}
+{"t": "2026-10-12T22:02:48Z", "event": "done", "id": "T5", "evidence": "verify OK: python -m compileall -q app ml_service api scripts"}

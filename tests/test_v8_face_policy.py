@@ -198,8 +198,12 @@ def test_fallback_methods_never_decide(monkeypatch):
     # Create two images
     img1 = Image.new("RGB", (100, 100), color=(255, 0, 0))
     img2 = Image.new("RGB", (100, 100), color=(0, 255, 0))
-    buf1 = io.BytesIO(); img1.save(buf1, format="PNG"); b1 = buf1.getvalue()
-    buf2 = io.BytesIO(); img2.save(buf2, format="PNG"); b2 = buf2.getvalue()
+    buf1 = io.BytesIO()
+    img1.save(buf1, format="PNG")
+    b1 = buf1.getvalue()
+    buf2 = io.BytesIO()
+    img2.save(buf2, format="PNG")
+    b2 = buf2.getvalue()
 
     # Disable onnx embedding to force fallback
     monkeypatch.setattr(app_fm, "_embed_image", lambda img: None)
@@ -291,7 +295,9 @@ def test_face_model_provisioning_zero_calls_when_auto_download_off(monkeypatch, 
 
     # Missing face model in compare_faces yields unavailable
     img = Image.new("RGB", (64, 64), color="blue")
-    buf = io.BytesIO(); img.save(buf, format="PNG"); b_img = buf.getvalue()
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    b_img = buf.getvalue()
     res = ml_fm.compare_faces(b_img, b_img)
     assert res["mode"] == "unavailable"
     assert res["decision"] == "INCONCLUSIVE"
@@ -368,7 +374,7 @@ def test_face_model_provisioning_oversize_refuses(monkeypatch, tmp_path):
     monkeypatch.setattr(model_fetch, "get_manifest_entry", lambda name, *args: manifest_stub.get(name))
 
     def fake_oversize_download(repo_id, filename, token, local_dir, **kwargs):
-        out_file = Path(local_dir) / filename
+        out_file = pathlib.Path(local_dir) / filename
         out_file.write_bytes(b"x" * 1200)  # 1200 bytes > 1050 bytes
         return str(out_file)
 

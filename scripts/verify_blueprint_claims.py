@@ -389,7 +389,7 @@ def run_checks():
     (REPO_ROOT / "docs/BLUEPRINT_VS_REALITY.md").write_text("\n".join(md_lines) + "\n", encoding="utf-8")
     print(f"Verified {len(results)} claims: {summary}")
     print(f"Report written to {run_dir / 'report.json'}")
-    print(f"Ledger written to docs/claims/claims.json and docs/BLUEPRINT_VS_REALITY.md")
+    print("Ledger written to docs/claims/claims.json and docs/BLUEPRINT_VS_REALITY.md")
     return report_data
 
 

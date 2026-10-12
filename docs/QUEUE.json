@@ -246,10 +246,10 @@
       "phase": "T",
       "title": "Static checks",
       "verify": "python -m compileall -q app ml_service api scripts",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m compileall -q app ml_service api scripts",
+      "updated": "2026-10-12T22:02:48Z"
     },
     {
       "id": "K1",
