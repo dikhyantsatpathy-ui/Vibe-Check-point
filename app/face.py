@@ -92,9 +92,13 @@ def face_verification(document_bytes: bytes | None = None,
     )
     sim = f_match_struct.get("similarity")
 
-    if f_dec == "MISMATCH" or fm.get("match") is False:
+    if f_mode != "arcface":
+        verdict = "REVIEW"
+        result["decision"] = "INCONCLUSIVE"
+        result["match"] = None
+    elif f_dec == "MISMATCH" or fm.get("match") is False:
         verdict = "FAIL"
-    elif f_dec == "MATCH" and f_mode == "arcface":
+    elif f_dec == "MATCH":
         if sim is not None and sim < BASE_SAME:
             verdict = "REVIEW"
             rel_sig = "Aged-photo match at relaxed threshold — officer to confirm"

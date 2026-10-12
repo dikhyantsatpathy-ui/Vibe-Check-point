@@ -56,10 +56,10 @@
       "phase": "P",
       "title": "Fallback never decides",
       "verify": "python -m pytest tests/test_v8_face_policy.py -q -k fallback",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_face_policy.py -q -k fallback",
+      "updated": "2026-10-12T16:23:06Z"
     },
     {
       "id": "P4",

@@ -463,13 +463,11 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
         }
     dist = _hamming(ha, hb)
     score = int(round((1.0 - dist / 64.0) * 100))
-    # Invariant FS / A3: If mode != 'arcface': decision MUST NEVER be 'MATCH'.
-    # Legacy match boolean True preserved for near-duplicate backwards-compatible test assertions.
-    match = True if dist <= dhash_same_threshold else (False if dist >= _DHASH_DIFF else None)
-    decision = "MISMATCH" if dist >= _DHASH_DIFF else "INCONCLUSIVE"
-    verdict = ("near-duplicate portraits" if match is True
-               else ("clearly different portraits" if match is False
-                     else "inconclusive — confirm by eye"))
+    # Phase P3: Fallback methods never decide.
+    # For any mode other than arcface: decision is INCONCLUSIVE always, match is None always.
+    match = None
+    decision = "INCONCLUSIVE"
+    verdict = "inconclusive (fallback perceptual-hash — confirm by eye)"
     return {
         "score": score,
         "match": match,

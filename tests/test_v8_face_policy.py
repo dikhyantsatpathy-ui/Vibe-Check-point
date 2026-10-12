@@ -180,3 +180,50 @@ def test_cap_relaxed_threshold_never_auto_pass(monkeypatch):
     )
     assert res_young["verdict"] == "REVIEW"
 
+
+def test_fallback_methods_never_decide(monkeypatch):
+    """P3: For any mode other than arcface (phash-dhash, unavailable):
+    - decision is INCONCLUSIVE always;
+    - verdict is REVIEW always;
+    - legacy field match is None always;
+    - perceptual-hash threshold is constant (no age relaxation).
+    """
+    import app.face as face_mod
+    import app.face_match as app_fm
+    from PIL import Image
+    import io
+
+    monkeypatch.setattr(face_mod, "_document_face_b64", lambda *args, **kwargs: "dummy_doc_b64")
+
+    # Create two images
+    img1 = Image.new("RGB", (100, 100), color=(255, 0, 0))
+    img2 = Image.new("RGB", (100, 100), color=(0, 255, 0))
+    buf1 = io.BytesIO(); img1.save(buf1, format="PNG"); b1 = buf1.getvalue()
+    buf2 = io.BytesIO(); img2.save(buf2, format="PNG"); b2 = buf2.getvalue()
+
+    # Disable onnx embedding to force fallback
+    monkeypatch.setattr(app_fm, "_embed_image", lambda img: None)
+
+    out_diff = app_fm.compare_faces(b1, b2, doc_age_years=10.0)
+    assert out_diff["mode"] == "fallback"
+    assert out_diff["decision"] == "INCONCLUSIVE"
+    assert out_diff["match"] is None
+    assert out_diff["threshold_used"] == 8
+
+    out_same = app_fm.compare_faces(b1, b1, doc_age_years=10.0)
+    assert out_same["mode"] == "fallback"
+    assert out_same["decision"] == "INCONCLUSIVE"
+    assert out_same["match"] is None
+    assert out_same["threshold_used"] == 8
+
+    # Test face_verification verdict in fallback mode
+    res = face_mod.face_verification(
+        document_bytes=b"dummy",
+        live_frame=b1,
+        doc_type="passport",
+    )
+    assert res["verdict"] == "REVIEW"
+    assert res["decision"] == "INCONCLUSIVE"
+    assert res["match"] is None
+
+
