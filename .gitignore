@@ -81,6 +81,8 @@ scripts/*
 !scripts/count_tests.py
 !scripts/check_coverage.py
 !scripts/owner_check_isolation.ps1
+!scripts/release_verdict.py
+!scripts/run_suite_n.py
 
 # ---- Rollback snapshots (local only, never pushed) ----
 _backup/
