@@ -19,51 +19,95 @@ logger = logging.getLogger("model_fetch")
 
 DEFAULT_REPO = "koropanda/no-cap-detectors"
 DEFAULT_MODELS_DIR = Path(__file__).resolve().parent / "models"
+MANIFEST_PATH = DEFAULT_MODELS_DIR / "MODEL_MANIFEST.json"
 
 
-def compute_sha256(file_path: Path) -> str:
+def load_manifest(manifest_path: Optional[Path] = None) -> Dict[str, dict]:
+    """Load model manifest with sha256, size, and source metadata."""
+    p = manifest_path or MANIFEST_PATH
+    if not p.exists():
+        return {}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        if "models" in data and isinstance(data["models"], dict):
+            return data["models"]
+        if "models" in data and isinstance(data["models"], list):
+            return {m["name"]: m for m in data["models"] if "name" in m}
+        if isinstance(data, list):
+            return {m["name"]: m for m in data if "name" in m}
+        if isinstance(data, dict):
+            return data
+    except Exception as exc:
+        logger.error("Failed to load model manifest %s: %s", p, exc)
+    return {}
+
+
+def get_manifest_entry(name: str, manifest_path: Optional[Path] = None) -> Optional[dict]:
+    """Get metadata for a specific model from manifest."""
+    manifest = load_manifest(manifest_path)
+    return manifest.get(name)
+
+
+def compute_sha256(file_path: Path | str) -> str:
     """Compute exact hex-digest SHA-256 checksum of a file."""
+    p = Path(file_path)
     h = hashlib.sha256()
-    with open(file_path, "rb") as f:
+    with open(p, "rb") as f:
         while chunk := f.read(1024 * 1024):
             h.update(chunk)
     return h.hexdigest().lower()
 
 
-def verify_model_integrity(model_path: Path, meta_path: Optional[Path] = None) -> bool:
-    """Verify SHA-256 checksum of model against its metadata sidecar.
-    Fails closed: returns False and logs critical error on checksum mismatch.
+def verify_model_integrity(
+    model_path: Path | str,
+    meta_path: Optional[Path] = None,
+    expected_sha: Optional[str] = None,
+) -> bool:
+    """Verify SHA-256 checksum of model against expected SHA, sidecar, or manifest.
+    Fails closed: returns False and logs error on missing/empty SHA or checksum mismatch.
     """
-    if not model_path.exists():
-        logger.error("Model file %s does not exist", model_path)
+    p = Path(model_path)
+    if not p.exists():
+        logger.error("Model file %s does not exist", p)
         return False
 
-    if meta_path is None:
-        meta_path = model_path.with_name(f"{model_path.name}.meta.json")
-        if not meta_path.exists():
-            meta_path = model_path.with_name(f"{model_path.stem}.meta.json")
+    sha_to_check = (expected_sha or "").strip().lower()
 
-    if not meta_path.exists():
-        logger.warning("Sidecar %s not found for %s; verifying existence only", meta_path.name, model_path.name)
-        return True
+    if not sha_to_check:
+        if meta_path is None:
+            meta_path = p.with_name(f"{p.name}.meta.json")
+            if not meta_path.exists():
+                meta_path = p.with_name(f"{p.stem}.meta.json")
+
+        if meta_path and meta_path.exists():
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                sha_to_check = (meta.get("sha256") or "").strip().lower()
+            except Exception as exc:
+                logger.error("Error reading sidecar %s: %s", meta_path, exc)
+                return False
+
+    if not sha_to_check:
+        entry = get_manifest_entry(p.name)
+        if entry and entry.get("sha256"):
+            sha_to_check = entry["sha256"].strip().lower()
+
+    if not sha_to_check:
+        logger.error("Empty or missing SHA-256 for %s! Refusing to load.", p.name)
+        return False
 
     try:
-        meta = json.loads(meta_path.read_text(encoding="utf-8"))
-        expected_sha = meta.get("sha256", "").strip().lower()
-        if not expected_sha:
-            return True
-
-        actual_sha = compute_sha256(model_path)
-        if actual_sha != expected_sha:
+        actual_sha = compute_sha256(p)
+        if actual_sha != sha_to_check:
             logger.critical(
                 "SHA-256 MISMATCH for %s! Expected: %s, Actual: %s. FAILING CLOSED.",
-                model_path.name, expected_sha, actual_sha
+                p.name, sha_to_check, actual_sha
             )
             return False
-        logger.info("SHA-256 verified for %s (%s)", model_path.name, actual_sha[:12])
+        logger.info("SHA-256 verified for %s (%s)", p.name, actual_sha[:12])
         return True
     except Exception as exc:
-        logger.error("Error reading sidecar %s: %s", meta_path, exc)
+        logger.error("Error computing checksum for %s: %s", p.name, exc)
         return False
 
 
@@ -74,8 +118,9 @@ def fetch_models_from_hf(
     dest_dir: Optional[Path] = None,
     model_filenames: Optional[List[str]] = None,
     max_retries: int = 3,
+    timeout: float = 30.0,
 ) -> Dict[str, bool]:
-    """Fetch weights and sidecars from Hugging Face with backoff retry and cache support."""
+    """Fetch weights and sidecars from Hugging Face with backoff retry, timeout, size cap, and cache support."""
     repo = repo_id or os.getenv("HF_MODEL_REPO", DEFAULT_REPO)
     rev = revision or os.getenv("HF_MODEL_REVISION")
     hf_token = token or os.getenv("HF_TOKEN")
@@ -110,14 +155,21 @@ def fetch_models_from_hf(
 
     for fname in model_filenames:
         dest_file = target_dir / fname
-        
+        entry = get_manifest_entry(fname)
+
         # If model is already cached locally, verify integrity first
         if dest_file.exists():
             if dest_file.suffix.lower() == ".onnx":
-                if verify_model_integrity(dest_file):
+                sidecar_cand = dest_file.with_name(f"{dest_file.name}.meta.json")
+                if not sidecar_cand.exists():
+                    sidecar_cand = dest_file.with_name(f"{dest_file.stem}.meta.json")
+                if verify_model_integrity(dest_file, meta_path=sidecar_cand if sidecar_cand.exists() else None):
                     logger.info("Using cached model %s (integrity verified)", fname)
                     status[fname] = True
                     continue
+                else:
+                    logger.warning("Cached model %s failed integrity check; refetching", fname)
+                    dest_file.unlink(missing_ok=True)
             else:
                 logger.info("Using cached file %s", fname)
                 status[fname] = True
@@ -128,21 +180,39 @@ def fetch_models_from_hf(
         for attempt in range(1, max_retries + 1):
             try:
                 logger.info("Fetching %s from %s (attempt %d/%d)...", fname, repo, attempt, max_retries)
-                hf_hub_download(
-                    repo_id=repo,
-                    filename=fname,
-                    revision=rev,
-                    token=hf_token,
-                    local_dir=str(target_dir),
-                )
+                dl_kwargs = {
+                    "repo_id": repo,
+                    "filename": fname,
+                    "token": hf_token,
+                    "local_dir": str(target_dir),
+                }
+                if rev:
+                    dl_kwargs["revision"] = rev
+                try:
+                    hf_hub_download(**dl_kwargs, etag_timeout=min(10.0, timeout))
+                except TypeError:
+                    # Fallback if mock or older huggingface_hub doesn't take etag_timeout
+                    hf_hub_download(**dl_kwargs)
+
+                # Check size cap: 1.05 x manifest bytes
+                if entry and "bytes" in entry and entry["bytes"]:
+                    max_allowed = int(entry["bytes"] * 1.05)
+                    actual_size = dest_file.stat().st_size
+                    if actual_size > max_allowed:
+                        dest_file.unlink(missing_ok=True)
+                        logger.error(
+                            "Oversize model %s: %d bytes exceeds 1.05x cap (%d bytes)",
+                            fname, actual_size, max_allowed
+                        )
+                        raise ValueError(f"Oversize model {fname}: {actual_size} exceeds 1.05x cap {max_allowed}")
+
                 if dest_file.suffix.lower() == ".onnx":
                     sidecar_cand = dest_file.with_name(f"{dest_file.name}.meta.json")
                     if not sidecar_cand.exists():
                         sidecar_cand = dest_file.with_name(f"{dest_file.stem}.meta.json")
-                    if sidecar_cand.exists():
-                        if not verify_model_integrity(dest_file, sidecar_cand):
-                            dest_file.unlink(missing_ok=True)
-                            raise ValueError(f"Integrity check failed for {fname}")
+                    if not verify_model_integrity(dest_file, meta_path=sidecar_cand if sidecar_cand.exists() else None):
+                        dest_file.unlink(missing_ok=True)
+                        raise ValueError(f"Integrity check failed for {fname}")
                 success = True
                 break
             except Exception as exc:
@@ -157,7 +227,10 @@ def fetch_models_from_hf(
         # If download failed, check if offline fallback exists
         if not success and dest_file.exists():
             logger.warning("Download failed but found local cache for %s. Operating in offline mode.", fname)
-            success = verify_model_integrity(dest_file) if dest_file.suffix == ".onnx" else True
+            sidecar_cand = dest_file.with_name(f"{dest_file.name}.meta.json")
+            if not sidecar_cand.exists():
+                sidecar_cand = dest_file.with_name(f"{dest_file.stem}.meta.json")
+            success = verify_model_integrity(dest_file, meta_path=sidecar_cand if sidecar_cand.exists() else None) if dest_file.suffix == ".onnx" else True
 
         status[fname] = success
 

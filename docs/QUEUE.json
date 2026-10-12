@@ -66,10 +66,10 @@
       "phase": "P",
       "title": "Face-model provisioning hardened",
       "verify": "python -m pytest tests/test_v8_face_policy.py -q -k provisioning",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_face_policy.py -q -k provisioning",
+      "updated": "2026-10-12T19:13:35Z"
     },
     {
       "id": "P5",

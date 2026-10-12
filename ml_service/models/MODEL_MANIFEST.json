@@ -1,0 +1,42 @@
+{
+  "w600k_r50.onnx": {
+    "name": "w600k_r50.onnx",
+    "sha256": "4c06341c33c2a6f3b79361ad22872322307fe959a7a9cb52de9ae3a246835a09",
+    "bytes": 174383860,
+    "source_repo": "koropanda/no-cap-detectors",
+    "revision": "main",
+    "origin_hint": "https://huggingface.co/maze/faceX/resolve/main/w600k_r50.onnx (Notice: InsightFace model under non-commercial research licence heads-up)"
+  },
+  "rfdetr_card_int8.onnx": {
+    "name": "rfdetr_card_int8.onnx",
+    "sha256": "ccab01630e53389387738a5af0c9456fb1aa6f3d68e3a0f1128ebe78b7f6b179",
+    "bytes": 38963695,
+    "source_repo": "koropanda/no-cap-detectors",
+    "revision": "main",
+    "origin_hint": "Fine-tuned card detector"
+  },
+  "rfdetr_mrz_int8.onnx": {
+    "name": "rfdetr_mrz_int8.onnx",
+    "sha256": "a208402229d99023067214fb38bcf1a3436701dd5bf92c96adf0af650d25d96a",
+    "bytes": 39034095,
+    "source_repo": "koropanda/no-cap-detectors",
+    "revision": "main",
+    "origin_hint": "Fine-tuned MRZ detector"
+  },
+  "doctype_v2.onnx": {
+    "name": "doctype_v2.onnx",
+    "sha256": "548faa0fd6cf98ca0ca520c9e7848b37e11cee2b7de9ed7bc13c6b9d1a5552a6",
+    "bytes": 6113857,
+    "source_repo": "koropanda/no-cap-detectors",
+    "revision": "main",
+    "origin_hint": "MobileNetV3 document classifier"
+  },
+  "rfdetr_id_fields_int8.onnx": {
+    "name": "rfdetr_id_fields_int8.onnx",
+    "sha256": "85c342e33f2b116dcf9c616687ab4f62e132771da32800e22a7fc11a59a7c85d",
+    "bytes": 39072565,
+    "source_repo": "koropanda/no-cap-detectors",
+    "revision": "main",
+    "origin_hint": "Fine-tuned ID fields detector"
+  }
+}

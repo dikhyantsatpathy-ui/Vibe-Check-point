@@ -107,61 +107,91 @@ def _hamming(a: int, b: int) -> int:
     return bin(a ^ b).count("1")
 
 
-DEFAULT_FACE_URL = "https://huggingface.co/maze/faceX/resolve/main/w600k_r50.onnx"
 DEFAULT_FACE_SHA256 = "4c06341c33c2a6f3b79361ad22872322307fe959a7a9cb52de9ae3a246835a09"
 
 
 def _resolve_face_model_path() -> str | None:
-    """Resolve ArcFace model path from env, local models/ dir, repo data/models/, or auto-download."""
-    env_path = (os.getenv("FACE_EMBED_MODEL", "") or "").strip()
-    if env_path and os.path.exists(env_path):
-        return env_path
+    """Resolve ArcFace model path from env, local models/ dir, repo data/models/, or model_fetch.
+    Enforces strict SHA-256 verification and size cap. Fails closed.
+    """
+    try:
+        from ml_service.model_fetch import (
+            compute_sha256,
+            fetch_models_from_hf,
+            get_manifest_entry,
+        )
+    except ImportError:
+        from model_fetch import (
+            compute_sha256,
+            fetch_models_from_hf,
+            get_manifest_entry,
+        )
 
+    manifest_entry = get_manifest_entry("w600k_r50.onnx") or {}
+    manifest_sha = (manifest_entry.get("sha256") or DEFAULT_FACE_SHA256).strip().lower()
+
+    # Rule (d): an empty or missing SHA means refuse to load.
+    # An FACE_MODEL_SHA256 override that is empty is treated as "use the manifest value".
+    env_sha = os.getenv("FACE_MODEL_SHA256")
+    if env_sha is not None:
+        env_sha_clean = env_sha.strip().lower()
+        expected_sha = env_sha_clean if env_sha_clean else manifest_sha
+    else:
+        expected_sha = manifest_sha
+
+    if not expected_sha:
+        # Empty or missing SHA -> refuse to load
+        return None
+
+    # Check candidates
     local_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
     local_model = os.path.join(local_dir, "w600k_r50.onnx")
-    if os.path.exists(local_model):
-        return local_model
-
     repo_model = os.path.abspath(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "models", "w600k_r50.onnx")
     )
-    if os.path.exists(repo_model):
-        return repo_model
+    env_path = (os.getenv("FACE_EMBED_MODEL", "") or "").strip()
 
-    if os.getenv("AUTO_DOWNLOAD_MODELS", "true").lower() in ("1", "true", "yes"):
-        try:
-            os.makedirs(local_dir, exist_ok=True)
-            print(f"[face_match] downloading ArcFace model -> {local_model} ({DEFAULT_FACE_URL})")
-            import hashlib
-            import shutil
-            import urllib.request
+    candidates = []
+    if env_path:
+        candidates.append(env_path)
+    candidates.extend([local_model, repo_model])
 
-            tmp = local_model + ".download"
-            req = urllib.request.Request(
-                DEFAULT_FACE_URL,
-                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
-            )
-            hasher = hashlib.sha256()
-            with urllib.request.urlopen(req) as resp, open(tmp, "wb") as out:
-                while chunk := resp.read(65536):
-                    hasher.update(chunk)
-                    out.write(chunk)
-            digest = hasher.hexdigest()
-            expected_sha = os.getenv("FACE_MODEL_SHA256", DEFAULT_FACE_SHA256).strip().lower()
-            if expected_sha and digest.lower() != expected_sha:
-                if os.path.exists(tmp):
-                    os.remove(tmp)
-                raise ValueError(f"Supply-chain check failed: ArcFace SHA-256 {digest} != expected {expected_sha}")
+    for cand in candidates:
+        if cand and os.path.exists(cand):
+            try:
+                actual_sha = compute_sha256(cand)
+                if actual_sha == expected_sha:
+                    return cand
+            except Exception:
+                pass
 
-            os.replace(tmp, local_model)
-            return local_model
-        except Exception as exc:
-            print(f"[face_match] failed to download ArcFace model: {exc}")
-            if os.path.exists(local_model + ".download"):
+    # If no valid candidate exists locally, check AUTO_DOWNLOAD_MODELS
+    # Rule (a): AUTO_DOWNLOAD_MODELS default becomes false
+    if os.getenv("AUTO_DOWNLOAD_MODELS", "false").lower() not in ("1", "true", "yes"):
+        # Rule (f): No network call may happen when the flag is off.
+        return None
+
+    # Obtain only through ml_service/model_fetch.py from configured private HF_MODEL_REPO
+    try:
+        from pathlib import Path
+        repo = os.getenv("HF_MODEL_REPO", "koropanda/no-cap-detectors")
+        res = fetch_models_from_hf(
+            repo_id=repo,
+            dest_dir=Path(local_dir),
+            model_filenames=["w600k_r50.onnx"],
+        )
+        if res.get("w600k_r50.onnx") and os.path.exists(local_model):
+            actual_sha = compute_sha256(local_model)
+            if actual_sha == expected_sha:
+                return local_model
+            else:
                 try:
-                    os.remove(local_model + ".download")
+                    os.remove(local_model)
                 except Exception:
                     pass
+    except Exception as exc:
+        print(f"[face_match] failed to fetch ArcFace model from HF: {exc}")
+
     return None
 
 
@@ -321,6 +351,23 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
     age_note = ""
     if is_age_adjusted:
         age_note = f" (age-adapted threshold: {emb_same_threshold:.2f} for older document portrait)"
+
+    model_path = _resolve_face_model_path()
+    if not model_path:
+        return {
+            "score": 0,
+            "match": None,
+            "method": "unavailable",
+            "mode": "unavailable",
+            "decision": "INCONCLUSIVE",
+            "detail": "Face model missing or unverifiable: face mode unavailable.",
+            "face_match": {
+                "mode": "unavailable",
+                "similarity": None,
+                "threshold": float(emb_same_threshold),
+                "decision": "INCONCLUSIVE",
+            },
+        }
 
     emb_a, emb_b = _embed_image(qr_img), _embed_image(sl_img)
     if emb_a is not None and emb_b is not None:

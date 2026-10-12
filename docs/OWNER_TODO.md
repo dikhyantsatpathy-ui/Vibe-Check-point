@@ -116,5 +116,27 @@ $env:DEMO_PASS_ENABLED = "1"
 - **Status**: **ACTION REQUIRED (Legal Counsel Review)**
 - **Detail**: YOLOv8 model weights exported to ONNX were trained using Ultralytics tooling (AGPL-3.0). While Ultralytics is omitted from all runtime dependencies and runtime inference is pure ONNX Runtime (MIT license), whether model weights derived from AGPL-licensed training tooling inherit copyleft obligations is an unresolved legal question for intellectual property counsel. Assert nothing about copyleft freedom without legal review.
 
+---
+
+## 5. PRIVATE MODEL REPOSITORY PROVISIONING (PHASE P4)
+
+### Item 10: Upload ArcFace Model to Private Hugging Face Repository
+- **Status**: **ACTION REQUIRED (Model Provisioning)**
+- **Detail**: In accordance with supply chain security hardening (Phase P4), automatic unauthenticated downloads of `w600k_r50.onnx` from third-party URLs are removed. When `AUTO_DOWNLOAD_MODELS=1`, models are fetched strictly from the private `HF_MODEL_REPO`. If `w600k_r50.onnx` is missing from the private repository or unverifiable, face verification runs in mode `unavailable` (INCONCLUSIVE -> REVIEW).
+- **Owner Action**:
+  Upload the local `w600k_r50.onnx` weights file to the private Hugging Face repository using `hf upload` (or `huggingface-cli upload`):
+  ```powershell
+  # 1. Configure environment variables
+  $env:HF_MODEL_REPO = "koropanda/no-cap-detectors"
+  $env:HF_TOKEN = "<your_hf_token>"
+
+  # 2. Upload model file using verified CLI signature:
+  # Usage: hf upload REPO_ID [LOCAL_PATH] [PATH_IN_REPO] --token TEXT
+  hf upload koropanda/no-cap-detectors data/models/w600k_r50.onnx w600k_r50.onnx --token $env:HF_TOKEN
+
+  # Alternatively, via huggingface-cli upload:
+  # huggingface-cli upload koropanda/no-cap-detectors data/models/w600k_r50.onnx w600k_r50.onnx --token $env:HF_TOKEN
+  ```
+
 
 

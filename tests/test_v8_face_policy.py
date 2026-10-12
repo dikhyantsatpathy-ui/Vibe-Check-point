@@ -227,3 +227,163 @@ def test_fallback_methods_never_decide(monkeypatch):
     assert res["match"] is None
 
 
+def test_face_model_provisioning_manifest_structure():
+    """P4: MODEL_MANIFEST.json contains per model: name, sha256, bytes, source_repo, revision, origin_hint.
+    Face model sha256 matches DEFAULT_FACE_SHA256 constant, origin_hint has URL and licence heads-up.
+    """
+    import json
+    import ml_service.face_match as ml_fm
+    from ml_service.model_fetch import load_manifest, MANIFEST_PATH
+
+    assert MANIFEST_PATH.exists(), f"Manifest file {MANIFEST_PATH} must exist"
+    manifest = load_manifest()
+    assert "w600k_r50.onnx" in manifest, "Manifest must contain w600k_r50.onnx"
+
+    for name, entry in manifest.items():
+        assert "name" in entry and entry["name"] == name
+        assert "sha256" in entry and len(entry["sha256"]) == 64
+        assert "bytes" in entry and isinstance(entry["bytes"], int) and entry["bytes"] > 0
+        assert "source_repo" in entry and entry["source_repo"]
+        assert "revision" in entry and entry["revision"]
+        assert "origin_hint" in entry and isinstance(entry["origin_hint"], str)
+
+    face_entry = manifest["w600k_r50.onnx"]
+    assert face_entry["sha256"].lower() == ml_fm.DEFAULT_FACE_SHA256.lower()
+    assert "maze/faceX" in face_entry["origin_hint"]
+    assert "licence" in face_entry["origin_hint"].lower() or "license" in face_entry["origin_hint"].lower()
+
+
+def test_face_model_provisioning_zero_calls_when_auto_download_off(monkeypatch, tmp_path):
+    """P4: When AUTO_DOWNLOAD_MODELS is off, zero network calls may happen, and missing model yields mode unavailable."""
+    import ml_service.face_match as ml_fm
+    from PIL import Image
+    import io
+
+    # Ensure auto-download is off
+    monkeypatch.delenv("AUTO_DOWNLOAD_MODELS", raising=False)
+    monkeypatch.setenv("FACE_EMBED_MODEL", str(tmp_path / "nonexistent.onnx"))
+
+    # Ensure local models dir in face_match doesn't find w600k_r50.onnx
+    monkeypatch.setattr(
+        ml_fm,
+        "_resolve_face_model_path",
+        lambda: None
+    )
+
+    network_called = []
+
+    def fake_download(*args, **kwargs):
+        network_called.append("hf_hub_download")
+        raise RuntimeError("Network should not be called!")
+
+    import huggingface_hub
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+
+    # Real call to _resolve_face_model_path with monkeypatched env
+    monkeypatch.undo()  # restore real _resolve_face_model_path
+    monkeypatch.setenv("AUTO_DOWNLOAD_MODELS", "false")
+    monkeypatch.setenv("FACE_EMBED_MODEL", str(tmp_path / "nonexistent.onnx"))
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+
+    resolved = ml_fm._resolve_face_model_path()
+    assert resolved is None, "Should not resolve when local files absent and auto_download is false"
+    assert len(network_called) == 0, f"Zero network calls expected when flag is off, got: {network_called}"
+
+    # Missing face model in compare_faces yields unavailable
+    img = Image.new("RGB", (64, 64), color="blue")
+    buf = io.BytesIO(); img.save(buf, format="PNG"); b_img = buf.getvalue()
+    res = ml_fm.compare_faces(b_img, b_img)
+    assert res["mode"] == "unavailable"
+    assert res["decision"] == "INCONCLUSIVE"
+    assert res["match"] is None
+
+
+def test_face_model_provisioning_mismatching_sha_refuses(monkeypatch, tmp_path):
+    """P4: Mismatching SHA refuses to load face model."""
+    import ml_service.face_match as ml_fm
+
+    corrupt_model = tmp_path / "corrupt_model.onnx"
+    corrupt_model.write_bytes(b"corrupt model data with invalid checksum")
+
+    monkeypatch.setenv("FACE_EMBED_MODEL", str(corrupt_model))
+    monkeypatch.setenv("FACE_MODEL_SHA256", ml_fm.DEFAULT_FACE_SHA256)
+    monkeypatch.setenv("AUTO_DOWNLOAD_MODELS", "false")
+
+    resolved = ml_fm._resolve_face_model_path()
+    assert resolved is None, "Model with mismatching SHA must refuse to load"
+
+
+def test_face_model_provisioning_empty_sha_refuses(monkeypatch, tmp_path):
+    """P4: Empty or missing SHA refuses to load; empty override uses manifest value."""
+    import hashlib
+    import ml_service.face_match as ml_fm
+    import ml_service.model_fetch as model_fetch
+
+    fake_model = tmp_path / "fake_model.onnx"
+    fake_bytes = b"real onnx bytes for testing empty sha logic"
+    fake_model.write_bytes(fake_bytes)
+    correct_sha = hashlib.sha256(fake_bytes).hexdigest()
+
+    monkeypatch.setenv("FACE_EMBED_MODEL", str(fake_model))
+    monkeypatch.setenv("AUTO_DOWNLOAD_MODELS", "false")
+
+    # 1. Override is empty string -> uses manifest value.
+    # When manifest has matching SHA, it loads!
+    monkeypatch.setattr(
+        model_fetch,
+        "get_manifest_entry",
+        lambda name: {"name": "w600k_r50.onnx", "sha256": correct_sha}
+    )
+    monkeypatch.setenv("FACE_MODEL_SHA256", "")
+    assert ml_fm._resolve_face_model_path() == str(fake_model)
+
+    # 2. Both env and manifest are empty -> refuses to load!
+    monkeypatch.setattr(
+        model_fetch,
+        "get_manifest_entry",
+        lambda name: {"name": "w600k_r50.onnx", "sha256": ""}
+    )
+    monkeypatch.setattr(ml_fm, "DEFAULT_FACE_SHA256", "")
+    monkeypatch.setenv("FACE_MODEL_SHA256", "")
+    assert ml_fm._resolve_face_model_path() is None, "Empty SHA must refuse to load"
+
+    monkeypatch.setenv("FACE_MODEL_SHA256", "   ")
+    assert ml_fm._resolve_face_model_path() is None, "Whitespace SHA must refuse to load"
+
+
+def test_face_model_provisioning_oversize_refuses(monkeypatch, tmp_path):
+    """P4: Size cap of 1.05 x manifest bytes enforced on any fetch; oversize unlinks and fails."""
+    from ml_service.model_fetch import fetch_models_from_hf
+    import ml_service.model_fetch as model_fetch
+
+    # Manifest with 1000 bytes. Max allowed: 1050 bytes.
+    manifest_stub = {
+        "oversize_model.onnx": {
+            "name": "oversize_model.onnx",
+            "bytes": 1000,
+            "sha256": "dummy_sha",
+        }
+    }
+    monkeypatch.setattr(model_fetch, "load_manifest", lambda *args: manifest_stub)
+    monkeypatch.setattr(model_fetch, "get_manifest_entry", lambda name, *args: manifest_stub.get(name))
+
+    def fake_oversize_download(repo_id, filename, token, local_dir, **kwargs):
+        out_file = Path(local_dir) / filename
+        out_file.write_bytes(b"x" * 1200)  # 1200 bytes > 1050 bytes
+        return str(out_file)
+
+    import huggingface_hub
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_oversize_download)
+
+    res = fetch_models_from_hf(
+        repo_id="test/repo",
+        dest_dir=tmp_path,
+        model_filenames=["oversize_model.onnx"],
+        max_retries=1,
+    )
+
+    assert res.get("oversize_model.onnx") is False, "Oversize download must fail"
+    assert not (tmp_path / "oversize_model.onnx").exists(), "Oversize file must be unlinked"
+
+
+
