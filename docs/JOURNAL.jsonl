@@ -68,3 +68,7 @@
 {"t": "2026-10-12T19:52:12Z", "event": "start", "id": "P12", "attempt": 1}
 {"t": "2026-10-12T20:04:03Z", "event": "resume", "session": 24}
 {"t": "2026-10-12T20:08:34Z", "event": "done", "id": "P12", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k coverage_ci"}
+{"t": "2026-10-12T20:09:11Z", "event": "checkpoint", "note": "P12 complete; next P13 owner isolation script"}
+{"t": "2026-10-12T20:09:16Z", "event": "resume", "session": 25}
+{"t": "2026-10-12T20:09:20Z", "event": "start", "id": "P13", "attempt": 1}
+{"t": "2026-10-12T20:11:30Z", "event": "done", "id": "P13", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q -k owner_script"}

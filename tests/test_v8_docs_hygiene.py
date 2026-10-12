@@ -246,3 +246,46 @@ def test_coverage_ci_thresholds_file_and_check_script():
         success, report = check_coverage(cov_file, thresh_path)
         assert success, f"Coverage check failed:\n{report}"
 
+
+# ---------------------------------------------------------------------------
+# Task P13: Owner Isolation Script
+# ---------------------------------------------------------------------------
+
+
+def test_owner_script_exists_and_safe():
+    """P13: scripts/owner_check_isolation.ps1 exists, lists required names, no raw Write-Host."""
+    script_path = REPO_ROOT / "scripts" / "owner_check_isolation.ps1"
+    assert script_path.exists(), "scripts/owner_check_isolation.ps1 must exist"
+
+    content = script_path.read_text(encoding="utf-8")
+
+    # Required variable names
+    required_names = [
+        "DATABASE_URL",
+        "MASTER_VAULT_KEY",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "ML_SERVICE_SECRET",
+        "ML_SECRET_KEY",
+        "HF_TOKEN",
+    ]
+    for name in required_names:
+        assert name in content, f"owner_check_isolation.ps1 must list variable '{name}'"
+
+    # Must contain no Write-Host of a raw value
+    # Check each Write-Host line: must only output static text or status token
+    import re
+    write_hosts = re.findall(r"Write-Host\s+(.*)", content)
+    for wh in write_hosts:
+        wh_clean = wh.strip()
+        # Disallow printing raw environment values or tokens
+        assert "$prodVal" not in wh_clean, f"Unsafe Write-Host printing prod value: {wh}"
+        assert "$testVal" not in wh_clean, f"Unsafe Write-Host printing test value: {wh}"
+        assert "$cleanVal" not in wh_clean, f"Unsafe Write-Host printing clean value: {wh}"
+        assert "$val" not in wh_clean, f"Unsafe Write-Host printing val: {wh}"
+        assert "$bytes" not in wh_clean, f"Unsafe Write-Host printing bytes: {wh}"
+        assert "$hex" not in wh_clean, f"Unsafe Write-Host printing hex: {wh}"
+
+    # Must clean up temporary files
+    assert "Remove-Item" in content, "owner_check_isolation.ps1 must clean up temporary files with Remove-Item"
+

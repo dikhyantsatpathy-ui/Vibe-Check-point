@@ -80,6 +80,7 @@ scripts/*
 !scripts/render_switch_readiness.py
 !scripts/count_tests.py
 !scripts/check_coverage.py
+!scripts/owner_check_isolation.ps1
 
 # ---- Rollback snapshots (local only, never pushed) ----
 _backup/
