@@ -3,3 +3,7 @@
 {"t": "2026-10-12T07:12:04Z", "event": "resume", "session": 2}
 {"t": "2026-10-12T07:12:24Z", "event": "start", "id": "R1", "attempt": 1}
 {"t": "2026-10-12T07:13:44Z", "event": "done", "id": "R1", "evidence": "verify OK: python scripts/agent_ctl.py selftest"}
+{"t": "2026-10-12T07:14:47Z", "event": "checkpoint", "note": "R1 complete; next R2 test_v8_resume.py"}
+{"t": "2026-10-12T07:14:57Z", "event": "resume", "session": 3}
+{"t": "2026-10-12T07:15:04Z", "event": "start", "id": "R2", "attempt": 1}
+{"t": "2026-10-12T07:16:59Z", "event": "done", "id": "R2", "evidence": "verify OK: python -m pytest tests/test_v8_resume.py -q"}

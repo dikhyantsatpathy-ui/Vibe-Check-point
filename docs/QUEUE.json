@@ -16,10 +16,10 @@
       "phase": "R",
       "title": "Resume-system tests",
       "verify": "python -m pytest tests/test_v8_resume.py -q",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_resume.py -q",
+      "updated": "2026-10-12T07:16:59Z"
     },
     {
       "id": "R3",
