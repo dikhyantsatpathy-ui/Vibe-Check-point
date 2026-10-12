@@ -344,3 +344,68 @@ def test_skills_routing_and_appendix_e():
     unrelated_out = run_router("baking a chocolate cake in an oven")
     assert "NONE" in unrelated_out, f"Unrelated query must return NONE, got: {unrelated_out}"
 
+
+# ---------------------------------------------------------------------------
+# Task T3: Blueprint, Claims, and Queue Parity Hygiene
+# ---------------------------------------------------------------------------
+
+
+def test_blueprint_has_no_unresolved_placeholders():
+    """T3: SIH26188_ENGINEERING_BLUEPRINT.md contains no unresolved {{...}} placeholders."""
+    blueprint_path = REPO_ROOT / "SIH26188_ENGINEERING_BLUEPRINT.md"
+    assert blueprint_path.exists(), "Blueprint must exist"
+    content = blueprint_path.read_text(encoding="utf-8")
+
+    import re
+    placeholders = re.findall(r"\{\{.*?\}\}", content)
+    assert not placeholders, f"Blueprint contains unresolved placeholders: {placeholders}"
+
+
+def test_blueprint_has_required_sections():
+    """T3: Blueprint contains the required sections from Section 6."""
+    blueprint_path = REPO_ROOT / "SIH26188_ENGINEERING_BLUEPRINT.md"
+    assert blueprint_path.exists(), "Blueprint must exist"
+    content = blueprint_path.read_text(encoding="utf-8")
+
+    assert "Known limitations and NOT MEASURED" in content, (
+        "Blueprint must contain section 'Known limitations and NOT MEASURED'"
+    )
+    assert "Resuming work and verifying this document" in content, (
+        "Blueprint must contain section 'Resuming work and verifying this document'"
+    )
+
+
+def test_claims_ledger_has_zero_false():
+    """T3: Claims ledger has 0 FALSE claims."""
+    claims_file = REPO_ROOT / "docs" / "claims" / "claims.json"
+    assert claims_file.exists(), "docs/claims/claims.json must exist"
+
+    with open(claims_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    claims = data if isinstance(data, list) else data.get("claims", [])
+    false_claims = [c for c in claims if c.get("status") == "FALSE"]
+    assert len(false_claims) == 0, f"Found FALSE claims in claims ledger: {false_claims}"
+
+
+def test_work_order_queue_block_parity():
+    """T3: docs/WORK_ORDER_V8.md's queue block parses to the same task IDs as docs/QUEUE.json."""
+    from scripts.agent_ctl import parse_queue_block
+
+    work_order = REPO_ROOT / "docs" / "WORK_ORDER_V8.md"
+    assert work_order.exists(), "docs/WORK_ORDER_V8.md must exist"
+    content = work_order.read_text(encoding="utf-8")
+
+    parsed_tasks = parse_queue_block(content)
+    parsed_ids = [t["id"] for t in parsed_tasks]
+
+    queue_file = REPO_ROOT / "docs" / "QUEUE.json"
+    assert queue_file.exists(), "docs/QUEUE.json must exist"
+    with open(queue_file, "r", encoding="utf-8") as f:
+        queue_data = json.load(f)
+    queue_ids = [t["id"] for t in queue_data.get("tasks", [])]
+
+    assert parsed_ids == queue_ids, (
+        f"Mismatch between WORK_ORDER_V8 queue block and QUEUE.json: {set(parsed_ids) ^ set(queue_ids)}"
+    )
+

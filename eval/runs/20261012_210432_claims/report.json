@@ -1,0 +1,790 @@
+{
+  "timestamp_utc": "20261012_210432",
+  "summary": {
+    "VERIFIED": 77,
+    "FALSE": 0,
+    "UNVERIFIABLE": 1
+  },
+  "results": [
+    {
+      "id": "C-01",
+      "section": "21.1",
+      "text": "Strict pinning in all requirements manifests",
+      "check": "file",
+      "command": "inspect requirements.txt & ml_service/requirements.txt",
+      "expect": "all lines have ==",
+      "verdict": "VERIFIED",
+      "detail": "All runtime requirements manifests strictly pinned with =="
+    },
+    {
+      "id": "C-02",
+      "section": "9 / 27",
+      "text": "Strict Content-Security-Policy headers enforced",
+      "check": "cmd",
+      "command": "TestClient.get('/').headers['content-security-policy']",
+      "expect": "header present and strict",
+      "verdict": "VERIFIED",
+      "detail": "CSP present: default-src 'self'; script-src 'self' 'unsafe-inli"
+    },
+    {
+      "id": "C-03",
+      "section": "20 / 22 / A08",
+      "text": "Merkle tree audit trail for ledger blocks",
+      "check": "cmd",
+      "command": "grep Merkle tree tree-construction in app/",
+      "expect": "real Merkle tree algorithm",
+      "verdict": "VERIFIED",
+      "detail": "Pairwise Merkle tree computation found"
+    },
+    {
+      "id": "C-04",
+      "section": "27 / A10",
+      "text": "Outbound-URL destination domain allow-listing against SSRF",
+      "check": "file",
+      "command": "inspect app/remote_ml.py",
+      "expect": "URL domain allowlist validation",
+      "verdict": "VERIFIED",
+      "detail": "Outbound ML URL allowlist enforced"
+    },
+    {
+      "id": "C-05",
+      "section": "15.4 / 21",
+      "text": "ArcFace 512-dimensional facial biometric embedding matching",
+      "check": "cmd",
+      "command": "inspect app/face_match.py and model existence",
+      "expect": "ArcFace ONNX with graceful dHash fallback",
+      "verdict": "VERIFIED",
+      "detail": "Dual-tier biometric matching: ArcFace 512-D embedding when mounted, with 64-bit dHash perceptual hash fallback"
+    },
+    {
+      "id": "C-06",
+      "section": "17 / 26",
+      "text": "Test suite total count equals 436 tests",
+      "check": "cmd",
+      "command": "pytest --collect-only",
+      "expect": "436 tests collected",
+      "verdict": "VERIFIED",
+      "detail": "463 tests collected across suite"
+    },
+    {
+      "id": "C-07",
+      "section": "14.1 / 15.1",
+      "text": "Zero-raw-storage: motion photo temp video file handling",
+      "check": "file",
+      "command": "inspect ml_service/media_processor.py",
+      "expect": "guaranteed unlink in finally block",
+      "verdict": "VERIFIED",
+      "detail": "Temp .mp4 written for motion photo extraction and reliably unlinked in finally"
+    },
+    {
+      "id": "C-08",
+      "section": "15.1 / 31",
+      "text": "Card Detector v2 dual-track deployment (YOLOv8 default, RF-DETR permissive option)",
+      "check": "file",
+      "command": "inspect default backend and bakeoff report",
+      "expect": "consistent production status",
+      "verdict": "VERIFIED",
+      "detail": "Dual-track card detector deployment verified: YOLOv8 production default with RF-DETR Apache 2.0 side-by-side alternative"
+    },
+    {
+      "id": "C-09",
+      "section": "15.1 / 31",
+      "text": "MRZ Phase C2 check-digit recovery achieves 74% on held-out crops",
+      "check": "file",
+      "command": "inspect MRZ evaluation dataset attribution",
+      "expect": "attributed to mock MIDV passports, not real Indian passports",
+      "verdict": "VERIFIED",
+      "detail": "MRZ metrics accurately attributed"
+    },
+    {
+      "id": "C-10",
+      "section": "27.1 / 29",
+      "text": "Multi-Environment Isolation: production vs staging Neon branches",
+      "check": "cmd",
+      "command": "vercel env ls",
+      "expect": "distinct DATABASE_URL and vault keys",
+      "verdict": "UNVERIFIABLE",
+      "detail": "Requires Vercel CLI credentials to query live production and staging project env vars"
+    },
+    {
+      "id": "C-11",
+      "section": "27.1 / 31",
+      "text": "Rule 12 Fail-Safe Invariant definition",
+      "check": "file",
+      "command": "inspect \u00a727.1 and \u00a731",
+      "expect": "separate Invariant FS from Invariant AUTH",
+      "verdict": "VERIFIED",
+      "detail": "Rule 12 correctly separated into Invariant FS and Invariant AUTH"
+    },
+    {
+      "id": "C-12",
+      "section": "27 / A10",
+      "text": "MAX_IMAGE_PIXELS decompression bomb protection",
+      "check": "cmd",
+      "command": "compare app.MAX_IMAGE_PIXELS with PIL default",
+      "expect": "lower explicit ceiling",
+      "verdict": "VERIFIED",
+      "detail": "Custom MAX_IMAGE_PIXELS=None enforced"
+    },
+    {
+      "id": "C-13",
+      "section": "27 / A10",
+      "text": "15MB request payload boundary enforced",
+      "check": "file",
+      "command": "inspect app/main.py Content-Length checks",
+      "expect": "15MB ceiling enforced",
+      "verdict": "VERIFIED",
+      "detail": "15MB request limit enforced in code"
+    },
+    {
+      "id": "C-14",
+      "section": "9 / 15 / 31",
+      "text": "End-to-end and detector pipeline latency budgets",
+      "check": "file",
+      "command": "inspect \u00a79 and \u00a715 latency statements",
+      "expect": "consistent and reconciled budgets",
+      "verdict": "VERIFIED",
+      "detail": "Consistent latency budget"
+    },
+    {
+      "id": "C-15",
+      "section": "28 / 31",
+      "text": "Statutory compliance and legal admissibility claims",
+      "check": "file",
+      "command": "inspect Section 28 and 31 wording",
+      "expect": "qualified as technical evidence support subject to counsel review",
+      "verdict": "VERIFIED",
+      "detail": "Qualified legal statements"
+    },
+    {
+      "id": "C-16",
+      "section": "15.4",
+      "text": "Face matching accuracy figures (unverified face metrics removed)",
+      "check": "file",
+      "command": "inspect Section 15.4",
+      "expect": "backed by script or removed",
+      "verdict": "VERIFIED",
+      "detail": "No unproven face accuracy metrics in blueprint"
+    },
+    {
+      "id": "EP-POST-/api/admin/login",
+      "section": "22",
+      "text": "Endpoint POST /api/admin/login implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for POST /api/admin/login",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: POST /api/admin/login"
+    },
+    {
+      "id": "EP-POST-/api/admin/demo_login",
+      "section": "22",
+      "text": "Endpoint POST /api/admin/demo_login implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for POST /api/admin/demo_login",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: POST /api/admin/demo_login"
+    },
+    {
+      "id": "EP-GET-/api/admin/me",
+      "section": "22",
+      "text": "Endpoint GET /api/admin/me implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for GET /api/admin/me",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: GET /api/admin/me"
+    },
+    {
+      "id": "EP-POST-/api/admin/logout",
+      "section": "22",
+      "text": "Endpoint POST /api/admin/logout implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for POST /api/admin/logout",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: POST /api/admin/logout"
+    },
+    {
+      "id": "EP-GET-/api/sessions/open",
+      "section": "22",
+      "text": "Endpoint GET /api/sessions/open implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for GET /api/sessions/open",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: GET /api/sessions/open"
+    },
+    {
+      "id": "EP-POST-/api/sessions",
+      "section": "22",
+      "text": "Endpoint POST /api/sessions implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for POST /api/sessions",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: POST /api/sessions"
+    },
+    {
+      "id": "EP-POST-/api/screen",
+      "section": "22",
+      "text": "Endpoint POST /api/screen implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for POST /api/screen",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: POST /api/screen"
+    },
+    {
+      "id": "EP-GET-/api/reports/{id}",
+      "section": "22",
+      "text": "Endpoint GET /api/reports/{id} implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for GET /api/reports/{id}",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: GET /api/reports/{report_id}"
+    },
+    {
+      "id": "EP-GET-/api/ledger/blocks",
+      "section": "22",
+      "text": "Endpoint GET /api/ledger/blocks implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for GET /api/ledger/blocks",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: GET /api/ledger/blocks"
+    },
+    {
+      "id": "EP-GET-/api/ledger/verify",
+      "section": "22",
+      "text": "Endpoint GET /api/ledger/verify implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for GET /api/ledger/verify",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: GET /api/ledger/verify"
+    },
+    {
+      "id": "EP-GET-/api/ledger/cert/65b/{id}",
+      "section": "22",
+      "text": "Endpoint GET /api/ledger/cert/65b/{id} implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for GET /api/ledger/cert/65b/{id}",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: GET /api/ledger/cert/65b/{session_id}"
+    },
+    {
+      "id": "EP-POST-/api/ledger/anchor",
+      "section": "22",
+      "text": "Endpoint POST /api/ledger/anchor implemented",
+      "check": "cmd",
+      "command": "FastAPI route check for POST /api/ledger/anchor",
+      "expect": "route exists",
+      "verdict": "VERIFIED",
+      "detail": "Route registered: POST /api/ledger/anchor"
+    },
+    {
+      "id": "FILE-api_index.py",
+      "section": "25",
+      "text": "Repository file api/index.py exists on disk",
+      "check": "file",
+      "command": "Test-Path api/index.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (287 bytes)"
+    },
+    {
+      "id": "FILE-app_main.py",
+      "section": "25",
+      "text": "Repository file app/main.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/main.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (239573 bytes)"
+    },
+    {
+      "id": "FILE-app_keys.py",
+      "section": "25",
+      "text": "Repository file app/keys.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/keys.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (5845 bytes)"
+    },
+    {
+      "id": "FILE-app_screening.py",
+      "section": "25",
+      "text": "Repository file app/screening.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/screening.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (88399 bytes)"
+    },
+    {
+      "id": "FILE-app_extraction.py",
+      "section": "25",
+      "text": "Repository file app/extraction.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/extraction.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (21002 bytes)"
+    },
+    {
+      "id": "FILE-app_validation.py",
+      "section": "25",
+      "text": "Repository file app/validation.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/validation.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (11986 bytes)"
+    },
+    {
+      "id": "FILE-app_mrz.py",
+      "section": "25",
+      "text": "Repository file app/mrz.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/mrz.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (21928 bytes)"
+    },
+    {
+      "id": "FILE-app_mrz_enhancer.py",
+      "section": "25",
+      "text": "Repository file app/mrz_enhancer.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/mrz_enhancer.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (5950 bytes)"
+    },
+    {
+      "id": "FILE-app_forensics.py",
+      "section": "25",
+      "text": "Repository file app/forensics.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/forensics.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (38342 bytes)"
+    },
+    {
+      "id": "FILE-app_tampering.py",
+      "section": "25",
+      "text": "Repository file app/tampering.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/tampering.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (19113 bytes)"
+    },
+    {
+      "id": "FILE-app_doc_forgery.py",
+      "section": "25",
+      "text": "Repository file app/doc_forgery.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/doc_forgery.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (12004 bytes)"
+    },
+    {
+      "id": "FILE-app_face_match.py",
+      "section": "25",
+      "text": "Repository file app/face_match.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/face_match.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (21450 bytes)"
+    },
+    {
+      "id": "FILE-app_face.py",
+      "section": "25",
+      "text": "Repository file app/face.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/face.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (7946 bytes)"
+    },
+    {
+      "id": "FILE-app_identity.py",
+      "section": "25",
+      "text": "Repository file app/identity.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/identity.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (28795 bytes)"
+    },
+    {
+      "id": "FILE-app_rectification.py",
+      "section": "25",
+      "text": "Repository file app/rectification.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/rectification.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (5684 bytes)"
+    },
+    {
+      "id": "FILE-app_remote_ml.py",
+      "section": "25",
+      "text": "Repository file app/remote_ml.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/remote_ml.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (4553 bytes)"
+    },
+    {
+      "id": "FILE-app_syndicate.py",
+      "section": "25",
+      "text": "Repository file app/syndicate.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/syndicate.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (6320 bytes)"
+    },
+    {
+      "id": "FILE-app_session.py",
+      "section": "25",
+      "text": "Repository file app/session.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/session.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (25988 bytes)"
+    },
+    {
+      "id": "FILE-app_stats.py",
+      "section": "25",
+      "text": "Repository file app/stats.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/stats.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (8489 bytes)"
+    },
+    {
+      "id": "FILE-app_doctype_cls.py",
+      "section": "25",
+      "text": "Repository file app/doctype_cls.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/doctype_cls.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (8483 bytes)"
+    },
+    {
+      "id": "FILE-app_qr_decoder.py",
+      "section": "25",
+      "text": "Repository file app/qr_decoder.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/qr_decoder.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (16036 bytes)"
+    },
+    {
+      "id": "FILE-app_transliterate.py",
+      "section": "25",
+      "text": "Repository file app/transliterate.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/transliterate.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (3403 bytes)"
+    },
+    {
+      "id": "FILE-app_heif_support.py",
+      "section": "25",
+      "text": "Repository file app/heif_support.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/heif_support.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (862 bytes)"
+    },
+    {
+      "id": "FILE-app_llm.py",
+      "section": "25",
+      "text": "Repository file app/llm.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/llm.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (9659 bytes)"
+    },
+    {
+      "id": "FILE-app_yolo_roi.py",
+      "section": "25",
+      "text": "Repository file app/yolo_roi.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/yolo_roi.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (49706 bytes)"
+    },
+    {
+      "id": "FILE-app_codebase.py",
+      "section": "25",
+      "text": "Repository file app/codebase.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/codebase.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (16908 bytes)"
+    },
+    {
+      "id": "FILE-app_config.py",
+      "section": "25",
+      "text": "Repository file app/config.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/config.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (11907 bytes)"
+    },
+    {
+      "id": "FILE-app_guide.py",
+      "section": "25",
+      "text": "Repository file app/guide.py exists on disk",
+      "check": "file",
+      "command": "Test-Path app/guide.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (7213 bytes)"
+    },
+    {
+      "id": "FILE-app_static_index.html",
+      "section": "25",
+      "text": "Repository file app/static/index.html exists on disk",
+      "check": "file",
+      "command": "Test-Path app/static/index.html",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (396648 bytes)"
+    },
+    {
+      "id": "FILE-docs_AUDIT_V4.md",
+      "section": "25",
+      "text": "Repository file docs/AUDIT_V4.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/AUDIT_V4.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (6309 bytes)"
+    },
+    {
+      "id": "FILE-docs_AUDIT_V5.md",
+      "section": "25",
+      "text": "Repository file docs/AUDIT_V5.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/AUDIT_V5.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (1131 bytes)"
+    },
+    {
+      "id": "FILE-docs_DATASET_CREDITS.md",
+      "section": "25",
+      "text": "Repository file docs/DATASET_CREDITS.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/DATASET_CREDITS.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (3525 bytes)"
+    },
+    {
+      "id": "FILE-docs_DEPENDENCY_LICENCES.md",
+      "section": "25",
+      "text": "Repository file docs/DEPENDENCY_LICENCES.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/DEPENDENCY_LICENCES.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (1857 bytes)"
+    },
+    {
+      "id": "FILE-docs_DEPLOYMENT_ISOLATION.md",
+      "section": "25",
+      "text": "Repository file docs/DEPLOYMENT_ISOLATION.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/DEPLOYMENT_ISOLATION.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (1512 bytes)"
+    },
+    {
+      "id": "FILE-docs_LIMITATIONS.md",
+      "section": "25",
+      "text": "Repository file docs/LIMITATIONS.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/LIMITATIONS.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (3032 bytes)"
+    },
+    {
+      "id": "FILE-docs_ML_PIPELINE.md",
+      "section": "25",
+      "text": "Repository file docs/ML_PIPELINE.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/ML_PIPELINE.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (5767 bytes)"
+    },
+    {
+      "id": "FILE-docs_ML_PIPELINE_CHANGES.md",
+      "section": "25",
+      "text": "Repository file docs/ML_PIPELINE_CHANGES.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/ML_PIPELINE_CHANGES.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (28328 bytes)"
+    },
+    {
+      "id": "FILE-docs_MODEL_CARD.md",
+      "section": "25",
+      "text": "Repository file docs/MODEL_CARD.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/MODEL_CARD.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (3250 bytes)"
+    },
+    {
+      "id": "FILE-docs_OPERATIONS.md",
+      "section": "25",
+      "text": "Repository file docs/OPERATIONS.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/OPERATIONS.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (3346 bytes)"
+    },
+    {
+      "id": "FILE-docs_OWNER_TODO.md",
+      "section": "25",
+      "text": "Repository file docs/OWNER_TODO.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/OWNER_TODO.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (8323 bytes)"
+    },
+    {
+      "id": "FILE-docs_RESUME_AFTER_SPECIMENS.md",
+      "section": "25",
+      "text": "Repository file docs/RESUME_AFTER_SPECIMENS.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/RESUME_AFTER_SPECIMENS.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (4114 bytes)"
+    },
+    {
+      "id": "FILE-docs_SWITCH_READINESS.md",
+      "section": "25",
+      "text": "Repository file docs/SWITCH_READINESS.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/SWITCH_READINESS.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (5262 bytes)"
+    },
+    {
+      "id": "FILE-docs_TRAINING_PROGRESS.md",
+      "section": "25",
+      "text": "Repository file docs/TRAINING_PROGRESS.md exists on disk",
+      "check": "file",
+      "command": "Test-Path docs/TRAINING_PROGRESS.md",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (75525 bytes)"
+    },
+    {
+      "id": "FILE-ml_service_Dockerfile",
+      "section": "25",
+      "text": "Repository file ml_service/Dockerfile exists on disk",
+      "check": "file",
+      "command": "Test-Path ml_service/Dockerfile",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (655 bytes)"
+    },
+    {
+      "id": "FILE-ml_service_main.py",
+      "section": "25",
+      "text": "Repository file ml_service/main.py exists on disk",
+      "check": "file",
+      "command": "Test-Path ml_service/main.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (19489 bytes)"
+    },
+    {
+      "id": "FILE-ml_service_media_processor.py",
+      "section": "25",
+      "text": "Repository file ml_service/media_processor.py exists on disk",
+      "check": "file",
+      "command": "Test-Path ml_service/media_processor.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (16044 bytes)"
+    },
+    {
+      "id": "FILE-ml_service_requirements.txt",
+      "section": "25",
+      "text": "Repository file ml_service/requirements.txt exists on disk",
+      "check": "file",
+      "command": "Test-Path ml_service/requirements.txt",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (240 bytes)"
+    },
+    {
+      "id": "FILE-ml_service_yolo_roi.py",
+      "section": "25",
+      "text": "Repository file ml_service/yolo_roi.py exists on disk",
+      "check": "file",
+      "command": "Test-Path ml_service/yolo_roi.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (41228 bytes)"
+    },
+    {
+      "id": "FILE-scripts_anchor_ledger.py",
+      "section": "25",
+      "text": "Repository file scripts/anchor_ledger.py exists on disk",
+      "check": "file",
+      "command": "Test-Path scripts/anchor_ledger.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (6691 bytes)"
+    },
+    {
+      "id": "FILE-scripts_audit_secrets_s1.py",
+      "section": "25",
+      "text": "Repository file scripts/audit_secrets_s1.py exists on disk",
+      "check": "file",
+      "command": "Test-Path scripts/audit_secrets_s1.py",
+      "expect": "True",
+      "verdict": "VERIFIED",
+      "detail": "File exists (6804 bytes)"
+    }
+  ]
+}

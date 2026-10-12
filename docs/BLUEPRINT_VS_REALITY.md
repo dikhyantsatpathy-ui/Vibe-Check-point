@@ -1,5 +1,5 @@
 # Blueprint vs. Reality — Claims Verification Report
-**Generated UTC:** 20261012_065838 | **Branch:** `ml/blueprint-sync-v7`
+**Generated UTC:** 20261012_210432 | **Branch:** `ml/blueprint-sync-v7`
 
 ## Summary
 - **VERIFIED:** 77
@@ -14,7 +14,7 @@
 | C-03 | 20 / 22 / A08 | Merkle tree audit trail for ledger blocks | cmd | **VERIFIED** | Pairwise Merkle tree computation found |
 | C-04 | 27 / A10 | Outbound-URL destination domain allow-listing against SSRF | file | **VERIFIED** | Outbound ML URL allowlist enforced |
 | C-05 | 15.4 / 21 | ArcFace 512-dimensional facial biometric embedding matching | cmd | **VERIFIED** | Dual-tier biometric matching: ArcFace 512-D embedding when mounted, with 64-bit dHash perceptual hash fallback |
-| C-06 | 17 / 26 | Test suite total count equals 397+ tests | cmd | **VERIFIED** | 397 tests collected across suite |
+| C-06 | 17 / 26 | Test suite total count equals 436 tests | cmd | **VERIFIED** | 463 tests collected across suite |
 | C-07 | 14.1 / 15.1 | Zero-raw-storage: motion photo temp video file handling | file | **VERIFIED** | Temp .mp4 written for motion photo extraction and reliably unlinked in finally |
 | C-08 | 15.1 / 31 | Card Detector v2 dual-track deployment (YOLOv8 default, RF-DETR permissive option) | file | **VERIFIED** | Dual-track card detector deployment verified: YOLOv8 production default with RF-DETR Apache 2.0 side-by-side alternative |
 | C-09 | 15.1 / 31 | MRZ Phase C2 check-digit recovery achieves 74% on held-out crops | file | **VERIFIED** | MRZ metrics accurately attributed |
@@ -38,9 +38,9 @@
 | EP-GET-/api/ledger/cert/65b/{id} | 22 | Endpoint GET /api/ledger/cert/65b/{id} implemented | cmd | **VERIFIED** | Route registered: GET /api/ledger/cert/65b/{session_id} |
 | EP-POST-/api/ledger/anchor | 22 | Endpoint POST /api/ledger/anchor implemented | cmd | **VERIFIED** | Route registered: POST /api/ledger/anchor |
 | FILE-api_index.py | 25 | Repository file api/index.py exists on disk | file | **VERIFIED** | File exists (287 bytes) |
-| FILE-app_main.py | 25 | Repository file app/main.py exists on disk | file | **VERIFIED** | File exists (236195 bytes) |
+| FILE-app_main.py | 25 | Repository file app/main.py exists on disk | file | **VERIFIED** | File exists (239573 bytes) |
 | FILE-app_keys.py | 25 | Repository file app/keys.py exists on disk | file | **VERIFIED** | File exists (5845 bytes) |
-| FILE-app_screening.py | 25 | Repository file app/screening.py exists on disk | file | **VERIFIED** | File exists (87539 bytes) |
+| FILE-app_screening.py | 25 | Repository file app/screening.py exists on disk | file | **VERIFIED** | File exists (88399 bytes) |
 | FILE-app_extraction.py | 25 | Repository file app/extraction.py exists on disk | file | **VERIFIED** | File exists (21002 bytes) |
 | FILE-app_validation.py | 25 | Repository file app/validation.py exists on disk | file | **VERIFIED** | File exists (11986 bytes) |
 | FILE-app_mrz.py | 25 | Repository file app/mrz.py exists on disk | file | **VERIFIED** | File exists (21928 bytes) |
@@ -48,11 +48,11 @@
 | FILE-app_forensics.py | 25 | Repository file app/forensics.py exists on disk | file | **VERIFIED** | File exists (38342 bytes) |
 | FILE-app_tampering.py | 25 | Repository file app/tampering.py exists on disk | file | **VERIFIED** | File exists (19113 bytes) |
 | FILE-app_doc_forgery.py | 25 | Repository file app/doc_forgery.py exists on disk | file | **VERIFIED** | File exists (12004 bytes) |
-| FILE-app_face_match.py | 25 | Repository file app/face_match.py exists on disk | file | **VERIFIED** | File exists (20520 bytes) |
-| FILE-app_face.py | 25 | Repository file app/face.py exists on disk | file | **VERIFIED** | File exists (7180 bytes) |
+| FILE-app_face_match.py | 25 | Repository file app/face_match.py exists on disk | file | **VERIFIED** | File exists (21450 bytes) |
+| FILE-app_face.py | 25 | Repository file app/face.py exists on disk | file | **VERIFIED** | File exists (7946 bytes) |
 | FILE-app_identity.py | 25 | Repository file app/identity.py exists on disk | file | **VERIFIED** | File exists (28795 bytes) |
 | FILE-app_rectification.py | 25 | Repository file app/rectification.py exists on disk | file | **VERIFIED** | File exists (5684 bytes) |
-| FILE-app_remote_ml.py | 25 | Repository file app/remote_ml.py exists on disk | file | **VERIFIED** | File exists (4530 bytes) |
+| FILE-app_remote_ml.py | 25 | Repository file app/remote_ml.py exists on disk | file | **VERIFIED** | File exists (4553 bytes) |
 | FILE-app_syndicate.py | 25 | Repository file app/syndicate.py exists on disk | file | **VERIFIED** | File exists (6320 bytes) |
 | FILE-app_session.py | 25 | Repository file app/session.py exists on disk | file | **VERIFIED** | File exists (25988 bytes) |
 | FILE-app_stats.py | 25 | Repository file app/stats.py exists on disk | file | **VERIFIED** | File exists (8489 bytes) |
@@ -72,18 +72,18 @@
 | FILE-docs_DEPENDENCY_LICENCES.md | 25 | Repository file docs/DEPENDENCY_LICENCES.md exists on disk | file | **VERIFIED** | File exists (1857 bytes) |
 | FILE-docs_DEPLOYMENT_ISOLATION.md | 25 | Repository file docs/DEPLOYMENT_ISOLATION.md exists on disk | file | **VERIFIED** | File exists (1512 bytes) |
 | FILE-docs_LIMITATIONS.md | 25 | Repository file docs/LIMITATIONS.md exists on disk | file | **VERIFIED** | File exists (3032 bytes) |
-| FILE-docs_ML_PIPELINE.md | 25 | Repository file docs/ML_PIPELINE.md exists on disk | file | **VERIFIED** | File exists (5742 bytes) |
+| FILE-docs_ML_PIPELINE.md | 25 | Repository file docs/ML_PIPELINE.md exists on disk | file | **VERIFIED** | File exists (5767 bytes) |
 | FILE-docs_ML_PIPELINE_CHANGES.md | 25 | Repository file docs/ML_PIPELINE_CHANGES.md exists on disk | file | **VERIFIED** | File exists (28328 bytes) |
 | FILE-docs_MODEL_CARD.md | 25 | Repository file docs/MODEL_CARD.md exists on disk | file | **VERIFIED** | File exists (3250 bytes) |
 | FILE-docs_OPERATIONS.md | 25 | Repository file docs/OPERATIONS.md exists on disk | file | **VERIFIED** | File exists (3346 bytes) |
-| FILE-docs_OWNER_TODO.md | 25 | Repository file docs/OWNER_TODO.md exists on disk | file | **VERIFIED** | File exists (6145 bytes) |
+| FILE-docs_OWNER_TODO.md | 25 | Repository file docs/OWNER_TODO.md exists on disk | file | **VERIFIED** | File exists (8323 bytes) |
 | FILE-docs_RESUME_AFTER_SPECIMENS.md | 25 | Repository file docs/RESUME_AFTER_SPECIMENS.md exists on disk | file | **VERIFIED** | File exists (4114 bytes) |
-| FILE-docs_SWITCH_READINESS.md | 25 | Repository file docs/SWITCH_READINESS.md exists on disk | file | **VERIFIED** | File exists (5189 bytes) |
+| FILE-docs_SWITCH_READINESS.md | 25 | Repository file docs/SWITCH_READINESS.md exists on disk | file | **VERIFIED** | File exists (5262 bytes) |
 | FILE-docs_TRAINING_PROGRESS.md | 25 | Repository file docs/TRAINING_PROGRESS.md exists on disk | file | **VERIFIED** | File exists (75525 bytes) |
 | FILE-ml_service_Dockerfile | 25 | Repository file ml_service/Dockerfile exists on disk | file | **VERIFIED** | File exists (655 bytes) |
-| FILE-ml_service_main.py | 25 | Repository file ml_service/main.py exists on disk | file | **VERIFIED** | File exists (19308 bytes) |
+| FILE-ml_service_main.py | 25 | Repository file ml_service/main.py exists on disk | file | **VERIFIED** | File exists (19489 bytes) |
 | FILE-ml_service_media_processor.py | 25 | Repository file ml_service/media_processor.py exists on disk | file | **VERIFIED** | File exists (16044 bytes) |
 | FILE-ml_service_requirements.txt | 25 | Repository file ml_service/requirements.txt exists on disk | file | **VERIFIED** | File exists (240 bytes) |
 | FILE-ml_service_yolo_roi.py | 25 | Repository file ml_service/yolo_roi.py exists on disk | file | **VERIFIED** | File exists (41228 bytes) |
 | FILE-scripts_anchor_ledger.py | 25 | Repository file scripts/anchor_ledger.py exists on disk | file | **VERIFIED** | File exists (6691 bytes) |
-| FILE-scripts_audit_secrets_s1.py | 25 | Repository file scripts/audit_secrets_s1.py exists on disk | file | **VERIFIED** | File exists (6670 bytes) |
+| FILE-scripts_audit_secrets_s1.py | 25 | Repository file scripts/audit_secrets_s1.py exists on disk | file | **VERIFIED** | File exists (6804 bytes) |

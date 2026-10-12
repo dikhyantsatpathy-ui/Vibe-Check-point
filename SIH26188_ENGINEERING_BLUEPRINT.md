@@ -1156,3 +1156,24 @@ The Smart India Hackathon jury demonstration follows a deterministic 8-step oper
 6. **Verhoeff, J. (1969):** *Error Detecting Decimal Codes*, Mathematical Centre Tract 29, Mathematisch Centrum Amsterdam.
 7. **NIST Special Publication 800-218:** *Secure Software Development Framework (SSDF) Version 1.1*, National Institute of Standards and Technology.
 8. **Indo-Nepal Treaty of Peace and Friendship (1950):** Bilateral framework governing trans-border travel and residence.
+
+---
+
+## 33. Known limitations and NOT MEASURED
+
+- **Real Indian-card accuracy:** Evaluated on mock datasets and synthetic specimens; true field accuracy on physical laminated/worn Indian identity cards across field lighting conditions is NOT MEASURED on real operational cohorts.
+- **Real forgeries:** System detects known digital tampering vectors (JPEG ELA anomalies, spectral PAPR, AI generation signatures); performance against professional physical counterfeiters (offset print micro-text, specialized optical variable ink) is NOT MEASURED.
+- **Real screen replays:** Replay heuristics detect moiré and LCD color banding on high-resolution re-photographed displays; low-frequency replay attacks remain an active threat requiring officer ocular verification.
+- **Field detection for PAN/voter/DL/Nagarikta/Bhutanese:** Handled via deterministic bounding heuristics and OCR parsing rules rather than unified trained anchor models.
+- **Face-matching accuracy (proxy only):** Evaluated via non-identity proxy metrics (embedding norm, self-similarity, perturbation robustness); production dataset accuracy is UNMEASURED without ground-truth identity pair benchmarks.
+- **MIDV mock-document limits:** MIDV-500/2019 samples represent printed paper mocks and do not simulate polycarbonate security layers or UV watermark responses.
+- **Legal admissibility:** Technical evidence packages and Section 65B hash chains are produced to aid evidence compilation, but admissibility under BSA 2023 requires competent legal counsel and certificate authority sign-off; the system does not decide admissibility.
+
+---
+
+## 34. Resuming work and verifying this document
+
+- State and execution progression are tracked in `docs/QUEUE.json`, `docs/AGENT_STATE.json`, and `docs/JOURNAL.jsonl`.
+- Resuming sessions is performed via `python scripts/agent_ctl.py resume`.
+- Operational instructions are anchored in `AGENTS.md` and `GEMINI.md`.
+- Blueprint generation and metric validation are managed via `scripts/render_blueprint.py` and `scripts/verify_blueprint_claims.py`.
