@@ -30,8 +30,23 @@ import os
 
 _DHASH_SAME = 8
 _DHASH_DIFF = 20
-_EMB_SAME = 0.60
-_EMB_DIFF = 0.40
+
+try:
+    from ml_service.face_policy import (
+        BASE_SAME as _EMB_SAME,
+        DIFF as _EMB_DIFF,
+        AGED_PHOTO_YEARS,
+        effective_threshold,
+        resolve_policy_thresholds,
+    )
+except ImportError:
+    from face_policy import (
+        BASE_SAME as _EMB_SAME,
+        DIFF as _EMB_DIFF,
+        AGED_PHOTO_YEARS,
+        effective_threshold,
+        resolve_policy_thresholds,
+    )
 
 _embed_session = None
 _embed_failed: str | None = None  # stores the model path that last failed, or None
@@ -189,29 +204,6 @@ def _embed_image(image):
         return None
 
 
-def get_age_aware_threshold(
-    issue_year: int | None = None,
-    doc_age_years: float | None = None,
-    screening_year: int = 2026,
-    base_threshold: float = 0.65,
-    min_threshold: float = 0.50,
-) -> float:
-    """Age-aware adaptive verification thresholding (SIH26188 Phase A / Module 4).
-    
-    Dynamically adjusts the ArcFace match threshold to prevent false rejections
-    for older valid documents (e.g. 10-year passports) while maintaining a strict floor.
-    """
-    delta_age = 0.0
-    if doc_age_years is not None and doc_age_years > 0:
-        delta_age = float(doc_age_years)
-    elif issue_year is not None:
-        delta_age = max(0.0, float(screening_year - issue_year))
-    else:
-        return base_threshold
-
-    discount = min(delta_age * 0.015, 0.15)
-    return round(max(min_threshold, base_threshold - discount), 3)
-
 
 def evaluate_liveness_frames(frames: list[dict], challenge: str) -> dict:
     """Evaluates multi-frame biometric stream for challenge fulfillment.
@@ -319,20 +311,16 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
             },
         }
 
-    # Age-aware adaptive threshold scaling:
-    # A 5-10 year old passport photo exhibits natural physiological aging.
-    # We adaptively relax the threshold slightly while guarding against spoofing.
-    emb_same_threshold = float(emb_same) if emb_same is not None else _EMB_SAME
-    age_note = ""
-    is_age_adjusted = emb_same is not None
-    if doc_age_years is not None and doc_age_years > 4.0:
-        relax = min(0.12, (doc_age_years - 4.0) * 0.015)
-        if emb_same is None:
-            emb_same_threshold = max(0.48, _EMB_SAME - relax)
+    if emb_same is not None:
+        emb_same_threshold = float(emb_same)
         is_age_adjusted = True
-        age_note = f" (age-adapted threshold: {emb_same_threshold:.2f} for ~{int(round(doc_age_years))}y old document portrait)"
-    elif emb_same is not None and emb_same != _EMB_SAME:
-        age_note = f" (adapted threshold: {emb_same_threshold:.2f})"
+    else:
+        emb_same_threshold = effective_threshold(doc_age_years)
+        is_age_adjusted = bool(doc_age_years is not None and doc_age_years >= AGED_PHOTO_YEARS)
+
+    age_note = ""
+    if is_age_adjusted:
+        age_note = f" (age-adapted threshold: {emb_same_threshold:.2f} for older document portrait)"
 
     emb_a, emb_b = _embed_image(qr_img), _embed_image(sl_img)
     if emb_a is not None and emb_b is not None:
@@ -361,11 +349,6 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
         }
 
     dhash_same_threshold = _DHASH_SAME
-    if doc_age_years is not None and doc_age_years > 4.0:
-        dhash_relax = min(4, int((doc_age_years - 4.0) * 0.5))
-        dhash_same_threshold = min(12, _DHASH_SAME + dhash_relax)
-        is_age_adjusted = True
-        age_note = f" (age-adapted threshold: <= {dhash_same_threshold} for ~{int(round(doc_age_years))}y old portrait)"
 
     ha, hb = dhash(qr_img), dhash(sl_img)
     if ha is None or hb is None:

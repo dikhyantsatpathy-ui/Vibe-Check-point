@@ -36,10 +36,10 @@
       "phase": "P",
       "title": "Single face-threshold policy",
       "verify": "python -m pytest tests/test_v8_face_policy.py -q -k policy",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python -m pytest tests/test_v8_face_policy.py -q -k policy",
+      "updated": "2026-10-12T16:06:14Z"
     },
     {
       "id": "P2",

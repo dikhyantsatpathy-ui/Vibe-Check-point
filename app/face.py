@@ -51,11 +51,15 @@ def face_verification(document_bytes: bytes | None = None,
         return result
 
     # Age-drift compensation: react to an aged document photo BEFORE matching.
-    emb_same = None
+    try:
+        from app.face_policy import effective_threshold, AGED_PHOTO_YEARS
+    except ImportError:
+        from face_policy import effective_threshold, AGED_PHOTO_YEARS
+
     photo_age = _photo_age_years(dob, issue_date)
     signals = []
-    if photo_age is not None and photo_age > 5.0:
-        emb_same = 0.52  # baseline 0.60 -> compensated threshold
+    emb_same = effective_threshold(photo_age)
+    if photo_age is not None and photo_age >= AGED_PHOTO_YEARS:
         signals.append("Age Drift Compensation Active")
     result["signals"] = signals
 

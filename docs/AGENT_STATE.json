@@ -82,14 +82,14 @@
   "findings_open": [
     "S1-01"
   ],
-  "last_commit": "07d4def",
+  "last_commit": "6d9543f",
   "last_evidence": "Phase R completed (Full release test suite passed 133/133; release_readiness_r.json generated with READY_FOR_RELEASE; FINAL_REPORT_DRAFT.md completed across all phases 0..R)",
   "notes": "Work Order v7 fully executed to completion across Phase 0 through Phase R. Ready for merge to main.",
-  "session": 6,
-  "resumed_at": "2026-10-12T07:18:06Z",
-  "current_task": "R3",
-  "updated": "2026-10-12T07:17:42Z",
-  "last_checkpoint": "R2 complete; next R3 Windows process tracking check",
-  "checkpoint_at": "2026-10-12T07:17:26Z",
+  "session": 8,
+  "resumed_at": "2026-10-12T16:05:38Z",
+  "current_task": "P1",
+  "updated": "2026-10-12T07:19:56Z",
+  "last_checkpoint": "Phase R complete (R1, R2, R3); next Phase P (P1 CSP hardening)",
+  "checkpoint_at": "2026-10-12T07:18:43Z",
   "branch": "ml/patch-v8"
 }
