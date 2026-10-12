@@ -100,3 +100,7 @@
 {"t": "2026-10-12T21:04:05Z", "event": "resume", "session": 32}
 {"t": "2026-10-12T21:04:10Z", "event": "start", "id": "T3", "attempt": 1}
 {"t": "2026-10-12T21:06:20Z", "event": "done", "id": "T3", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q"}
+{"t": "2026-10-12T21:06:43Z", "event": "checkpoint", "note": "T3 complete; next T4 full suite three times"}
+{"t": "2026-10-12T21:06:48Z", "event": "resume", "session": 33}
+{"t": "2026-10-12T21:06:54Z", "event": "start", "id": "T4", "attempt": 1}
+{"t": "2026-10-12T21:59:51Z", "event": "done", "id": "T4", "evidence": "eval/runs/20261012_210727_suite/result.json passed: runs=3, passed=3, failed=0, durations=[1037.999, 1039.824, 1034.873]"}

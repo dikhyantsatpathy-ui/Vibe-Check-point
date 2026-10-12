@@ -236,10 +236,10 @@
       "phase": "T",
       "title": "Full suite three times",
       "verify": "python scripts/run_suite_n.py 3",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "eval/runs/20261012_210727_suite/result.json passed: runs=3, passed=3, failed=0, durations=[1037.999, 1039.824, 1034.873]",
+      "updated": "2026-10-12T21:59:51Z"
     },
     {
       "id": "T5",
