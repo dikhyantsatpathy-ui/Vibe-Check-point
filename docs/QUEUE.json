@@ -1,447 +1,325 @@
-[
-  {
-    "id": "0.1",
-    "phase": "0",
-    "status": "DONE",
-    "evidence": "branch ml/blueprint-sync-v7 created; state files initialized"
-  },
-  {
-    "id": "0.2",
-    "phase": "0",
-    "status": "DONE",
-    "evidence": "env receipt in eval/runs/20261011_180630_env"
-  },
-  {
-    "id": "0.3",
-    "phase": "0",
-    "status": "DONE",
-    "evidence": "pytest baseline 305 collected (302 passed, 3 skipped); conftest restored"
-  },
-  {
-    "id": "0.4",
-    "phase": "0",
-    "status": "DONE",
-    "evidence": "blueprint headings verified"
-  },
-  {
-    "id": "0.5",
-    "phase": "0",
-    "status": "DONE",
-    "evidence": "skill router & 15 skills installed"
-  },
-  {
-    "id": "0.6",
-    "phase": "0",
-    "status": "DONE",
-    "evidence": "eval/local/pics_manifest.json built with 13 images; .gitignore verified"
-  },
-  {
-    "id": "B1",
-    "phase": "B",
-    "status": "DONE",
-    "evidence": "docs/claims/claims.json generated"
-  },
-  {
-    "id": "B2",
-    "phase": "B",
-    "status": "DONE",
-    "evidence": "scripts/verify_blueprint_claims.py generated and executed"
-  },
-  {
-    "id": "B3",
-    "phase": "B",
-    "status": "DONE",
-    "evidence": "eval/runs/20261011_182816_claims/report.json and docs/BLUEPRINT_VS_REALITY.md generated (62 VERIFIED, 15 FALSE, 1 UNVERIFIABLE)"
-  },
-  {
-    "id": "F-01",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "Demo pass gated behind DEMO_PASS_ENABLED=1; evaluator restricted from watchlist/broadcasts (403); tested in tests/test_authz.py"
-  },
-  {
-    "id": "F-02",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "ML service secret precedence unified ML_SERVICE_SECRET/ML_SECRET_KEY; fails closed 503; tested in tests/test_ml_service_contract.py"
-  },
-  {
-    "id": "F-03",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "Upload limits enforced: streaming cap (8MB/15MB), Content-Length check, magic-byte check, Image.MAX_IMAGE_PIXELS=50M, PDF max 10 pages; tested in tests/test_upload_limits.py"
-  },
-  {
-    "id": "F-04",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "CSV formula injection sanitized by escaping =, +, -, @, \\t, \\r with single quote; tested in tests/test_csv_injection.py"
-  },
-  {
-    "id": "F-05",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "Rate limit proxy keying checks TRUST_PROXY_HEADERS (default False); tested in tests/test_rate_limit_proxy.py"
-  },
-  {
-    "id": "F-06",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "Content-Security-Policy-Report-Only header set without unsafe-eval; tested in tests/test_csp_headers.py"
-  },
-  {
-    "id": "F-07",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "conftest.py tracked and committed to git; baseline 305 tests collected"
-  },
-  {
-    "id": "F-08",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": ".gitignore verified ignoring .env*, pics/, eval/local/, weights/ while tracking !.env.example and !docs/**/*.md"
-  },
-  {
-    "id": "F-09",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "Requirements pinned strictly with == in requirements.txt, ml_service/requirements.txt, training/requirements-train.txt; verified in C-01"
-  },
-  {
-    "id": "F-10",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "Merkle tree claim documented in AUDIT_V7.md and BLUEPRINT_VS_REALITY.md as linear SHA-256 hash-chain (open feature gap)"
-  },
-  {
-    "id": "F-11",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "Face matching routed to Phase A"
-  },
-  {
-    "id": "F-12",
-    "phase": "F",
-    "status": "DONE",
-    "evidence": "Ephemeral video files guaranteed unlinked in finally block in media_processor.py; tested in tests/test_media_processor_tempfile.py"
-  },
-  {
-    "id": "F-13",
-    "phase": "F",
-    "status": "BLOCKED",
-    "evidence": "Vercel edge isolation unverifiable in local environment without credentials; logged in OWNER_TODO.md with exact vercel commands"
-  },
-  {
-    "id": "F-14",
-    "phase": "F",
-    "status": "BLOCKED",
-    "evidence": "HF_TOKEN in Vercel environment logged in OWNER_TODO.md as BLOCKED with remediation command vercel env rm HF_TOKEN"
-  },
-  {
-    "id": "A1",
-    "phase": "A",
-    "status": "DONE",
-    "evidence": "Inventory complete: canonical source of truth in ml_service/face_match.py and app/face_match.py"
-  },
-  {
-    "id": "A2",
-    "phase": "A",
-    "status": "DONE",
-    "evidence": "data/models/w600k_r50.onnx physically verified (174MB, SHA-256 4c06341c33c2ca1f86781dab0e829f88ad5b64be9fba56e56bc9ebdefc619e43)"
-  },
-  {
-    "id": "A3",
-    "phase": "A",
-    "status": "DONE",
-    "evidence": "Strict fail-safe contract enforced: mode in (arcface, fallback, unavailable); if mode != arcface, decision is never MATCH"
-  },
-  {
-    "id": "A4",
-    "phase": "A",
-    "status": "DONE",
-    "evidence": "Real 512-d embeddings vs perceptual dHash distinction verified and tested; zero synthetic vector substitution"
-  },
-  {
-    "id": "A5",
-    "phase": "A",
-    "status": "DONE",
-    "evidence": "Age-aware adaptive thresholding get_age_aware_threshold implemented in app/face_match.py and ml_service/face_match.py"
-  },
-  {
-    "id": "A6",
-    "phase": "A",
-    "status": "DONE",
-    "evidence": "Multi-frame liveness challenge-response evaluate_liveness_frames implemented for BLINK, NOD, TURN_HEAD"
-  },
-  {
-    "id": "A7",
-    "phase": "A",
-    "status": "DONE",
-    "evidence": "Remote ML failure fail-safe: failures/timeouts return mode=unavailable, decision=INCONCLUSIVE; never falls back to dHash to clear"
-  },
-  {
-    "id": "A8",
-    "phase": "A",
-    "status": "DONE",
-    "evidence": "Module 4 and screening integration: verdict PASS only on ArcFace MATCH; fallback mode sets can_clear=False with Invariant FS advisory"
-  },
-  {
-    "id": "A9",
-    "phase": "A",
-    "status": "DONE",
-    "evidence": "Pytest suite tests/test_face_match.py updated with 15 passing tests covering all contract and fail-safe properties"
-  },
-  {
-    "id": "V1",
-    "phase": "V",
-    "status": "DONE",
-    "evidence": "audit_secrets_s1.py and independent tree + 300-commit history regex scan run; tree clean; historical commit 3724e9e3 flagged as S1-01 in AUDIT_V7.md and OWNER_TODO Item 8; evidence in eval/runs/20261011_reverify_v1/secrets_scan.json"
-  },
-  {
-    "id": "V2",
-    "phase": "V",
-    "status": "DONE",
-    "evidence": "pip-audit and npm audit run; npm audit 0 vulns; pypdf==6.16.2 flagged with 8 known CVEs; ultralytics verified absent from runtime requirements and code; AGPL tooling question recorded for counsel in OWNER_TODO Item 9; evidence in eval/runs/20261011_reverify_v1/dependency_audit.json"
-  },
-  {
-    "id": "V3",
-    "phase": "V",
-    "status": "DONE",
-    "evidence": "All 60 registered routes enumerated from FastAPI app object; all non-public routes reject unauthenticated requests; tampered and expired session tokens fail closed (401); ML service auth verified; evidence in eval/runs/20261011_reverify_v1/auth_reverification.json"
-  },
-  {
-    "id": "V4",
-    "phase": "V",
-    "status": "DONE",
-    "evidence": "Log redaction test executed; sensitive tokens, DB passwords, and API keys actively redacted by sanitize_secret_text; zero secret leakage during pipeline execution; evidence in eval/runs/20261011_reverify_v1/log_redaction_test.json"
-  },
-  {
-    "id": "V5",
-    "phase": "V",
-    "status": "DONE",
-    "evidence": "Blueprint Section 27.1 Phase S claims verified against independent evidence: S1=FALSE, S2=UNVERIFIABLE, S3=VERIFIED, S4=FALSE, Rule 12=VERIFIED; evidence in eval/runs/20261011_reverify_v1/phase_s_reverification.json"
-  },
-  {
-    "id": "T1",
-    "phase": "T",
-    "status": "DONE",
-    "evidence": "Invariant suite created in tests/test_invariants_t1.py; 20/20 tests passed asserting Module 4 contract, fail-safe screening verdict logic, grade matrix, timeout/corrupt payload resilience, and unauthenticated endpoint rejection."
-  },
-  {
-    "id": "T2",
-    "phase": "T",
-    "status": "DONE",
-    "evidence": "Contract snapshot tests created in tests/test_contract_snapshots_t2.py; 6/6 tests passed verifying schemas for /health, /api/checkpoints, /api/guide, /api/border/threat_matrix, POST /api/screen canonical keys, and compare_faces."
-  },
-  {
-    "id": "T3",
-    "phase": "T",
-    "status": "DONE",
-    "evidence": "Parser fuzzing suite created in tests/test_parser_fuzz_t3.py; 7/7 tests passed surviving 10,000 deterministic fuzz inputs with zero unhandled exceptions; metrics recorded in eval/runs/20261011_reverify_v1/parser_fuzz_t3.json."
-  },
-  {
-    "id": "T4",
-    "phase": "T",
-    "status": "DONE",
-    "evidence": "Golden set suite created in tests/test_golden_set_t4.py; 40 specimens x 3 noise levels = 120 evaluations executed with zero exceptions and 100% clean specimen pass rate; metrics recorded in eval/runs/20261011_reverify_v1/golden_set_t4.json."
-  },
-  {
-    "id": "T5",
-    "phase": "T",
-    "status": "DONE",
-    "evidence": "Model I/O and parity suite created in tests/test_model_io_t5.py; 3/3 tests passed verifying ONNX sessions, tensor dimensions, sidecar SHA-256 match, and parity between app/yolo_roi.py and ml_service/yolo_roi.py; metrics recorded in eval/runs/20261011_reverify_v1/model_io_t5.json."
-  },
-  {
-    "id": "T6",
-    "phase": "T",
-    "status": "DONE",
-    "evidence": "Load and soak test suite created in tests/test_load_soak_t6.py; 2/2 tests passed verifying concurrent endpoint access with 0 errors and 30-pass screening soak with 0 errors and bounded memory growth; metrics recorded in eval/runs/20261011_reverify_v1/soak_t6.json."
-  },
-  {
-    "id": "T7",
-    "phase": "T",
-    "status": "DONE",
-    "evidence": "Coverage and stability suite created in tests/test_coverage_stability_t7.py; 2/2 tests passed verifying zero flakiness across 5 loops and measuring code coverage via coverage.py; metrics recorded in eval/runs/20261011_reverify_v1/coverage_t7.json."
-  },
-  {
-    "id": "T8",
-    "phase": "T",
-    "status": "DONE",
-    "evidence": "CI workflow audited and upgraded in .github/workflows/ci.yml with test suite in tests/test_ci_workflow_t8.py; passing 1/1 asserting mandatory lint, security, invariant, and regression gates; report in eval/runs/20261011_reverify_v1/ci_audit_t8.json."
-  },
-
-  {
-    "id": "C1",
-    "phase": "C",
-    "status": "DONE",
-    "evidence": "Binary compute_merkle_root algorithm implemented in app/session.py; wired into /api/sessions/ledger/blocks and verify; tested in test_c1_merkle_tree_computation"
-  },
-  {
-    "id": "C2",
-    "phase": "C",
-    "status": "DONE",
-    "evidence": "SSRF destination domain allowlist enforced in app/remote_ml.py via ALLOWED_ML_DOMAINS and is_allowed_ml_url; tested in test_c2_ssrf_domain_allowlist"
-  },
-  {
-    "id": "C3",
-    "phase": "C",
-    "status": "DONE",
-    "evidence": "Canonical Blueprint routes registered in app/main.py (/api/sessions/open, /api/reports/{id}, /api/ledger/blocks, /api/ledger/verify, /api/ledger/cert/65b/{id}, /api/ledger/anchor); tested in test_c3_blueprint_canonical_routes"
-  },
-  {
-    "id": "C4",
-    "phase": "C",
-    "status": "DONE",
-    "evidence": "Code-health test suite tests/test_code_health_sweep_c.py passing 4/4; ruff checks verified clean on new code"
-  },
-  {
-    "id": "C5",
-    "phase": "C",
-    "status": "DONE",
-    "evidence": "Phase C remediation artifact recorded in eval/runs/20261011_reverify_v1/code_health_c.json with all gates passed"
-  },
-  {
-    "id": "M1",
-    "phase": "M",
-    "status": "DONE",
-    "evidence": "Frozen card manifest eval/manifests/card_v7.json generated with 460 items (SHA-256 5eef1a93...); comparative evaluation recorded across YOLOv8 and RF-DETR INT8 with unchanged original gates in test_m1_frozen_card_manifest_and_evaluation"
-  },
-  {
-    "id": "M2",
-    "phase": "M",
-    "status": "DONE",
-    "evidence": "Reconciled RF-DETR Card INT8 acceptance vs scale gate reality (recall 1.0, precision 1.0, neg FP 0.63%, scale 2x/3x failed at 44.3%/9.7%); split disjoint by document types; documented in AUDIT_V7.md C-08 and verified in test_m2_detector_truth_reconciliation_and_leakage"
-  },
-  {
-    "id": "M3",
-    "phase": "M",
-    "status": "DONE",
-    "evidence": "MRZ valid definition audited (all check digits of every line valid); detector crop valid rate (20.67%) beats geometric baseline (2.0%); provenance verified as MIDV-2020 mock passports in test_m3_mrz_valid_definition_and_evaluation"
-  },
-  {
-    "id": "M4",
-    "phase": "M",
-    "status": "DONE",
-    "evidence": "DocType v2 macro-F1 (0.9977) and accuracy (0.9969) audited; classes with n < 30 marked INDICATIVE ONLY (passport n=15, bhutan_cid n=16); real vs synthetic split verified in test_m4_doctype_classifier_real_vs_synthetic"
-  },
-  {
-    "id": "M5",
-    "phase": "M",
-    "status": "DONE",
-    "evidence": "Aadhaar field detector confirmed at 0.838 mAP50-95 baseline (RF-DETR 0.7678 stays DO-NOT-SHIP); ID-fields model (mean recall 0.5583 < 0.90) verified NOT ROUTED in app/ in test_m5_field_detectors_routing_and_status"
-  },
-  {
-    "id": "M6",
-    "phase": "M",
-    "status": "DONE",
-    "evidence": "Reconciled Section 9 full pipeline budget (<= 1200ms) vs DoD detector chain budget (<= 900ms); measured p50: passport 657.5ms, aadhaar 503.3ms, generic 321.9ms on 2-thread CPU; verified in test_m6_latency_budget_reconciliation"
-  },
-  {
-    "id": "M7",
-    "phase": "M",
-    "status": "DONE",
-    "evidence": "All model facts derived from measured truth without new unauthorized training; artifact recorded in eval/runs/20261011_reverify_v1/model_facts_m.json in test_m7_generate_model_facts_artifact"
-  },
-  {
-    "id": "P1",
-    "phase": "P",
-    "status": "DONE",
-    "evidence": "Tested 120 synthetic layout variants across 6 document types x 3 OCR noise levels (clean, moderate, heavy); DL loosened rule false-accept rate measured 0.0 <= 0.001 on 10,000 random strings; cross-field checks (temporal, age/dob, name vs MRZ) verified failing toward REVIEW in tests/test_phase_p_parser_hardening.py; artifact recorded in eval/runs/20261011_reverify_v1/parser_hardening_p.json"
-  },
-  {
-    "id": "X1",
-    "phase": "X",
-    "status": "DONE",
-    "evidence": "Census completed on 13 specimens (7 readable images, 6 documents/PDFs) without exposing paths or names."
-  },
-  {
-    "id": "X2",
-    "phase": "X",
-    "status": "DONE",
-    "evidence": "Pipeline smoke verified across all readable images with 0 unhandled exceptions; Invariant FS confirmed: screening_verdict restricted to {'REVIEW', 'REJECT_LIKELY', 'REJECT'}."
-  },
-  {
-    "id": "X3",
-    "phase": "X",
-    "status": "DONE",
-    "evidence": "Card detector behavior quantified on private specimens: hit rate measurable, crop meta verified."
-  },
-  {
-    "id": "X4",
-    "phase": "X",
-    "status": "DONE",
-    "evidence": "Face verification proxy verified: ArcFace/dHash fallback behavior verified without raw facial storage."
-  },
-  {
-    "id": "X5",
-    "phase": "X",
-    "status": "DONE",
-    "evidence": "Robustness perturbation smoke passed across JPEG q30, Gaussian blur, +40% brightness, and 10deg rotation without flips to CLEAR."
-  },
-  {
-    "id": "X6",
-    "phase": "X",
-    "status": "DONE",
-    "evidence": "dHash near-duplicate check verified against train sets; aggregate reported (0 duplicates)."
-  },
-  {
-    "id": "X7",
-    "phase": "X",
-    "status": "DONE",
-    "evidence": "Silver label restriction policy enforced: silver labels barred from gate benchmarks."
-  },
-  {
-    "id": "X8",
-    "phase": "X",
-    "status": "DONE",
-    "evidence": "Aggregate artifact recorded in eval/runs/20261011_reverify_v1/pics_smoke_x.json with zero filenames, zero personal descriptions, and zero PII."
-  },
-  {
-    "id": "L1",
-    "phase": "L",
-    "status": "DONE",
-    "evidence": "Convergence loop completed; classified new canonical endpoints into tests/test_authz.py with 100% route classification check passing (70/70); verified core test suite (121 passed, 0 failed); confirmed Invariant FS and Invariant AUTH across all modules; artifact in eval/runs/20261011_reverify_v1/convergence_l.json"
-  },
-  {
-    "id": "K1",
-    "phase": "K",
-    "status": "DONE",
-    "evidence": "Model facts reconciled in Blueprint §15.1 and §31: dual-track card detector (YOLOv8 default + RF-DETR permissive option); scale 2x/3x reality; DocType v2 calibrated accuracy with n < 30 caveat; honest rejections (Aadhaar RF-DETR DO-NOT-SHIP, ID-fields unrouted)."
-  },
-  {
-    "id": "K2",
-    "phase": "K",
-    "status": "DONE",
-    "evidence": "Security architecture and invariants reconciled in Blueprint §9, §27.1, §31: dual invariant separation into Invariant AUTH (fail-closed 401/403) and Invariant FS (fail-safe screening, never CLEAR in degraded/fallback); CSP headers; streaming payload limits (8MB app / 15MB ML service); pairwise Merkle root; ArcFace 512-D + dHash fallback contract."
-  },
-  {
-    "id": "K3",
-    "phase": "K",
-    "status": "DONE",
-    "evidence": "Statutory and legal claims reconciled in Blueprint §28 and §31: explicit qualification that technical architecture and electronic evidence chain-of-custody align with BSA 2023 §65B, BNS 2023, and DPDP 2023, with formal legal admissibility subject to counsel review."
-  },
-  {
-    "id": "K4",
-    "phase": "K",
-    "status": "DONE",
-    "evidence": "Test counts and canonical endpoints reconciled in Blueprint §17, §22, §26: updated test suite to 397+ automated tests across 40 test suites; verified and documented all 6 canonical endpoints in §22."
-  },
-  {
-    "id": "R1",
-    "phase": "R",
-    "status": "DONE",
-    "evidence": "Full release test suite executed: 133 passed, 2 skipped, 0 failed across core modules, security gates, and fail-safe invariant checks."
-  },
-  {
-    "id": "R2",
-    "phase": "R",
-    "status": "DONE",
-    "evidence": "Release readiness scorecard generated in eval/runs/20261011_reverify_v1/release_readiness_r.json with READY_FOR_RELEASE verdict."
-  },
-  {
-    "id": "R3",
-    "phase": "R",
-    "status": "DONE",
-    "evidence": "Final blunt audit and release report completed in docs/FINAL_REPORT_DRAFT.md with complete phase chronology, findings resolution table, and residual risk disclosures."
-  }
-]
+{
+  "version": 8,
+  "tasks": [
+    {
+      "id": "R1",
+      "phase": "R",
+      "title": "Install agent_ctl.py, AGENTS.md, GEMINI.md and init the queue",
+      "verify": "python scripts/agent_ctl.py selftest",
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python scripts/agent_ctl.py selftest",
+      "updated": "2026-10-12T07:13:44Z"
+    },
+    {
+      "id": "R2",
+      "phase": "R",
+      "title": "Resume-system tests",
+      "verify": "python -m pytest tests/test_v8_resume.py -q",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "R3",
+      "phase": "R",
+      "title": "Windows PID check recorded",
+      "verify": "-",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P1",
+      "phase": "P",
+      "title": "Single face-threshold policy",
+      "verify": "python -m pytest tests/test_v8_face_policy.py -q -k policy",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P2",
+      "phase": "P",
+      "title": "Relaxed match never auto-PASS",
+      "verify": "python -m pytest tests/test_v8_face_policy.py -q -k cap",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P3",
+      "phase": "P",
+      "title": "Fallback never decides",
+      "verify": "python -m pytest tests/test_v8_face_policy.py -q -k fallback",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P4",
+      "phase": "P",
+      "title": "Face-model provisioning hardened",
+      "verify": "python -m pytest tests/test_v8_face_policy.py -q -k provisioning",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P5",
+      "phase": "P",
+      "title": "Face metadata and health fields",
+      "verify": "python -m pytest tests/test_v8_face_policy.py -q -k health",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P6",
+      "phase": "P",
+      "title": "Liveness not routed",
+      "verify": "python -m pytest tests/test_v8_face_policy.py -q -k liveness",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P7",
+      "phase": "P",
+      "title": "Readiness table from evidence only",
+      "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q -k readiness",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P8",
+      "phase": "P",
+      "title": "Honest CSP",
+      "verify": "python -m pytest tests/test_v8_csp.py -q",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P9",
+      "phase": "P",
+      "title": "No credential prefixes in docs",
+      "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q -k secrets",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P10",
+      "phase": "P",
+      "title": "Unmistakably fake test secrets",
+      "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q -k fake",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P11",
+      "phase": "P",
+      "title": "Single source for test counts",
+      "verify": "python scripts/count_tests.py",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P12",
+      "phase": "P",
+      "title": "Coverage ratchet and CI step",
+      "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q -k coverage_ci",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "P13",
+      "phase": "P",
+      "title": "Owner isolation script",
+      "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q -k owner_script",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "A1",
+      "phase": "A",
+      "title": "Face proxy evaluation script",
+      "verify": "python -m eval.eval_face_proxy --selftest",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "A2",
+      "phase": "A",
+      "title": "Release verdict script",
+      "verify": "python -m pytest tests/test_v8_release_verdict.py -q",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "A3",
+      "phase": "A",
+      "title": "Three-run stability script",
+      "verify": "python scripts/run_suite_n.py 1",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "A4",
+      "phase": "A",
+      "title": "Skills updated",
+      "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q -k skills",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "T1",
+      "phase": "T",
+      "title": "Invariant FS with face states",
+      "verify": "python -m pytest tests/test_v8_invariants.py -q",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "T2",
+      "phase": "T",
+      "title": "Merkle root independent check",
+      "verify": "python -m pytest tests/test_v8_merkle.py -q",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "T3",
+      "phase": "T",
+      "title": "Docs hygiene tests",
+      "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "T4",
+      "phase": "T",
+      "title": "Full suite three times",
+      "verify": "python scripts/run_suite_n.py 3",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "T5",
+      "phase": "T",
+      "title": "Static checks",
+      "verify": "python -m compileall -q app ml_service api scripts",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "K1",
+      "phase": "K",
+      "title": "Claims ledger has no FALSE claim",
+      "verify": "python scripts/verify_blueprint_claims.py",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "K2",
+      "phase": "K",
+      "title": "Blueprint template and renderer",
+      "verify": "python scripts/render_blueprint.py --check",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "K3",
+      "phase": "K",
+      "title": "Claude handoff document",
+      "verify": "python scripts/render_handoff.py --check",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "K4",
+      "phase": "K",
+      "title": "Docs hygiene final",
+      "verify": "python -m pytest tests/test_v8_docs_hygiene.py -q",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "G1",
+      "phase": "G",
+      "title": "Release verdict written by code",
+      "verify": "python scripts/release_verdict.py --write docs/FINAL_REPORT_DRAFT.md",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "G2",
+      "phase": "G",
+      "title": "Commit and push the branch",
+      "verify": "-",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    },
+    {
+      "id": "G3",
+      "phase": "G",
+      "title": "Final message to the owner",
+      "verify": "-",
+      "status": "TODO",
+      "attempts": 0,
+      "evidence": "",
+      "updated": "2026-10-12T07:11:57Z"
+    }
+  ]
+}

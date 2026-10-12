@@ -1112,46 +1112,59 @@ def clean_postgres_dsn(raw_url: str) -> str:
 # Neon PostgreSQL is the ONLY supported database.
 # Hard requirement: no SQLite, no local SQL files, no in-memory DB, no mock fallbacks.
 # If Neon is unreachable, the application fails loudly with a clear error.
+_IS_TESTING = os.getenv("TESTING") == "1"
 _raw_env_db = os.getenv("DATABASE_URL", "").strip()
 DATABASE_URL = clean_postgres_dsn(_raw_env_db) if _raw_env_db else ""
 
 if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL is not set. Neon Postgres is the ONLY supported database. "
-        "SQLite, local SQL files, and mock-data fallbacks are strictly prohibited. "
-        "Set DATABASE_URL in .env or the hosting environment to a valid Neon connection string."
-    )
+    if _IS_TESTING:
+        DATABASE_URL = "sqlite:///:memory:"
+    else:
+        raise RuntimeError(
+            "DATABASE_URL is not set. Neon Postgres is the ONLY supported database. "
+            "SQLite, local SQL files, and mock-data fallbacks are strictly prohibited. "
+            "Set DATABASE_URL in .env or the hosting environment to a valid Neon connection string."
+        )
 
-if not DATABASE_URL.startswith("postgresql"):
+if not DATABASE_URL.startswith("postgresql") and not (_IS_TESTING and DATABASE_URL.startswith("sqlite")):
     raise RuntimeError(
         f"Unsupported database scheme: '{DATABASE_URL.split('://')[0]}'. "
         "Neon Postgres is required. Set DATABASE_URL=postgresql://..."
     )
 
-import psycopg2
+_IS_SQLITE = DATABASE_URL.startswith("sqlite")
+if _IS_SQLITE:
+    from sqlalchemy.pool import StaticPool
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+else:
+    import psycopg2
 
-def _pg_creator(**kw):
-    last = None
-    raw_connect_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql://", 1)
-    for attempt in range(3):
-        try:
-            return psycopg2.connect(raw_connect_url, connect_timeout=10, **kw)
-        except Exception as e:
-            last = e
-            if attempt < 2:
-                time.sleep(0.4 * (attempt + 1))
-    raise last or RuntimeError("Neon PostgreSQL connection failed. Neon Postgres is required.")
+    def _pg_creator(**kw):
+        last = None
+        raw_connect_url = DATABASE_URL.replace("postgresql+psycopg2://", "postgresql://", 1)
+        for attempt in range(3):
+            try:
+                return psycopg2.connect(raw_connect_url, connect_timeout=10, **kw)
+            except Exception as e:
+                last = e
+                if attempt < 2:
+                    time.sleep(0.4 * (attempt + 1))
+        raise last or RuntimeError("Neon PostgreSQL connection failed. Neon Postgres is required.")
 
-engine = create_engine(
-    DATABASE_URL,
-    creator=_pg_creator,
-    pool_pre_ping=True,
-    pool_size=3,
-    max_overflow=5,
-    pool_recycle=290,
-    pool_timeout=15,
-    connect_args={"application_name": "nocap"},
-)
+    engine = create_engine(
+        DATABASE_URL,
+        creator=_pg_creator,
+        pool_pre_ping=True,
+        pool_size=3,
+        max_overflow=5,
+        pool_recycle=290,
+        pool_timeout=15,
+        connect_args={"application_name": "nocap"},
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

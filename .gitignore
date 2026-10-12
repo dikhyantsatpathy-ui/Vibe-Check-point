@@ -113,6 +113,8 @@ eval/local/
 # Ignore root generated documentation, blueprints, and chat logs
 *.md
 !README.md
+!AGENTS.md
+!GEMINI.md
 !SIH26188_ENGINEERING_BLUEPRINT.md
 !ml_service/README.md
 !docs/*.md
