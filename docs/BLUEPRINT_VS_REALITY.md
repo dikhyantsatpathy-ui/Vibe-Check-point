@@ -1,5 +1,5 @@
 # Blueprint vs. Reality — Claims Verification Report
-**Generated UTC:** 20261012_210432 | **Branch:** `ml/blueprint-sync-v7`
+**Generated UTC:** 20261012_220510 | **Branch:** `ml/blueprint-sync-v7`
 
 ## Summary
 - **VERIFIED:** 77
@@ -14,7 +14,7 @@
 | C-03 | 20 / 22 / A08 | Merkle tree audit trail for ledger blocks | cmd | **VERIFIED** | Pairwise Merkle tree computation found |
 | C-04 | 27 / A10 | Outbound-URL destination domain allow-listing against SSRF | file | **VERIFIED** | Outbound ML URL allowlist enforced |
 | C-05 | 15.4 / 21 | ArcFace 512-dimensional facial biometric embedding matching | cmd | **VERIFIED** | Dual-tier biometric matching: ArcFace 512-D embedding when mounted, with 64-bit dHash perceptual hash fallback |
-| C-06 | 17 / 26 | Test suite total count equals 436 tests | cmd | **VERIFIED** | 463 tests collected across suite |
+| C-06 | 17 / 26 | Test suite total count equals 436 tests | cmd | **VERIFIED** | 467 tests collected across suite |
 | C-07 | 14.1 / 15.1 | Zero-raw-storage: motion photo temp video file handling | file | **VERIFIED** | Temp .mp4 written for motion photo extraction and reliably unlinked in finally |
 | C-08 | 15.1 / 31 | Card Detector v2 dual-track deployment (YOLOv8 default, RF-DETR permissive option) | file | **VERIFIED** | Dual-track card detector deployment verified: YOLOv8 production default with RF-DETR Apache 2.0 side-by-side alternative |
 | C-09 | 15.1 / 31 | MRZ Phase C2 check-digit recovery achieves 74% on held-out crops | file | **VERIFIED** | MRZ metrics accurately attributed |

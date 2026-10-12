@@ -256,10 +256,10 @@
       "phase": "K",
       "title": "Claims ledger has no FALSE claim",
       "verify": "python scripts/verify_blueprint_claims.py",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python scripts/verify_blueprint_claims.py",
+      "updated": "2026-10-12T22:05:10Z"
     },
     {
       "id": "K2",

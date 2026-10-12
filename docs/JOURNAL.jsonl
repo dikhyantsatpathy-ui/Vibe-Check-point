@@ -108,3 +108,8 @@
 {"t": "2026-10-12T22:00:34Z", "event": "resume", "session": 34}
 {"t": "2026-10-12T22:00:41Z", "event": "start", "id": "T5", "attempt": 1}
 {"t": "2026-10-12T22:02:48Z", "event": "done", "id": "T5", "evidence": "verify OK: python -m compileall -q app ml_service api scripts"}
+{"t": "2026-10-12T22:03:10Z", "event": "checkpoint", "note": "T5 complete (Phase T finished); next Phase K"}
+{"t": "2026-10-12T22:03:16Z", "event": "resume", "session": 35}
+{"t": "2026-10-12T22:03:28Z", "event": "start", "id": "K1", "attempt": 1}
+{"t": "2026-10-12T22:04:03Z", "event": "resume", "session": 36}
+{"t": "2026-10-12T22:05:10Z", "event": "done", "id": "K1", "evidence": "verify OK: python scripts/verify_blueprint_claims.py"}

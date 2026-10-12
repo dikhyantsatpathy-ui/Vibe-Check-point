@@ -394,4 +394,7 @@ def run_checks():
 
 
 if __name__ == "__main__":
-    run_checks()
+    rep = run_checks()
+    if rep.get("summary", {}).get("FALSE", 0) > 0:
+        sys.exit(1)
+    sys.exit(0)
