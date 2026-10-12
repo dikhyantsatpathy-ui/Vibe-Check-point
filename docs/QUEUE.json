@@ -266,10 +266,10 @@
       "phase": "K",
       "title": "Blueprint template and renderer",
       "verify": "python scripts/render_blueprint.py --check",
-      "status": "TODO",
-      "attempts": 0,
-      "evidence": "",
-      "updated": "2026-10-12T07:11:57Z"
+      "status": "DONE",
+      "attempts": 1,
+      "evidence": "verify OK: python scripts/render_blueprint.py --check",
+      "updated": "2026-10-12T22:14:33Z"
     },
     {
       "id": "K3",

@@ -250,7 +250,7 @@ To deliver a secure, sub-second, multi-tier inspection platform that:
 - **Google OAuth 2.0 Integration:** Verifies Google ID tokens via backend Google Auth API (`google-auth`).
 - **Exact-Match Super-Admin Access:** Root administrative clearance is strictly granted to exact email matches defined in `SUPER_ADMINS`. Substring matching, pattern wildcards, or domain-based regex matches are strictly prohibited.
 - **Signer Identity Row Enforcement:** `get_current_admin()` mandates that an authenticated user must possess an active, non-revoked record in the `signer_identities` table. A bare cryptographic signature without an active registered identity is rejected with `HTTP 401 Unauthorized`.
-- **SIH Evaluator Demo Pass:** Dedicated 1-click endpoint (`POST /api/admin/demo_login`) minting a valid session cookie for `evaluator@ssb.gov.in` (Inspector R. Sharma, Border Screening Division) ensuring hackathon jurors can evaluate all features without third-party OAuth setup.
+- **SIH Evaluator Demo Pass:** Opt-in demo feature controlled by `DEMO_PASS_ENABLED` (default off; jury deployment must set `DEMO_PASS_ENABLED=1`, real deployments must not; evaluator cannot create notices or watchlist entries). Provides 1-click login endpoint (`POST /api/admin/demo_login`) minting a session cookie for `evaluator@ssb.gov.in` (Inspector R. Sharma, Border Screening Division).
 
 ### 8.2 Client-Side Pre-Flight Ingestion
 - Dual-dropzone layout for Front (Side A) and Back (Side B) documents.
@@ -285,7 +285,8 @@ To deliver a secure, sub-second, multi-tier inspection platform that:
 | **Cryptographic Separation** | Zero key reuse. Master key derives subkeys via HKDF-SHA256 (`session_key`, `seal_key`, `mask_salt`). | Verified by `tests/test_auth.py` and `tests/test_ledger_chain.py`. |
 | **Zero Raw Storage** | $0\text{ bytes}$ of raw passenger images or cleartext PII stored on disk. | Verified by RAM-only `BytesIO` streaming and automated CI file audits. |
 | **Privacy Lifecycle** | Ephemeral raw fields purged on approval; automated 240-minute TTL sweep. | Verified by `tests/test_privacy.py`. |
-| **Test Suite Coverage** | $100\%$ pass rate across 397 automated unit and integration tests across 40 test suites. | Verified by `pytest` running under `pytest.ini`. |
+| **Test Suite Coverage** | $100\%$ pass rate across 467 automated tests across 54 test suites. | Verified by `pytest` running under `pytest.ini`. |
+| **Content Security Policy** | Enforced baseline (script-src allows unsafe-inline) + stricter Report-Only policy; strict enforcement behind `CSP_STRICT_ENFORCE`, UI not browser-verified. | Verified by `tests/test_v8_csp.py` and response headers. |
 | **Security Standards** | OWASP Top 10 compliance; strict Content Security Policy; safe LLM context filtering. | Secret-bearing files excluded via `NEVER_INDEX` in `app/codebase.py`. |
 
 ---
@@ -549,7 +550,7 @@ Under Section 8 of the **Digital Personal Data Protection Act, 2023**, personal 
 - **Dual-Tier Biometric Architecture & Runtime Profile:**
   - **Tier 1 (Remote Deep Inference):** Containerized ML microservice hosts 512-dimensional ArcFace deep facial feature embedding extraction with cosine similarity matching. Active when `FACE_EMBED_MODEL` points to an ONNX weight graph (`onnxruntime` loaded).
   - **Tier 2 (Fail-Safe Local Fallback):** When the ML microservice is unmounted or unreachable (e.g. lightweight serverless nodes without heavy ONNX weights), edge runtime employs a 64-bit difference hash (dHash) computed via Pillow.
-  - **Invariant FS Biometric Fail-Safe Contract:** The system strictly enforces that local dHash fallback mode returns `match=None` or `INCONCLUSIVE` (routing directly to `REVIEW`), and can **NEVER** issue an autonomous `PASS`. An automated face verification `PASS` is mathematically restricted exclusively to authenticated ArcFace deep embedding matches meeting or exceeding threshold.
+  - **Invariant FS Biometric Fail-Safe Contract:** ArcFace-style 512-D embedding when the model is present and SHA-verified; otherwise face matching is INCONCLUSIVE and routes to REVIEW; perceptual hash is a coarse fallback and never decides; aged photos use one step threshold and can never auto-PASS; accuracy UNMEASURED (proxy only); liveness not integrated.
 - **Facial Landmark Alignment & Extraction:**
   - Normalizes input face crops to canonical $112 \times 112$ bounding boxes, with 5 facial landmark points (pupils, nose tip, mouth corners) aligned to canonical coordinates.
   - Normalizes pixel values via $(I - 127.5) / 128.0$ into $[-1.0, 1.0]$.
@@ -704,7 +705,7 @@ The Officer Desk console (`frontend/src/views/DeskView.tsx`) is designed for max
   - Automatically purges `ephemeral_raw_fields` upon adjudication.
 - **Cryptographic Shift Handover:**
   - Aggregates total travellers screened, cleared, and flagged during the duty shift.
-  - Calculates the latest Merkle root of the immutable ledger.
+  - Calculates the latest Merkle root of the immutable ledger via binary pairwise tree computation over block hashes (verified by `tests/test_v8_merkle.py`; leaf modifications strictly perturb the root).
   - Generates a signed handover token stamped with outgoing and incoming supervisor identities.
 
 ---
@@ -741,8 +742,7 @@ The Syndicate Intelligence Engine (`app/syndicate.py`):
 ### 21.1 Supply Chain Hardening & Audit Seals
 - **Exact Version Pinning:** All 13 runtime dependencies in `ml_service/requirements.txt` are pinned with exact `==` equality operators, eliminating uncontrolled floating version drift.
 - **Vulnerability Audit (pip-audit & npm audit):**
-  - Backend: `pip-audit 2.10.1` executed across root `requirements.txt` and `ml_service/requirements.txt` — **0 vulnerabilities found**.
-  - Frontend: `npm audit --omit=dev` executed across frontend dependencies — **0 vulnerabilities found**.
+  - Dated results from `eval/runs/20261011_reverify_v1/dependency_audit.json`: `npm audit --omit=dev` 0 vulnerabilities; `pip-audit` identified 8 advisory CVEs against pinned `pypdf 6.16.2` (owner upgrade pending); network live audit UNVERIFIABLE in offline environment.
 - **Licensing Compliance Matrix:**
   - Production runtime uses exclusively permissive licenses: MIT (`fastapi`, `uvicorn`), Apache 2.0 (`onnxruntime`, `rapidocr-onnxruntime`, `cryptography`), BSD (`numpy`, `torch`), and HPND (`Pillow`).
   - Copyleft isolation: AGPL-3.0 libraries (`ultralytics`) are strictly confined to offline dataset preparation and training scripts (`training/train_card_rfdetr.py`). The production serving runtime relies entirely on ONNX Runtime (Apache-2.0), avoiding copyleft license contagion on serverless and edge nodes.
@@ -965,7 +965,7 @@ d:\mos\crypto\
 │   ├── audit_secrets_s1.py            # Phase S automated secret hygiene & git history scanner
 │   ├── export_test_metrics.py         # Test metrics exporter and JUnit XML synthesizer
 │   └── verify_blueprint_claims.py     # Deterministic verification harness for all blueprint claims
-├── tests/                             # 51 automated test suites (436 tests, 100% active passing)
+├── tests/                             # 54 automated test suites (467 tests, 100% active passing)
 └── training/
     ├── convert_yolo_to_coco.py        # Dataset conversion utilities
     ├── make_composites.py             # Multi-scale composite dataset generator
@@ -974,60 +974,67 @@ d:\mos\crypto\
 
 ---
 
-## 26. Testing & Evaluation Suite (397+ Automated Tests)
+## 26. Testing & Evaluation Suite (467 Automated Tests)
 
 The repository contains an exhaustive test suite executed via `pytest`:
 
 ```
-tests/test_auth.py                 # 11 tests: Token signatures, super-admin matching, tampering
-tests/test_authz.py                # 70 tests: Role-based authorization across all API routes
-tests/test_ci_workflow_t8.py       #  4 tests: CI quality gate and workflow automation verification
-tests/test_code_health_sweep_c.py  #  4 tests: Code health sweep, Merkle roots, SSRF allowlisting
-tests/test_codebase.py             # 13 tests: RAG context indexer, NEVER_INDEX shielding
-tests/test_composites.py           #  3 tests: Multi-scale synthetic composites and perspective warping
-tests/test_contract_snapshots_t2.py#  3 tests: API payload and contract snapshot stability
-tests/test_converters.py           #  5 tests: YOLO-to-COCO bounding box conversion and split integrity
-tests/test_coverage_stability_t7.py#  2 tests: Codebase line coverage and regression stability
-tests/test_csp_headers.py          #  2 tests: CSP headers and anti-eval enforcement
-tests/test_csv_injection.py        #  3 tests: CSV formula sanitization and spreadsheet escaping
-tests/test_detection_flags.py      #  8 tests: Per-stage backend flags, fail-closed sidecars, degraded mode
-tests/test_detector_backend.py     #  9 tests: Per-stage backend switches, fail-loud missing weights, SHA-256 pin
-tests/test_detectors.py            # 11 tests: ELA, 2D-FFT PAPR, PRNU noise variance
-tests/test_e2e_screening.py        #  6 tests: End-to-end multi-doc screening on real MIDV & synthetic inputs
-tests/test_eval_metrics.py         #  3 tests: Precision, recall, and gate evaluation harness
-tests/test_face_match.py           #  9 tests: Face embedding similarity, aging thresholds
-tests/test_forensics.py            #  8 tests: Pixel tampering, splice detection
-tests/test_golden_set_t4.py        #  4 tests: Frozen golden verification benchmark
-tests/test_identity.py             #  9 tests: Aadhaar Verhoeff, PAN, Nagarikta rules
-tests/test_indian_specimens.py     #  4 tests: Indian specimen generation, EXIF rotation handling, off-frame clipping
-tests/test_invariants_t1.py        #  7 tests: Invariant FS fail-safe and Invariant AUTH fail-closed contracts
-tests/test_ledger_chain.py         #  8 tests: Hash chain integrity, Merkle root, Section 65B
-tests/test_load_soak_t6.py         #  2 tests: Concurrent soak and memory stability verification
-tests/test_media_processor_tempfile.py # 2 tests: In-memory tempfile isolation
-tests/test_mixed_media.py          #  6 tests: In-memory PDF digital signature inspection, motion photo burst separation
-tests/test_ml_service_contract.py  #  9 tests: ML service API contract, health checks, oversized payload hardening
-tests/test_model_io_t5.py          #  5 tests: ONNX model input/output tensor contract verification
-tests/test_mrz.py                  #  5 tests: ICAO Doc 9303 TD1, TD2, TD3 7-3-1 check digits
-tests/test_parser_fuzz_t3.py       #  4 tests: Fuzz testing over corrupted and noisy document text
-tests/test_phase_m_model_facts.py  #  7 tests: Model facts reconciliation and performance budget gates
-tests/test_phase_p_parser_hardening.py # 4 tests: Parser layout variants, DL FAR, cross-field consistency
-tests/test_phase_x_pics_smoke.py   #  8 tests: Private specimens pipeline smoke and perturbation stability
-tests/test_privacy.py              # 10 tests: Zero-storage, PII masking, ephemeral field wiping
-tests/test_qr_and_verification.py  #  5 tests: Aadhaar QR decoding & byte decompression
-tests/test_rate_limit_proxy.py     #  3 tests: Proxy headers trust and IP rate-limiting
-tests/test_rectification.py        #  5 tests: Quad corner sorting, DLT homography mapping, CR-80 warping
-tests/test_repo_hygiene.py         #  1 test : Repository hygiene, clean tree check
-tests/test_revamp.py               # 14 tests: End-to-end screening workflows
-tests/test_rfdetr_inference.py     #  5 tests: Pre/postprocessing shapes, INT8 ONNX inference, sidecar metadata
-tests/test_screening.py            # 39 tests: Multi-document intake, risk score calculation
-tests/test_sessions.py             #  7 tests: Session state machine, adjudication, settlement
-tests/test_syndicate.py            #  7 tests: Cross-checkpoint duplicate tracking
-tests/test_synth_fields.py         #  7 tests: Procedural card layout rendering and text field bounding boxes
-tests/test_synth_mrz.py            #  3 tests: Procedural TD1/TD3 MRZ strip rendering and check digits
-tests/test_upload_limits.py        #  7 tests: Streaming upload caps, magic-byte checking, decompression bombs
-tests/test_yolo_roi.py             #  8 tests: Aspect-preserving letterboxing, vectorized NMS, dual-impl drift
+tests/test_auth.py                         # 11 tests: Suite test_auth.py
+tests/test_authz.py                        # 70 tests: Suite test_authz.py
+tests/test_ci_workflow_t8.py               # 1 tests: Suite test_ci_workflow_t8.py
+tests/test_code_health_sweep_c.py          # 4 tests: Suite test_code_health_sweep_c.py
+tests/test_codebase.py                     # 13 tests: Suite test_codebase.py
+tests/test_composites.py                   # 1 tests: Suite test_composites.py
+tests/test_contract_snapshots_t2.py        # 6 tests: Suite test_contract_snapshots_t2.py
+tests/test_converters.py                   # 9 tests: Suite test_converters.py
+tests/test_coverage_stability_t7.py        # 2 tests: Suite test_coverage_stability_t7.py
+tests/test_csp_headers.py                  # 1 tests: Suite test_csp_headers.py
+tests/test_csv_injection.py                # 1 tests: Suite test_csv_injection.py
+tests/test_detection_flags.py              # 8 tests: Suite test_detection_flags.py
+tests/test_detector_backend.py             # 9 tests: Suite test_detector_backend.py
+tests/test_detectors.py                    # 11 tests: Suite test_detectors.py
+tests/test_e2e_screening.py                # 6 tests: Suite test_e2e_screening.py
+tests/test_eval_metrics.py                 # 3 tests: Suite test_eval_metrics.py
+tests/test_face_match.py                   # 15 tests: Suite test_face_match.py
+tests/test_forensics.py                    # 8 tests: Suite test_forensics.py
+tests/test_golden_set_t4.py                # 1 tests: Suite test_golden_set_t4.py
+tests/test_identity.py                     # 9 tests: Suite test_identity.py
+tests/test_indian_specimens.py             # 4 tests: Suite test_indian_specimens.py
+tests/test_invariants_t1.py                # 20 tests: Suite test_invariants_t1.py
+tests/test_ledger_chain.py                 # 8 tests: Suite test_ledger_chain.py
+tests/test_load_soak_t6.py                 # 2 tests: Suite test_load_soak_t6.py
+tests/test_media_processor_tempfile.py     # 2 tests: Suite test_media_processor_tempfile.py
+tests/test_mixed_media.py                  # 6 tests: Suite test_mixed_media.py
+tests/test_ml_service_contract.py          # 10 tests: Suite test_ml_service_contract.py
+tests/test_model_io_t5.py                  # 3 tests: Suite test_model_io_t5.py
+tests/test_mrz.py                          # 5 tests: Suite test_mrz.py
+tests/test_parser_fuzz_t3.py               # 7 tests: Suite test_parser_fuzz_t3.py
+tests/test_phase_m_model_facts.py          # 7 tests: Suite test_phase_m_model_facts.py
+tests/test_phase_p_parser_hardening.py     # 4 tests: Suite test_phase_p_parser_hardening.py
+tests/test_phase_x_pics_smoke.py           # 8 tests: Suite test_phase_x_pics_smoke.py
+tests/test_privacy.py                      # 10 tests: Suite test_privacy.py
+tests/test_qr_and_verification.py          # 5 tests: Suite test_qr_and_verification.py
+tests/test_rate_limit_proxy.py             # 3 tests: Suite test_rate_limit_proxy.py
+tests/test_rectification.py                # 5 tests: Suite test_rectification.py
+tests/test_repo_hygiene.py                 # 1 tests: Suite test_repo_hygiene.py
+tests/test_revamp.py                       # 14 tests: Suite test_revamp.py
+tests/test_rfdetr_inference.py             # 5 tests: Suite test_rfdetr_inference.py
+tests/test_screening.py                    # 40 tests: Suite test_screening.py
+tests/test_sessions.py                     # 7 tests: Suite test_sessions.py
+tests/test_syndicate.py                    # 7 tests: Suite test_syndicate.py
+tests/test_synth_fields.py                 # 7 tests: Suite test_synth_fields.py
+tests/test_synth_mrz.py                    # 3 tests: Suite test_synth_mrz.py
+tests/test_upload_limits.py                # 7 tests: Suite test_upload_limits.py
+tests/test_v8_csp.py                       # 4 tests: Suite test_v8_csp.py
+tests/test_v8_docs_hygiene.py              # 18 tests: Suite test_v8_docs_hygiene.py
+tests/test_v8_face_policy.py               # 17 tests: Suite test_v8_face_policy.py
+tests/test_v8_invariants.py                # 8 tests: Suite test_v8_invariants.py
+tests/test_v8_merkle.py                    # 6 tests: Suite test_v8_merkle.py
+tests/test_v8_release_verdict.py           # 8 tests: Suite test_v8_release_verdict.py
+tests/test_v8_resume.py                    # 9 tests: Suite test_v8_resume.py
+tests/test_yolo_roi.py                     # 8 tests: Suite test_yolo_roi.py
 -----------------------------------------------------------------------------------------
-TOTAL: 397+ collected (active passes across all Phase 0-X verification suites)
+TOTAL: 467 collected (active passes across all 54 test suites)
 ```
 
 ---
@@ -1045,7 +1052,7 @@ TOTAL: 397+ collected (active passes across all Phase 0-X verification suites)
 | **A07: Identification & Auth Failures** | Brute-force credential guessing; session hijacking; timing attacks. | `HttpOnly`, `SameSite=Lax`, `Secure` cookies; SlowAPI rate limiting (30 requests/minute on sensitive routes); constant-time `hmac.compare_digest` for microservice keys. |
 | **A08: Software & Data Integrity Failures** | Tampering with historic border screening records; unsafe serialization. | SHA-256 immutable hash chain; cryptographic evidence sealing; Merkle tree audit trail; zero `pickle`, unsafe `yaml`, or `eval` deserialization. |
 | **A09: Security Logging Failures** | Inability to prove an officer cleared a fraudulent document. | Immutable `ScreeningReport` rows logging officer identity, timestamp in IST, risk score, and tamper signals. |
-| **A10: Server-Side Request Forgery (SSRF)** | Exploiting remote ML service URL to probe internal cloud networks. | Strict URL scheme validation; destination domain allow-listing on outbound requests; decompression-bomb caps (`MAX_IMAGE_PIXELS = 89,478,485`, max 15MB payloads). |
+| **A10: Server-Side Request Forgery (SSRF)** | Exploiting remote ML service URL to probe internal cloud networks. | Strict URL scheme validation; outbound ML URL destination domain allow-listing enforced via `is_allowed_ml_url` (allowing localhost, 127.0.0.1, and configured ML host); decompression-bomb caps (`MAX_IMAGE_PIXELS = 89,478,485`, max 15MB payloads). |
 
 ### 27.1 Phase S & v7 Security Audit Controls (Work Orders v5 & v7 Reconciled)
 1. **S1 Secret Hygiene & Repository Sealing:**
@@ -1110,7 +1117,7 @@ The system's evidentiary output supports prosecution under modern Indian penal l
 
 The Smart India Hackathon jury demonstration follows a deterministic 8-step operational narrative:
 
-1. **Evaluator 1-Click Access:** Juror opens `https://vibe-check-point.vercel.app`, clicks **"One-click access (SIH evaluator pass)"**, and is instantly authenticated as Inspector R. Sharma (Border Screening Division).
+1. **Evaluator 1-Click Access:** Juror opens `https://vibe-check-point.vercel.app`, clicks **"One-click access (SIH evaluator pass)"** (enabled via `DEMO_PASS_ENABLED=1` on jury deployment; disabled in real deployments; evaluator role restricted from creating notices or watchlist entries), and is authenticated as Inspector R. Sharma (Border Screening Division).
 2. **Session Intake:** System initializes active screening session for **Raxaul ICP** with the Indo-Nepal 1950 Treaty protocol banner.
 3. **Clean Passport Screening:** Juror clicks `[Clean Indian Passport]` preset and hits `[Ctrl + Enter]`. System returns green **CLEAR** (Risk Score: 12) in 780ms with valid ICAO MRZ checksums.
 4. **Tampered MRZ Interception:** Juror clicks `[Tampered Passport (Altered MRZ)]`. System flags check digit 2 failure in red; displays the exact mismatched digit and photo-splice ELA anomaly.
@@ -1137,10 +1144,10 @@ The Smart India Hackathon jury demonstration follows a deterministic 8-step oper
 - [x] **CPU Latency Budget Met ($\le 900$ ms):** 2-thread CPU end-to-end detector latencies: Passport/MRZ 657.53 ms, Aadhaar 503.25 ms, Generic ID 321.85 ms.
 - [x] **Phase S & v7 Security Audit Sealed (Work Orders v5 & v7 Reconciled):**
   - **S1 Secret Hygiene:** 0 plaintext secrets in tree or git history verified via `scripts/audit_secrets_s1.py`.
-  - **S2 Deployment Isolation:** Test staging domain (`vibe-check-point-test.vercel.app`) isolated from production; distinct Neon database branches and vault keys.
+  - [ ] **S2 Deployment Isolation:** Test staging domain (`vibe-check-point-test.vercel.app`) isolated from production; requires Vercel CLI credentials to query live production and staging project env vars (UNVERIFIABLE in claims ledger).
   - **S3 Auth & Input Hardening:** Constant-time `hmac.compare_digest` for microservice keys; zero unsafe deserialization; decompression-bomb pixel caps enforced.
   - **Dual Invariants Enforced:** Invariant AUTH (unauthenticated requests fail closed with HTTP 401/403) and Invariant FS (degraded or fallback inputs never autonomously clear).
-- [x] **Automated Tests Passing:** Comprehensive verification across 397+ tests spanning all suites (Phase 0, B, F, A, V, T, C, M, P, X, L).
+- [x] **Automated Tests Passing:** Comprehensive verification across 467 tests across 54 suites.
 - [x] **Dual-Track Deployments Operational:** Live at `https://vibe-check-point.vercel.app` (Production) and `https://vibe-check-point-test.vercel.app` (Staging).
 - [x] **Technical Evidence & Statutory Alignment (Qualified):** Architectures for chain of custody and data handling are aligned with Bharatiya Sakshya Adhiniyam, 2023 (Section 65B), Bharatiya Nyaya Sanhita, 2023, and DPDP Act, 2023; formal legal admissibility remains subject to counsel review.
 

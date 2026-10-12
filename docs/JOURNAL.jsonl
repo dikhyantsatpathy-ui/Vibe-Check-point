@@ -113,3 +113,7 @@
 {"t": "2026-10-12T22:03:28Z", "event": "start", "id": "K1", "attempt": 1}
 {"t": "2026-10-12T22:04:03Z", "event": "resume", "session": 36}
 {"t": "2026-10-12T22:05:10Z", "event": "done", "id": "K1", "evidence": "verify OK: python scripts/verify_blueprint_claims.py"}
+{"t": "2026-10-12T22:05:50Z", "event": "checkpoint", "note": "K1 complete; next K2 blueprint template and renderer"}
+{"t": "2026-10-12T22:05:54Z", "event": "resume", "session": 37}
+{"t": "2026-10-12T22:05:59Z", "event": "start", "id": "K2", "attempt": 1}
+{"t": "2026-10-12T22:14:33Z", "event": "done", "id": "K2", "evidence": "verify OK: python scripts/render_blueprint.py --check"}
