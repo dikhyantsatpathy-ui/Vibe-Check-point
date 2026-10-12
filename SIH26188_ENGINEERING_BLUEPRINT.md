@@ -10,8 +10,8 @@
 **System Name:** NO-CAP (Next-Gen Online Checkpoint & Admissibility Platform)  
 **Production URL:** `https://vibe-check-point.vercel.app` (Mirror: `https://vibe-check-point-eight.vercel.app`)  
 **Test / Staging URL:** `https://vibe-check-point-test.vercel.app`  
-**Version:** 5.0.0-Hardened-Release | **Last Updated:** October 2026  
-**Security & Audit Posture:** Work Order v5 Hardened (Phase S Zero-Vulnerability Sealed)  
+**Version:** 7.0.0-Production-Release | **Last Updated:** October 2026  
+**Security & Audit Posture:** Work Order v7 Reconciled (Phase 0–R Release Gate Sealed)  
 
 ---
 
@@ -805,9 +805,12 @@ d:\mos\crypto\
 ├── docs/
 │   ├── AUDIT_V4.md                    # Work Order v4 Audit Register & Architecture Review
 │   ├── AUDIT_V5.md                    # Work Order v5 Audit Register & Findings (F-001–F-005)
+│   ├── AUDIT_V7.md                    # Master Work Order v7 Comprehensive Audit Register (F-001–F-014)
+│   ├── BLUEPRINT_VS_REALITY.md        # Comprehensive Audit & Fact-Check Matrix (Blueprint vs Implementation)
 │   ├── DATASET_CREDITS.md             # Dataset source attribution, licensing & compliance
 │   ├── DEPENDENCY_LICENCES.md         # License compliance matrix & AGPL copyleft boundary
 │   ├── DEPLOYMENT_ISOLATION.md        # Production vs Test site isolation architecture
+│   ├── FINAL_REPORT_DRAFT.md          # Final Consolidated Engineering & Audit Report
 │   ├── LIMITATIONS.md                 # Known operational boundaries & edge-case catalog
 │   ├── ML_PIPELINE.md                 # Machine learning architecture & pipeline overview
 │   ├── ML_PIPELINE_CHANGES.md         # Comprehensive log of ML pipeline changes & trade-offs
@@ -816,7 +819,9 @@ d:\mos\crypto\
 │   ├── OWNER_TODO.md                  # Secret vault migration & Neon test branch setup
 │   ├── RESUME_AFTER_SPECIMENS.md      # Indian physical card evaluation protocols
 │   ├── SWITCH_READINESS.md            # Pre-flight operational readiness checklist
-│   └── TRAINING_PROGRESS.md           # Training logs, validation curves, and ablation notes
+│   ├── TRAINING_PROGRESS.md           # Training logs, validation curves, and ablation notes
+│   └── claims/
+│       └── claims.json                # Master blueprint claim catalog & verification rules
 ├── eval/
 │   ├── audit_leakage.py               # Train/val/test data leakage audit
 │   ├── audit_task1.py                 # Task 1 card detection ablation audit
@@ -836,6 +841,8 @@ d:\mos\crypto\
 │   ├── metrics.py                     # Precision, recall, mAP, and ROC-AUC calculation utilities
 │   ├── repro_ledger.py                # Deterministic metric reproduction harness
 │   ├── run_all.py                     # Master evaluation orchestrator
+│   ├── runs/
+│   │   └── 20261011_reverify_v1/      # Master v7 verified benchmark outputs & release readiness gates
 │   ├── task2_negatives_and_stress.py  # Hard negative and stress testing harness
 │   ├── task3_deployment_latency.py    # Edge deployment latency profiler
 │   ├── task4f_crop_contact_sheet.py   # Diagnostic contact sheet generator for card crops
@@ -856,8 +863,10 @@ d:\mos\crypto\
 │   └── yolo_roi.py                    # Server-side ROI detection engine
 ├── scripts/
 │   ├── anchor_ledger.py               # CLI tool: anchors ledger hash to public GitHub Gist
-│   └── audit_secrets_s1.py            # Phase S automated secret hygiene & git history scanner
-├── tests/                             # 30 automated test suites (305 tests, 100% active passing)
+│   ├── audit_secrets_s1.py            # Phase S automated secret hygiene & git history scanner
+│   ├── export_test_metrics.py         # Test metrics exporter and JUnit XML synthesizer
+│   └── verify_blueprint_claims.py     # Deterministic verification harness for all blueprint claims
+├── tests/                             # 40 automated test suites (397+ tests, 100% active passing)
 └── training/
     ├── convert_yolo_to_coco.py        # Dataset conversion utilities
     ├── make_composites.py             # Multi-scale composite dataset generator
@@ -939,7 +948,7 @@ TOTAL: 397+ collected (active passes across all Phase 0-X verification suites)
 | **A09: Security Logging Failures** | Inability to prove an officer cleared a fraudulent document. | Immutable `ScreeningReport` rows logging officer identity, timestamp in IST, risk score, and tamper signals. |
 | **A10: Server-Side Request Forgery (SSRF)** | Exploiting remote ML service URL to probe internal cloud networks. | Strict URL scheme validation; destination domain allow-listing on outbound requests; decompression-bomb caps (`MAX_IMAGE_PIXELS = 89,478,485`, max 15MB payloads). |
 
-### 27.1 Phase S Security Audit Controls (Work Order v5)
+### 27.1 Phase S & v7 Security Audit Controls (Work Orders v5 & v7 Reconciled)
 1. **S1 Secret Hygiene & Repository Sealing:**
    - Git working tree and entire commit history scanned with automated secret audit tool (`scripts/audit_secrets_s1.py`).
    - Zero live plaintext tokens, credentials, or private keys present in repository history or working tree.
@@ -1027,7 +1036,7 @@ The Smart India Hackathon jury demonstration follows a deterministic 8-step oper
 - [x] **Card Detector v2 Dual-Track Deployment:** RF-DETR Small INT8 validated on frozen card manifest (Recall: 1.0000, FP: 0.63%); YOLOv8 retained as production default (`DETECTOR_BACKEND=yolov8`) following scale 2x/3x stress results; RF-DETR maintained for copyleft-sensitive deployments.
 - [x] **Honest Rejections Documented:** Aadhaar Field Detector (Model B) evaluated and REJECTED (mAP50-95 regressed 0.7678 vs 0.8380; YOLOv8 retained). Unified ID-Fields Detector evaluated and REJECTED (Recall@0.5 = 0.5583 vs 0.90 gate; OCR heuristics retained).
 - [x] **CPU Latency Budget Met ($\le 900$ ms):** 2-thread CPU end-to-end detector latencies: Passport/MRZ 657.53 ms, Aadhaar 503.25 ms, Generic ID 321.85 ms.
-- [x] **Phase S Security Audit Sealed (Work Order v5):**
+- [x] **Phase S & v7 Security Audit Sealed (Work Orders v5 & v7 Reconciled):**
   - **S1 Secret Hygiene:** 0 plaintext secrets in tree or git history verified via `scripts/audit_secrets_s1.py`.
   - **S2 Deployment Isolation:** Test staging domain (`vibe-check-point-test.vercel.app`) isolated from production; distinct Neon database branches and vault keys.
   - **S3 Auth & Input Hardening:** Constant-time `hmac.compare_digest` for microservice keys; zero unsafe deserialization; decompression-bomb pixel caps enforced.
