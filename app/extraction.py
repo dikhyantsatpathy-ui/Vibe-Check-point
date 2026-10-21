@@ -274,7 +274,8 @@ def _extract_image(data: bytes, doc_type: str = "") -> dict:
             out["mrz"] = None
 
     # Dedicated MRZ zone detector pass if whole-page OCR did not yield a valid MRZ
-    if not out.get("mrz"):
+    # Only run on documents that carry an MRZ (passports, travel documents, or unclassified types)
+    if not out.get("mrz") and (doc_type or "").lower() not in ("pan", "voter_id", "driving_licence", "aadhaar"):
         try:
             try:
                 from app.yolo_roi import extract_mrz_zone, get_mrz_detector_backend
