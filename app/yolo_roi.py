@@ -77,13 +77,63 @@ _AADHAAR_CLASS_NAMES = ["Aadhaar_No", "DOB", "Gender", "Name", "Photo"]
 # Per-class confidence thresholds (configurable via env)
 DEFAULT_CONF_THRESHOLDS: Dict[str, float] = {
     "document": float(os.getenv("CONF_THRES_DOCUMENT", "0.35")),
-    "card": float(os.getenv("CONF_THRES_DOCUMENT", "0.35")),
+    "card": float(os.getenv("CONF_THRES_CARD", os.getenv("CONF_THRES_DOCUMENT", "0.35"))),
     "Aadhaar_No": float(os.getenv("CONF_THRES_AADHAAR_NO", "0.35")),
     "DOB": float(os.getenv("CONF_THRES_DOB", "0.35")),
     "Gender": float(os.getenv("CONF_THRES_GENDER", "0.35")),
     "Name": float(os.getenv("CONF_THRES_NAME", "0.35")),
     "Photo": float(os.getenv("CONF_THRES_PHOTO", "0.35")),
 }
+
+
+def _load_threshold_file(file_path: Optional[str] = None) -> None:
+    """Load per-class confidence threshold overrides from JSON file.
+
+    Env variables take precedence over file; file takes precedence over code defaults.
+    """
+    path = file_path or os.getenv("CONF_THRESHOLDS_FILE")
+    if not path:
+        cand1 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "thresholds.json")
+        cand2 = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ml_service", "models", "thresholds.json"
+        )
+        path = cand1 if os.path.exists(cand1) else cand2
+
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        thresholds_map = data.get("thresholds") if isinstance(data.get("thresholds"), dict) else data
+        if not isinstance(thresholds_map, dict):
+            return
+
+        lower_to_canon = {k.lower(): k for k in DEFAULT_CONF_THRESHOLDS}
+        for k, v in thresholds_map.items():
+            if k in ("selected_from", "metric", "calibrated_at") or k.startswith("val_"):
+                continue
+            canon = lower_to_canon.get(k.lower())
+            if canon:
+                try:
+                    val = float(v)
+                    if 0.01 <= val <= 0.99:
+                        if canon == "card":
+                            env_set = (
+                                os.getenv("CONF_THRES_CARD") is not None
+                                or os.getenv("CONF_THRES_DOCUMENT") is not None
+                            )
+                        else:
+                            env_set = os.getenv(f"CONF_THRES_{canon.upper()}") is not None
+                        if not env_set:
+                            DEFAULT_CONF_THRESHOLDS[canon] = val
+                except (ValueError, TypeError):
+                    pass
+    except FileNotFoundError:
+        pass
+    except Exception as exc:
+        logger.warning("thresholds file ignored: %s", exc)
+
+
+_load_threshold_file()
+
 
 
 def get_detector_backend() -> str:

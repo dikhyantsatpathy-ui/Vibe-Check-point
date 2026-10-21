@@ -244,3 +244,22 @@ def test_yolo_roi_dual_implementation_drift():
     boxes_app = mod_app._postprocess_yolo_predictions(raw_preds, 1.0, (0.0, 0.0), (640, 640))
     boxes_ml = mod_ml._postprocess_yolo_predictions(raw_preds, 1.0, (0.0, 0.0), (640, 640))
     assert boxes_app == boxes_ml
+
+
+def test_thresholds_file_resolution_and_env_precedence(monkeypatch):
+    """With thresholds.json present, card resolves to 0.40; with env CONF_THRES_CARD=0.5, it resolves to 0.5."""
+    import ml_service.yolo_roi as ml_roi
+
+    # 1. Clean env: file is present -> card resolves to 0.40
+    monkeypatch.delenv("CONF_THRES_CARD", raising=False)
+    monkeypatch.delenv("CONF_THRES_DOCUMENT", raising=False)
+    ml_roi.DEFAULT_CONF_THRESHOLDS["card"] = 0.35
+    ml_roi._load_threshold_file()
+    assert ml_roi.DEFAULT_CONF_THRESHOLDS["card"] == 0.40
+
+    # 2. Env variable wins over file -> card resolves to 0.50
+    monkeypatch.setenv("CONF_THRES_CARD", "0.5")
+    ml_roi.DEFAULT_CONF_THRESHOLDS["card"] = 0.50
+    ml_roi._load_threshold_file()
+    assert ml_roi.DEFAULT_CONF_THRESHOLDS["card"] == 0.50
+

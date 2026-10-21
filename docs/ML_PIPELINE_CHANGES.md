@@ -392,6 +392,18 @@ If any unexpected behavior occurs in production with new models:
 - **New env vars:** None.
 - **Rollback:** Revert commit to restore previous single-job CI definition.
 
+### Fix 7: Add CONF_THRES_CARD env var and load calibrated thresholds from JSON file
+- **Reason:** In `app/yolo_roi.py` and `ml_service/yolo_roi.py`, the "card" class confidence threshold was tied to `CONF_THRES_DOCUMENT` rather than an independent `CONF_THRES_CARD` variable, and `DEFAULT_CONF_THRESHOLDS` was hardcoded without loading calibrated thresholds from `ml_service/models/thresholds.json`.
+- **Files touched:** `app/yolo_roi.py`, `ml_service/yolo_roi.py`, `tests/test_yolo_roi.py`, `docs/ML_PIPELINE_CHANGES.md`.
+- **Behavior change:**
+  - Added support for `CONF_THRES_CARD` environment variable with fallback to `CONF_THRES_DOCUMENT` and default `0.35`.
+  - Implemented `_load_threshold_file()` to load overrides from `CONF_THRESHOLDS_FILE` or `models/thresholds.json` (resolving case-insensitively, ignoring metadata fields `selected_from`, `metric`, `calibrated_at`, `val_*`).
+  - Precedence order: Environment variables > JSON thresholds file > hardcoded defaults.
+  - Set provisional card threshold to `0.40` loaded from `thresholds.json` (evaluated on clean validation set; pending real-world photo verification under Fix 17).
+  - Added unit test `test_thresholds_file_resolution_and_env_precedence` in `tests/test_yolo_roi.py`.
+- **New env vars:** `CONF_THRES_CARD`, `CONF_THRESHOLDS_FILE`.
+- **Rollback:** Revert commit to restore previous hardcoded card threshold.
+
 
 
 
