@@ -1,44 +1,43 @@
-"""Tests for ephemeral video file unlinking in media_processor (F-12).
+"""Tests for zero-raw-storage in-memory video decoding in media_processor (F-12 / FIX 5).
 
 Verifies:
-  1. Temporary .mp4 file created during motion liveness extraction is guaranteed
-     to be unlinked in the finally block.
-  2. Unlinking occurs even when cv2 decoding raises an exception.
-  3. Zero temporary files remain on disk after processing corrupted or valid video.
+  1. No temporary files or tempfile calls (NamedTemporaryFile, mkstemp) are used.
+  2. In-memory decoding with PyAV operates strictly in RAM.
+  3. Corrupted or valid video inputs return structured dictionaries without disk access.
 """
 
 from __future__ import annotations
 
-import os
-from unittest.mock import patch
-import pytest
+import tempfile
 
 from ml_service.media_processor import analyze_motion_liveness_frames
 
 
-def test_temp_video_unlinked_on_corrupt_input():
-    """Ephemeral .mp4 file must be unlinked even when video bytes are corrupted."""
+def test_no_tempfile_used_on_garbage_input(monkeypatch):
+    """tempfile must not be called when analyzing motion liveness frames."""
+    def forbid_tempfile(*args, **kwargs):
+        raise AssertionError("tempfile was invoked, violating Zero-Raw-Storage!")
+
+    monkeypatch.setattr(tempfile, "NamedTemporaryFile", forbid_tempfile)
+    monkeypatch.setattr(tempfile, "mkstemp", forbid_tempfile)
+
     corrupt_video = b"NOT_A_VALID_MP4_JUST_GARBAGE_BYTES" * 100  # > 1024 bytes
     res = analyze_motion_liveness_frames(corrupt_video)
     assert res.get("has_video") is True
     assert res.get("liveness_detected") is False
+    assert res.get("experimental") is True
 
 
-def test_temp_video_unlinked_when_decoder_raises():
-    """Even if cv2.VideoCapture raises an unhandled exception, finally block must unlink file."""
-    captured_tmp_path = []
+def test_no_tempfile_used_on_mp4_payload(monkeypatch):
+    """tempfile must not be called on any video payload."""
+    def forbid_tempfile(*args, **kwargs):
+        raise AssertionError("tempfile was invoked, violating Zero-Raw-Storage!")
 
-    def mock_video_capture(path):
-        captured_tmp_path.append(path)
-        assert os.path.exists(path), "Temp file should exist before decoder runs"
-        raise RuntimeError("Simulated codec crash")
+    monkeypatch.setattr(tempfile, "NamedTemporaryFile", forbid_tempfile)
+    monkeypatch.setattr(tempfile, "mkstemp", forbid_tempfile)
 
-    video_payload = b"\x00\x00\x00 ftypmp42fake" + (b"\x00" * 2000)
-    with patch("cv2.VideoCapture", side_effect=mock_video_capture):
-        res = analyze_motion_liveness_frames(video_payload)
-        assert res.get("liveness_detected") is False
-        assert "Simulated codec crash" in res.get("reason", "")
+    video_payload = b"\x00\x00\x00 ftypmp42isom" + (b"\x00" * 2000)
+    res = analyze_motion_liveness_frames(video_payload)
+    assert isinstance(res, dict)
+    assert res.get("experimental") is True
 
-    assert len(captured_tmp_path) == 1
-    tmp_path = captured_tmp_path[0]
-    assert not os.path.exists(tmp_path), f"Temp file {tmp_path} was NOT unlinked!"

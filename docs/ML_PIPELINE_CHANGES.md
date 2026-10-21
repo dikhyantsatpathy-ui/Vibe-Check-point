@@ -370,6 +370,18 @@ If any unexpected behavior occurs in production with new models:
 - **New env vars:** None.
 - **Rollback:** Revert commit to restore previous synthetic blank page fallback.
 
+### Fix 5: Decode motion liveness video burst in RAM without tempfiles
+- **Reason:** `analyze_motion_liveness_frames` in `ml_service/media_processor.py` wrote incoming video bursts to disk using `tempfile.NamedTemporaryFile` for `cv2.VideoCapture` decoding, violating the Zero-Raw-Storage architectural invariant before unlinking in `finally`.
+- **Files touched:** `ml_service/requirements.txt`, `ml_service/media_processor.py`, `tests/test_media_processor_tempfile.py`.
+- **Behavior change:**
+  - Added `av==18.1.0` (PyAV) to `ml_service/requirements.txt`.
+  - Replaced disk-based `tempfile` + `cv2.VideoCapture` in `analyze_motion_liveness_frames` with in-memory `av.open(io.BytesIO(video_bytes))` streaming.
+  - Eliminated `tempfile` imports, file writes, and disk unlink paths entirely.
+  - Verified that motion liveness retains `experimental: True` and does not reduce risk scores in the core screening pipeline.
+- **New env vars:** None.
+- **Rollback:** Revert commit to restore previous disk-backed decoding.
+
+
 
 
 

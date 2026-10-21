@@ -322,8 +322,8 @@ def extract_motion_photo_streams(media_bytes: bytes) -> Tuple[bytes, Optional[by
 
 
 def analyze_motion_liveness_frames(video_bytes: bytes, max_frames: int = 15) -> Dict[str, Any]:
-    """Decode video burst in memory and evaluate inter-frame physiological micro-motion.
-    Guarantees zero persistent files via immediate secure unlinking in finally block.
+    """Decode video burst entirely in memory and evaluate inter-frame physiological micro-motion.
+    Guarantees zero persistent files by avoiding any temporary disk storage.
     """
     if not video_bytes or len(video_bytes) < 1024:
         return {
@@ -334,46 +334,42 @@ def analyze_motion_liveness_frames(video_bytes: bytes, max_frames: int = 15) -> 
         }
 
     frames: List[np.ndarray] = []
-    tmp_path = None
     try:
-        import tempfile
+        import av
         import cv2
 
-        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
-            f.write(video_bytes)
-            tmp_path = f.name
-
-        cap = cv2.VideoCapture(tmp_path)
-        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
-        step = max(1, frame_count // max_frames)
-
-        idx = 0
-        while cap.isOpened() and len(frames) < max_frames:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if idx % step == 0:
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                # Resize for fast motion analysis
-                small = cv2.resize(gray, (160, 120))
-                frames.append(small)
-            idx += 1
-        cap.release()
-    except Exception as exc:
-        logger.warning(f"Video burst frame decoding failed: {exc}")
+        container = av.open(io.BytesIO(video_bytes))
+        try:
+            stream = container.streams.video[0]
+            total = int(stream.frames or 0)
+            step = max(1, total // max_frames) if total else 3
+            for idx, frame in enumerate(container.decode(stream)):
+                if idx % step == 0:
+                    gray = frame.to_ndarray(format="gray")
+                    frames.append(cv2.resize(gray, (160, 120)))
+                if len(frames) >= max_frames:
+                    break
+        finally:
+            container.close()
+    except ImportError:
         return {
             "has_video": True,
+            "frames_analyzed": 0,
             "motion_score": 0.0,
             "liveness_detected": False,
+            "experimental": True,
+            "reason": "In-memory video decoder (PyAV) not installed; liveness skipped.",
+        }
+    except Exception as exc:
+        logger.warning("Video burst frame decoding failed: %s", exc)
+        return {
+            "has_video": True,
+            "frames_analyzed": 0,
+            "motion_score": 0.0,
+            "liveness_detected": False,
+            "experimental": True,
             "reason": f"Video frame decode error: {exc}",
         }
-    finally:
-        # Secure immediate zero-storage unlinking
-        if tmp_path and os.path.exists(tmp_path):
-            try:
-                os.unlink(tmp_path)
-            except Exception:
-                pass
 
     if len(frames) < 3:
         return {
