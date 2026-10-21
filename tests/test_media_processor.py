@@ -44,7 +44,10 @@ def test_plain_jpeg_returns_none_video():
 
 def test_validate_upload_bytes_accepts_heic():
     """validate_upload_bytes returns 'heic' when given an ftyp box with an accepted HEIF brand."""
-    from app.main import validate_upload_bytes
+    try:
+        from app.main import validate_upload_bytes
+    except (ImportError, ModuleNotFoundError):
+        from main import validate_upload_bytes
 
     heic_bytes = b"\x00\x00\x00\x18ftypheic" + b"\x00" * 32
     assert validate_upload_bytes(heic_bytes) == "heic"
@@ -91,4 +94,120 @@ def test_api_process_live_photo_raises_415_on_heic_unavailable(monkeypatch):
     )
     assert response.status_code == 415
     assert "HEIC decoding unavailable" in response.json()["detail"]
+
+
+def test_heic_normalize_via_mocked_ml(monkeypatch):
+    """normalize_heic_to_png decodes HEIC via remote ML service when local HEIF is unavailable."""
+    import base64
+    try:
+        from app import heif_support as hs
+        from app.main import normalize_heic_to_png
+        from app import remote_ml as rm
+    except (ImportError, ModuleNotFoundError):
+        import heif_support as hs
+        from main import normalize_heic_to_png
+        import remote_ml as rm
+
+    monkeypatch.setattr(hs, "HEIF_SUPPORTED", False)
+
+    img = Image.new("RGB", (50, 50), color=(10, 20, 30))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    png_bytes = buf.getvalue()
+    b64_png = base64.b64encode(png_bytes).decode("ascii")
+
+    def mock_call_ml_media(path, filename, data, content_type):
+        if path == "/api/ml/media/process_live_photo":
+            return {"primary_image_b64": b64_png, "error": None}
+        return None
+
+    monkeypatch.setattr(rm, "call_ml_media", mock_call_ml_media)
+    heic_bytes = b"\x00\x00\x00\x18ftypheic" + b"\x00" * 32
+    result = normalize_heic_to_png(heic_bytes)
+    assert result == png_bytes
+
+
+def test_heic_normalize_raises_415_when_ml_fails(monkeypatch):
+    """normalize_heic_to_png raises HTTP 415 when local HEIF and remote ML are unavailable."""
+    import pytest
+    from fastapi import HTTPException
+    try:
+        from app import heif_support as hs
+        from app.main import normalize_heic_to_png
+        from app import remote_ml as rm
+    except (ImportError, ModuleNotFoundError):
+        import heif_support as hs
+        from main import normalize_heic_to_png
+        import remote_ml as rm
+
+    monkeypatch.setattr(hs, "HEIF_SUPPORTED", False)
+    monkeypatch.setattr(rm, "call_ml_media", lambda *args, **kwargs: None)
+
+    heic_bytes = b"\x00\x00\x00\x18ftypheic" + b"\x00" * 32
+    with pytest.raises(HTTPException) as exc_info:
+        normalize_heic_to_png(heic_bytes)
+    assert exc_info.value.status_code == 415
+    assert "HEIC photos can't be decoded right now" in exc_info.value.detail
+
+
+def test_pdf_text_or_image_ml_rasterization(monkeypatch):
+    """_pdf_text_or_image rasterizes vector-only PDF via ML service when local fitz produces no image."""
+    import base64
+    from pypdf import PdfWriter
+    try:
+        from app.extraction import _pdf_text_or_image
+        from app import remote_ml as rm
+    except (ImportError, ModuleNotFoundError):
+        from extraction import _pdf_text_or_image
+        import remote_ml as rm
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=100, height=100)
+    buf = io.BytesIO()
+    writer.write(buf)
+    blank_pdf = buf.getvalue()
+
+    img = Image.new("RGB", (60, 60), color=(50, 60, 70))
+    ibuf = io.BytesIO()
+    img.save(ibuf, format="PNG")
+    png_bytes = ibuf.getvalue()
+    b64_png = base64.b64encode(png_bytes).decode("ascii")
+
+    monkeypatch.setattr(
+        rm,
+        "call_ml_media",
+        lambda path, filename, data, content_type: {
+            "render_failed": False,
+            "pages": [{"png_b64": b64_png, "text": "Scanned Document", "render_failed": False}],
+        },
+    )
+
+    text, img_out = _pdf_text_or_image(blank_pdf)
+    assert text == "Scanned Document"
+    assert img_out == png_bytes
+
+
+def test_pdf_text_or_image_ml_rasterization_failure(monkeypatch):
+    """_pdf_text_or_image returns ('', None) when remote ML rasterization fails."""
+    from pypdf import PdfWriter
+    try:
+        from app.extraction import _pdf_text_or_image
+        from app import remote_ml as rm
+    except (ImportError, ModuleNotFoundError):
+        from extraction import _pdf_text_or_image
+        import remote_ml as rm
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=100, height=100)
+    buf = io.BytesIO()
+    writer.write(buf)
+    blank_pdf = buf.getvalue()
+
+    monkeypatch.setattr(rm, "call_ml_media", lambda *args, **kwargs: None)
+
+    text, img_out = _pdf_text_or_image(blank_pdf)
+    assert text == ""
+    assert img_out is None
+
+
 

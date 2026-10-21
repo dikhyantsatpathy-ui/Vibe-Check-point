@@ -192,3 +192,4 @@ def test_api_media_endpoints_via_testclient(monkeypatch):
     assert "primary_image_b64" in live_data
     assert "liveness" in live_data
     assert live_data["liveness"].get("experimental") is True
+

@@ -131,3 +131,33 @@ def prepare_payload(image_bytes: bytes, max_dim: int = 800) -> bytes:
         return buf.getvalue()
     except Exception:
         return image_bytes
+
+
+def call_ml_media(path: str, filename: str, data: bytes, content_type: str) -> dict | None:
+    """POST a file to an ML-service media endpoint. Returns parsed JSON or None.
+    Uses longer timeouts than detection (rendering is heavier). Never raises."""
+    if not is_remote_available(path):
+        return None
+    base = os.getenv("ML_SERVICE_URL", "").rstrip("/")
+    try:
+        import httpx
+
+        timeout = httpx.Timeout(max(get_timeout() * 4, 8.0), connect=max(get_connect_timeout() * 3, 3.0))
+        with httpx.Client(timeout=timeout) as client:
+            resp = client.post(
+                base + path,
+                files={"file": (filename, data, content_type)},
+                headers=get_auth_headers(),
+            )
+        if resp.status_code == 200:
+            mark_remote_success()
+            return resp.json()
+        logger.warning("[remote_ml] %s returned HTTP %s", path, resp.status_code)
+        if resp.status_code >= 500:
+            mark_remote_failed(path)
+        return None
+    except Exception as exc:
+        logger.warning("[remote_ml] %s failed: %s", path, exc)
+        mark_remote_failed(path)
+        return None
+

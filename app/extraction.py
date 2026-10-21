@@ -194,6 +194,21 @@ def _pdf_text_or_image(data: bytes) -> tuple[str, bytes | None]:
             return "", pix.tobytes("png")
     except Exception:
         pass
+    # Vector-only / unrenderable PDF: ask the ML service to rasterize page 1 (RAM only).
+    try:
+        try:
+            from app.remote_ml import call_ml_media
+        except ImportError:
+            from remote_ml import call_ml_media
+        res = call_ml_media("/api/ml/media/process_pdf", "document.pdf", data, "application/pdf")
+        if res and not res.get("render_failed"):
+            import base64
+
+            for pg in res.get("pages", []):
+                if pg.get("png_b64") and not pg.get("render_failed"):
+                    return pg.get("text", "") or "", base64.b64decode(pg["png_b64"])
+    except Exception:
+        pass
     return "", None
 
 

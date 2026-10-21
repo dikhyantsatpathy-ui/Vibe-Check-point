@@ -350,6 +350,17 @@ If any unexpected behavior occurs in production with new models:
 - **New env vars:** None.
 - **Rollback:** Revert commit to restore previous upload gate constraints.
 
+### Fix 3: Wire ML media processing into app (PDF rasterization and HEIC conversion)
+- **Reason:** ML service media endpoints `/api/ml/media/process_pdf` and `/api/ml/media/process_live_photo` were implemented but never called from `app/`. Vercel serverless environment lacks fitz/pdfium rasterizers and pillow-heif, leaving vector-only PDFs and iPhone HEIC uploads unhandled.
+- **Files touched:** `app/remote_ml.py`, `app/extraction.py`, `app/main.py`, `tests/test_media_processor.py`.
+- **Behavior change:**
+  - Added `call_ml_media(path, filename, data, content_type)` in `app/remote_ml.py` with 8.0s timeout and circuit breaker tracking.
+  - In `app/extraction.py::_pdf_text_or_image`, if local PDF extractors cannot rasterize vector-only pages, calls `/api/ml/media/process_pdf` to render page 1 in RAM.
+  - In `app/main.py`, added `normalize_heic_to_png(data)` helper converting HEIC to PNG via local `heif_support` or `/api/ml/media/process_live_photo`, and wired into screening and extraction upload gates.
+- **New env vars:** None.
+- **Rollback:** Revert commit to restore previous local-only extraction behavior.
+
+
 
 
 

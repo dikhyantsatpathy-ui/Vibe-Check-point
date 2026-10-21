@@ -81,7 +81,7 @@ from guide import (flow_for, checkpoint_catalog, document_catalog,
                    nationality_catalog)
 from stats import report_stats, session_stats, throughput
 
-from PIL import Image
+from PIL import Image, ImageOps
 # Decompression bomb explicit hardening: lower than default 89,478,485
 Image.MAX_IMAGE_PIXELS = 50_000_000
 # Upload payload boundaries: 8MB app boundary, 15MB ML microservice boundary
@@ -169,6 +169,33 @@ def validate_upload_bytes(data: bytes, filename: str = "", max_pdf_pages: int = 
         raise HTTPException(status_code=400, detail=f"Corrupt or malformed image: {exc}")
 
     return "jpg" if is_jpeg else ("png" if is_png else ("webp" if is_webp else "bmp"))
+
+
+def normalize_heic_to_png(data: bytes) -> bytes:
+    """HEIC -> PNG bytes. Local pillow-heif if available, else the ML service. RAM only."""
+    try:
+        from app.heif_support import HEIF_SUPPORTED as ok
+    except ImportError:
+        from heif_support import HEIF_SUPPORTED as ok
+    if ok:
+        img = Image.open(io.BytesIO(data))
+        img = ImageOps.exif_transpose(img).convert("RGB")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+    try:
+        from app.remote_ml import call_ml_media
+    except ImportError:
+        from remote_ml import call_ml_media
+    res = call_ml_media("/api/ml/media/process_live_photo", "photo.heic", data, "image/heic")
+    if res and res.get("primary_image_b64") and not res.get("error"):
+        import base64
+
+        return base64.b64decode(res["primary_image_b64"])
+    raise HTTPException(
+        status_code=415,
+        detail="HEIC photos can't be decoded right now. Re-take as JPEG/PNG or try again in a minute.",
+    )
 
 # Passport/Visa MRZ / Driving-Licence / PAN / Voter-ID validation lives in
 # identity.py and feeds the screening desk's Module 2 (document validation)
@@ -2827,7 +2854,10 @@ async def screen_document(
                 pass
 
         data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
-        validate_upload_bytes(data, file.filename or "")
+        fmt = validate_upload_bytes(data, file.filename or "")
+        if fmt == "heic":
+            data = normalize_heic_to_png(data)
+            validate_upload_bytes(data, "converted.png")
 
         session_owner = session_id.strip() or None
         if session_owner:
@@ -2848,7 +2878,10 @@ async def screen_document(
         if file_back is not None:
             data_back = await read_upload_capped(file_back, MAX_UPLOAD_BYTES)
             if data_back:
-                validate_upload_bytes(data_back, file_back.filename or "")
+                fmt_back = validate_upload_bytes(data_back, file_back.filename or "")
+                if fmt_back == "heic":
+                    data_back = normalize_heic_to_png(data_back)
+                    validate_upload_bytes(data_back, "converted_back.png")
                 filename_back = file_back.filename or "back.jpg"
 
         declared_map = {}
@@ -2861,7 +2894,10 @@ async def screen_document(
                 declared_map = {}
         live_bytes = await read_upload_capped(live_frame, MAX_UPLOAD_BYTES) if live_frame is not None else None
         if live_bytes:
-            validate_upload_bytes(live_bytes, live_frame.filename or "")
+            fmt_live = validate_upload_bytes(live_bytes, live_frame.filename or "")
+            if fmt_live == "heic":
+                live_bytes = normalize_heic_to_png(live_bytes)
+                validate_upload_bytes(live_bytes, "converted_live.png")
         nat = (nationality or "").strip().upper()[:2] or None
         purpose_txt = (purpose or "").strip()[:120] or None
         session_owner = session_id.strip() or None
@@ -3670,10 +3706,16 @@ async def extract_live_image(
             except ValueError:
                 pass
         data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
-        validate_upload_bytes(data, file.filename or "")
+        fmt = validate_upload_bytes(data, file.filename or "")
+        if fmt == "heic":
+            data = normalize_heic_to_png(data)
+            validate_upload_bytes(data, "converted.png")
         frame_bytes = await read_upload_capped(live_frame, MAX_UPLOAD_BYTES) if live_frame is not None else None
         if frame_bytes:
-            validate_upload_bytes(frame_bytes, live_frame.filename or "")
+            fmt_frame = validate_upload_bytes(frame_bytes, live_frame.filename or "")
+            if fmt_frame == "heic":
+                frame_bytes = normalize_heic_to_png(frame_bytes)
+                validate_upload_bytes(frame_bytes, "converted_frame.png")
         
         # Auto-classify document type with local ONNX classifier
         from doctype_cls import classify_document
@@ -4695,7 +4737,10 @@ async def screen_aadhaar_fields(
             except ValueError:
                 pass
         data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
-        validate_upload_bytes(data, file.filename or "")
+        fmt = validate_upload_bytes(data, file.filename or "")
+        if fmt == "heic":
+            data = normalize_heic_to_png(data)
+            validate_upload_bytes(data, "converted.png")
         try:
             from yolo_roi import extract_aadhaar_fields
             boxes = extract_aadhaar_fields(data)
