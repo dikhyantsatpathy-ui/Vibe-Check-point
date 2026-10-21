@@ -979,8 +979,8 @@ def _detect_qr_zone(rgb: np.ndarray) -> Optional[Dict[str, Any]]:
                 "confidence": None,
                 "source": "heuristic",
             }
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("heuristic failed (%s): %s", "qr", exc)
     return None
 
 
@@ -1009,8 +1009,8 @@ def _detect_document_card(rgb: np.ndarray) -> Dict[str, Any]:
                     "source": "heuristic",
                     "is_fallback": False,
                 }
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("heuristic failed (%s): %s", "document_card", exc)
 
     # Default document frame heuristic: padded inner bounds
     return {

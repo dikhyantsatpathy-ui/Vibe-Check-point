@@ -404,6 +404,17 @@ If any unexpected behavior occurs in production with new models:
 - **New env vars:** `CONF_THRES_CARD`, `CONF_THRESHOLDS_FILE`.
 - **Rollback:** Revert commit to restore previous hardcoded card threshold.
 
+### Fix 8: Log heuristic exceptions and tag fallback boxes
+- **Reason:** In `app/yolo_roi.py` and `ml_service/yolo_roi.py`, QR code and document card heuristics silently swallowed runtime exceptions (`except Exception: pass`), obscuring internal detector or OpenCV failures.
+- **Files touched:** `app/yolo_roi.py`, `ml_service/yolo_roi.py`, `tests/test_yolo_roi.py`, `docs/ML_PIPELINE_CHANGES.md`.
+- **Behavior change:**
+  - Replaced silent pass in `_detect_qr_zone` with `logger.debug("heuristic failed (%s): %s", "qr", exc)`.
+  - Replaced silent pass in `_detect_document_card` with `logger.debug("heuristic failed (%s): %s", "document_card", exc)`.
+  - Retained honest heuristic tagging (`source: "heuristic"`, `confidence: None`, `is_fallback: True` on the document card fallback box).
+  - Added unit test `test_heuristic_exception_handling_and_logging` in `tests/test_yolo_roi.py` verifying that forced OpenCV/runtime exceptions in both modules log debug messages and return tagged/None results.
+- **New env vars:** None.
+- **Rollback:** Revert commit to restore previous silent pass.
+
 
 
 

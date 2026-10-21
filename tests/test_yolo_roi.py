@@ -263,3 +263,38 @@ def test_thresholds_file_resolution_and_env_precedence(monkeypatch):
     ml_roi._load_threshold_file()
     assert ml_roi.DEFAULT_CONF_THRESHOLDS["card"] == 0.50
 
+
+def test_heuristic_exception_handling_and_logging(monkeypatch, caplog):
+    """Forced exceptions in QR and document card heuristics log debug and return tagged/None results."""
+    import logging
+    import ml_service.yolo_roi as ml_roi
+
+    try:
+        import app.yolo_roi as app_roi
+    except (ImportError, ModuleNotFoundError):
+        import yolo_roi as app_roi
+
+    dummy_rgb = np.zeros((100, 100, 3), dtype=np.uint8)
+
+    for mod in (ml_roi, app_roi):
+        # 1. Force exception in _detect_qr_zone
+        caplog.clear()
+        with caplog.at_level(logging.DEBUG):
+            # Monkeypatch cv2.cvtColor to raise
+            import cv2
+            monkeypatch.setattr(cv2, "cvtColor", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("Forced cv2 failure")))
+            qr_res = mod._detect_qr_zone(dummy_rgb)
+            assert qr_res is None
+            assert any("heuristic failed (qr)" in rec.message for rec in caplog.records)
+
+        # 2. Force exception in _detect_document_card
+        caplog.clear()
+        with caplog.at_level(logging.DEBUG):
+            doc_res = mod._detect_document_card(dummy_rgb)
+            assert doc_res is not None
+            assert doc_res["label"] == "document"
+            assert doc_res["source"] == "heuristic"
+            assert doc_res["is_fallback"] is True
+            assert doc_res["confidence"] is None
+            assert any("heuristic failed (document_card)" in rec.message for rec in caplog.records)
+
