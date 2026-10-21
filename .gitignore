@@ -129,6 +129,7 @@ eval/local/
 !docs/**/*.md
 !docs/claims/*.json
 !training/indian_specimens/CAPTURE_PROTOCOL.md
+!eval/field_capture/PROTOCOL.md
 CHAT_EXPORT.html
 chat_transcripts/
 clean up for hackathon/
