@@ -381,6 +381,18 @@ If any unexpected behavior occurs in production with new models:
 - **New env vars:** None.
 - **Rollback:** Revert commit to restore previous disk-backed decoding.
 
+### Fix 6: Install ML service dependencies in CI and add Python 3.12 validation job
+- **Reason:** `.github/workflows/ci.yml` installed only root `requirements.txt` (omitting `ml_service/requirements.txt` dependencies: onnxruntime, opencv, pypdfium2, av, pillow-heif) while computing code coverage on `ml_service`. Furthermore, tests were only run on Python 3.11 with no visibility into skipped tests or Python 3.12 compatibility.
+- **Files touched:** `.github/workflows/ci.yml`.
+- **Behavior change:**
+  - Added `pip install -r ml_service/requirements.txt` to CI dependency installation.
+  - Added visibility step `pytest -q -m "not slow" -rs | tail -40` to report skipped tests.
+  - Retained Python 3.11 for primary CI and Dockerfile. Kept `.python-version` as 3.12 per instruction pending Vercel dashboard verification.
+  - Added secondary CI job `test-py312` running `pytest -m "not slow"` against Python 3.12.
+- **New env vars:** None.
+- **Rollback:** Revert commit to restore previous single-job CI definition.
+
+
 
 
 
