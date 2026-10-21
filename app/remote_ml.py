@@ -30,8 +30,26 @@ ALLOWED_ML_DOMAINS = {
 }
 
 
+def get_allowed_ml_hosts() -> set[str]:
+    """Return exact allowed hosts from ML_ALLOWED_HOSTS or parsed ML_SERVICE_URL default."""
+    custom = os.getenv("ML_ALLOWED_HOSTS")
+    if custom:
+        return {h.strip().lower() for h in custom.split(",") if h.strip()}
+
+    allowed = {"localhost", "127.0.0.1", "::1", "test-ml-service"}
+    ml_url = os.getenv("ML_SERVICE_URL")
+    if ml_url:
+        try:
+            h = (urlparse(ml_url).hostname or "").lower()
+            if h:
+                allowed.add(h)
+        except Exception:
+            pass
+    return allowed
+
+
 def is_allowed_ml_url(url: str) -> bool:
-    """Validate that ML URL domain conforms to SSRF allowlist."""
+    """Validate that ML URL domain conforms to SSRF exact-host and domain allowlist."""
     if not url:
         return False
     try:
@@ -39,6 +57,26 @@ def is_allowed_ml_url(url: str) -> bool:
         hostname = (parsed.hostname or "").lower()
         if not hostname:
             return False
+
+        # If explicit ML_ALLOWED_HOSTS is set, enforce exact match
+        if os.getenv("ML_ALLOWED_HOSTS"):
+            return hostname in get_allowed_ml_hosts()
+
+        # If hostname is a subdomain of hf.space, restrict to the designated ML_SERVICE_URL host
+        # or known default space, rejecting arbitrary attacker spaces (*.hf.space)
+        if hostname.endswith(".hf.space"):
+            allowed_spaces = {"koropanda-ml-service.hf.space"}
+            ml_url = os.getenv("ML_SERVICE_URL")
+            if ml_url:
+                try:
+                    s_host = (urlparse(ml_url).hostname or "").lower()
+                    if s_host:
+                        allowed_spaces = {s_host}
+                except Exception:
+                    pass
+            return hostname in allowed_spaces
+
+        # Default trusted infrastructure domain roots
         return any(hostname == d or hostname.endswith(f".{d}") for d in ALLOWED_ML_DOMAINS)
     except Exception:
         return False

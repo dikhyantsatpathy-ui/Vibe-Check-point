@@ -1,5 +1,8 @@
+import logging
 import os
 import sys
+
+logger = logging.getLogger("ml_service.app")
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
@@ -75,8 +78,18 @@ gradio_app.include_router(fastapi_app.router, prefix="/gradio_api")
 gradio_app.router.routes = fastapi_app.routes + gradio_app.router.routes
 
 # Restricted CORS for external integrations (Vercel production, local dev, desk consoles)
-_cors_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
-if not _cors_origins:
+_env = (os.getenv("ENV") or os.getenv("ENVIRONMENT") or "").strip().lower()
+_raw_allowed = os.getenv("ALLOWED_ORIGINS")
+
+if _raw_allowed:
+    _cors_origins = [o.strip() for o in _raw_allowed.split(",") if o.strip()]
+elif _env == "production":
+    _cors_origins = ["https://vibe-check-point.vercel.app"]
+    logger.warning(
+        "[cors] Running in production without explicit ALLOWED_ORIGINS. "
+        "Defaulting strictly to https://vibe-check-point.vercel.app without localhost."
+    )
+else:
     _cors_origins = [
         "https://vibe-check-point.vercel.app",
         "http://localhost:3000",

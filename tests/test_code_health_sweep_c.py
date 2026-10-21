@@ -99,6 +99,35 @@ def test_c2_ssrf_domain_allowlist(monkeypatch):
     monkeypatch.setenv("ML_SERVICE_URL", "https://koropanda-ml-service.hf.space")
     assert is_remote_available() is True
 
+    # Fix 12: evil.hf.space must be rejected when ML_SERVICE_URL points to official space
+    assert is_allowed_ml_url("https://evil.hf.space") is False
+    assert is_allowed_ml_url("https://evil.hf.space/predict") is False
+
+    # Fix 12: ML_ALLOWED_HOSTS exact match override
+    monkeypatch.setenv("ML_ALLOWED_HOSTS", "trusted-ml.internal, ml.ssb.gov.in")
+    assert is_allowed_ml_url("https://trusted-ml.internal/api") is True
+    assert is_allowed_ml_url("https://ml.ssb.gov.in/api") is True
+    assert is_allowed_ml_url("https://other.internal") is False
+    assert is_allowed_ml_url("https://koropanda-ml-service.hf.space") is False
+
+
+def test_fix12_cors_production_restriction(monkeypatch):
+    """Verify CORS origins in production omit localhost defaults unless explicitly set."""
+    import importlib
+    monkeypatch.setenv("ENV", "production")
+    monkeypatch.delenv("ALLOWED_ORIGINS", raising=False)
+    
+    # Reload ml_service.main
+    import ml_service.main as ml_main
+    importlib.reload(ml_main)
+    assert "http://localhost:3000" not in ml_main._allowed_origins
+    assert "https://vibe-check-point.vercel.app" in ml_main._allowed_origins
+
+    # When ALLOWED_ORIGINS is provided, it is respected
+    monkeypatch.setenv("ALLOWED_ORIGINS", "https://custom.gov.in")
+    importlib.reload(ml_main)
+    assert ml_main._allowed_origins == ["https://custom.gov.in"]
+
 
 def test_c3_blueprint_canonical_routes(auth_client):
     """Verify all canonical routes claimed in Blueprint Section 22 exist and respond."""

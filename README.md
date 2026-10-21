@@ -78,8 +78,6 @@ of suspicious documents from one origin, or an individual flagged repeatedly.
 
 ## 4. Architecture
 
-## 4. Architecture
-
 ```mermaid
 graph TD
     Client[Officer Console / Web UI] -->|HTTPS / Multipart| API[FastAPI Backend - app/main.py]
@@ -99,7 +97,7 @@ graph TD
     M3 --> DecLayer
     M4 --> DecLayer
     
-    DecLayer --> Decision[Verdict: GENUINE_LIKELY / REVIEW / REJECT_LIKELY]
+    DecLayer --> Decision[Verdict: CLEAR / REVIEW / FLAGGED]
     Decision --> Ledger[(Immutable SHA-256 Hash Chain)]
 ```
 
@@ -119,7 +117,7 @@ graph TD
 | `HF_MODEL_REPO` | `koropanda/no-cap-detectors` | Hugging Face repository for downloading model weights. |
 | `HF_MODEL_REVISION` | `main` | Git commit SHA or branch pinned on Hugging Face. |
 | `MODEL_CACHE_DIR` | `ml_service/models` | Local directory for cached model weights and SHA-256 sidecars. |
-| `DATABASE_URL` | `sqlite:///./nocap.db` | Database connection string (PostgreSQL or SQLite). |
+| `DATABASE_URL` | `postgresql://...` | Neon PostgreSQL connection string (only supported database; no SQLite). |
 | `MASTER_VAULT_KEY` | *dev-key* | Secret key for signing session cookies and audit hashes. |
 
 ### Quick Start
@@ -204,12 +202,13 @@ identifiers (e.g. `PAN: ABCT…23`, never the naked number).
 ## 8. Setup & Run
 
 ```bash
-git clone <repo-url> && cd crypto
+git clone https://github.com/dikhyantsatpathy-ui/Vibe-Check-point.git
+cd Vibe-Check-point
 python -m venv .venv
 .venv\Scripts\activate                 # Windows (Linux: source .venv/bin/activate)
 pip install -r requirements.txt
 copy .env.example .env                # then fill real values
-uvicorn main:app --port 8000          # run from app/  (or double-click START.bat)
+python -m uvicorn app.main:app --port 8000  # run from repo root (or double-click START.bat)
 ```
 
 Or double-click **START.bat** (Windows), which installs Python + npm deps, rebuilds the

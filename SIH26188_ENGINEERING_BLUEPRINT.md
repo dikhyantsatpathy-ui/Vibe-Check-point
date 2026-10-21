@@ -1072,7 +1072,7 @@ TOTAL: 467 collected (active passes across all 54 test suites)
    - Zero vulnerabilities verified via `pip-audit 2.10.1` and `npm audit`.
 5. **Dual Invariant Architecture (Invariant AUTH & Invariant FS):**
    - **Invariant AUTH (Fail-Closed Authorization):** All protected routes require valid credentials and fail closed with immediate HTTP 401/403 status codes and zero operational telemetry leakage.
-   - **Invariant FS (Fail-Safe Screening):** Under no condition, failure mode, or degraded/fallback state does the screening pipeline autonomously issue a CLEAR verdict. Degraded or unverified inputs route strictly to REVIEW or REJECT_LIKELY.
+   - **Invariant FS (Fail-Safe Screening):** Under no condition, failure mode, or degraded/fallback state does the screening pipeline autonomously issue a CLEAR verdict. Degraded or unverified inputs route strictly to REVIEW or FLAGGED.
 
 ---
 

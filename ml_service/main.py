@@ -51,9 +51,19 @@ def verify_ml_auth(x_ml_secret_key: Optional[str] = Security(_API_KEY_HEADER)):
     return True
 
 
-# --- Security: CORS Origin Restriction (Finding C2) ---
-_allowed_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
-if not _allowed_origins:
+# --- Security: CORS Origin Restriction (Finding C2 / Fix 12) ---
+_env = (os.getenv("ENV") or os.getenv("ENVIRONMENT") or "").strip().lower()
+_raw_allowed = os.getenv("ALLOWED_ORIGINS")
+
+if _raw_allowed:
+    _allowed_origins = [o.strip() for o in _raw_allowed.split(",") if o.strip()]
+elif _env == "production":
+    _allowed_origins = ["https://vibe-check-point.vercel.app"]
+    logger.warning(
+        "[cors] Running in production without explicit ALLOWED_ORIGINS. "
+        "Defaulting strictly to https://vibe-check-point.vercel.app without localhost."
+    )
+else:
     _allowed_origins = [
         "https://vibe-check-point.vercel.app",
         "http://localhost:3000",
