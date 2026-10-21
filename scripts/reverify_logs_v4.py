@@ -22,7 +22,7 @@ FAKE_SECRETS = [
     "AIzaSyFAKE-TOKEN-NOT-REAL-GOOGLE-12345",
 ]
 
-def test_log_redaction():
+def test_log_redaction(out_dir: Path | None = None) -> Path:
     results = []
     all_passed = True
 
@@ -67,7 +67,8 @@ def test_log_redaction():
     if raw_token_leaked:
         all_passed = False
 
-    out_dir = ROOT / "eval" / "runs" / "20261011_reverify_v1"
+    if out_dir is None:
+        out_dir = (ROOT / "eval" / "runs" / "20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else Path(os.getenv("TEST_TMP_DIR") or (ROOT / "eval" / "runs" / "20261011_reverify_v1"))
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "log_redaction_test.json"
 
@@ -79,6 +80,7 @@ def test_log_redaction():
     }
     out_file.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(f"Log redaction test complete (verdict: {report['verdict']}). Written to {out_file}")
+    return out_file
 
 if __name__ == "__main__":
     test_log_redaction()

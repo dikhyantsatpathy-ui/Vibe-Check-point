@@ -26,6 +26,8 @@ from app.yolo_roi import isolate_document_card
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+pytestmark = pytest.mark.slow
+
 
 @pytest.fixture(scope="session")
 def readable_pics():
@@ -196,9 +198,9 @@ def test_x7_silver_labels_restriction():
     assert silver_gate_allowed is False, "Silver labels must never serve as gates"
 
 
-def test_x8_generate_pics_smoke_artifact():
+def test_x8_generate_pics_smoke_artifact(tmp_path):
     """X8: Generates Phase X aggregate smoke artifact."""
-    artifact_dir = REPO_ROOT / "eval" / "runs" / "20261011_reverify_v1"
+    artifact_dir = (REPO_ROOT / "eval" / "runs" / "20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
     artifact_dir.mkdir(parents=True, exist_ok=True)
     artifact_path = artifact_dir / "pics_smoke_x.json"
 

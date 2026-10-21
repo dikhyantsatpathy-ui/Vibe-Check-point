@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
+import os
 from pathlib import Path
 import pytest
 import onnxruntime as ort
@@ -113,9 +114,9 @@ def test_t5_yolo_roi_interface_parity():
         )
 
 
-def test_t5_generate_artifact(inspected_models):
+def test_t5_generate_artifact(inspected_models, tmp_path):
     """Writes model facts and I/O audit artifact."""
-    out_dir = Path("eval/runs/20261011_reverify_v1")
+    out_dir = Path("eval/runs/20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "model_io_t5.json"
 

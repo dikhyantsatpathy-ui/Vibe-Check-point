@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import random
 from pathlib import Path
 import pytest
@@ -101,7 +102,8 @@ def golden_specimens():
     return specimens
 
 
-def test_t4_golden_set_execution(golden_specimens):
+@pytest.mark.slow
+def test_t4_golden_set_execution(golden_specimens, tmp_path):
     """Execute 40 documents × 3 noise levels = 120 evaluations and verify stability."""
     results = []
     clean_passes = 0
@@ -160,7 +162,7 @@ def test_t4_golden_set_execution(golden_specimens):
 
 
     # Save artifact
-    out_dir = Path("eval/runs/20261011_reverify_v1")
+    out_dir = Path("eval/runs/20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "golden_set_t4.json"
     summary = {

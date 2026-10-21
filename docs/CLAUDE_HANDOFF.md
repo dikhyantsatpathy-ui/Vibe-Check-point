@@ -38,8 +38,8 @@
 ## Dynamic Repository Facts Block (Auto-Generated)
 
 - **Branch:** `ml/patch-v8`
-- **Last Commit:** `4c21f3e [K3] Claude handoff generator with static narrative and dynamic facts block`
-- **Queue Task Statuses:** {"DONE": 28, "DOING": 1, "TODO": 3}
+- **Last Commit:** `ad93ebf fix(config): reconcile timeout aliases, face thresholds, and degraded mode gates`
+- **Queue Task Statuses:** {"DONE": 32}
 - **Claims Ledger Verdicts:** {"UNKNOWN": 78}
 - **Test Suite Status:** **467 total tests** collected across **54 suites** (100% passing)
 
@@ -105,26 +105,26 @@
 - ### Item 11: CSP Strict Enforce Verification
 
 ### Last 20 Agent Journal Entries
-- `{"t": "2026-10-12T22:00:29Z", "event": "checkpoint", "note": "T4 complete; next T5 compileall and ruff check"}`
-- `{"t": "2026-10-12T22:00:34Z", "event": "resume", "session": 34}`
-- `{"t": "2026-10-12T22:00:41Z", "event": "start", "id": "T5", "attempt": 1}`
-- `{"t": "2026-10-12T22:02:48Z", "event": "done", "id": "T5", "evidence": "verify OK: python -m compileall -q app ml_service api scripts"}`
-- `{"t": "2026-10-12T22:03:10Z", "event": "checkpoint", "note": "T5 complete (Phase T finished); next Phase K"}`
-- `{"t": "2026-10-12T22:03:16Z", "event": "resume", "session": 35}`
-- `{"t": "2026-10-12T22:03:28Z", "event": "start", "id": "K1", "attempt": 1}`
-- `{"t": "2026-10-12T22:04:03Z", "event": "resume", "session": 36}`
-- `{"t": "2026-10-12T22:05:10Z", "event": "done", "id": "K1", "evidence": "verify OK: python scripts/verify_blueprint_claims.py"}`
-- `{"t": "2026-10-12T22:05:50Z", "event": "checkpoint", "note": "K1 complete; next K2 blueprint template and renderer"}`
-- `{"t": "2026-10-12T22:05:54Z", "event": "resume", "session": 37}`
-- `{"t": "2026-10-12T22:05:59Z", "event": "start", "id": "K2", "attempt": 1}`
-- `{"t": "2026-10-12T22:14:33Z", "event": "done", "id": "K2", "evidence": "verify OK: python scripts/render_blueprint.py --check"}`
-- `{"t": "2026-10-12T22:15:00Z", "event": "checkpoint", "note": "K2 complete; next K3 Claude handoff generator"}`
-- `{"t": "2026-10-12T22:15:08Z", "event": "resume", "session": 38}`
 - `{"t": "2026-10-12T22:15:14Z", "event": "start", "id": "K3", "attempt": 1}`
 - `{"t": "2026-10-12T22:17:45Z", "event": "done", "id": "K3", "evidence": "verify OK: python scripts/render_handoff.py --check"}`
 - `{"t": "2026-10-12T22:18:32Z", "event": "checkpoint", "note": "K3 complete; next K4 blueprint and handoff check"}`
 - `{"t": "2026-10-12T22:18:37Z", "event": "resume", "session": 39}`
 - `{"t": "2026-10-12T22:18:43Z", "event": "start", "id": "K4", "attempt": 1}`
+- `{"t": "2026-10-12T22:20:21Z", "event": "done", "id": "K4", "evidence": "verify OK: python -m pytest tests/test_v8_docs_hygiene.py -q"}`
+- `{"t": "2026-10-12T22:21:02Z", "event": "checkpoint", "note": "K4 complete (Phase K finished); next Phase G verdict and close-out"}`
+- `{"t": "2026-10-12T22:21:08Z", "event": "resume", "session": 40}`
+- `{"t": "2026-10-12T22:21:30Z", "event": "start", "id": "G1", "attempt": 1}`
+- `{"t": "2026-10-12T22:25:05Z", "event": "done", "id": "G1", "evidence": "verify OK: python scripts/release_verdict.py --write docs/FINAL_REPORT_DRAFT.md"}`
+- `{"t": "2026-10-12T22:25:44Z", "event": "checkpoint", "note": "G1 complete; next G2 push branch and finalize queue"}`
+- `{"t": "2026-10-12T22:25:58Z", "event": "resume", "session": 41}`
+- `{"t": "2026-10-12T22:26:08Z", "event": "start", "id": "G2", "attempt": 1}`
+- `{"t": "2026-10-12T22:26:55Z", "event": "done", "id": "G2", "evidence": "git push origin ml/patch-v8 succeeded; new branch pushed clean"}`
+- `{"t": "2026-10-12T22:27:23Z", "event": "checkpoint", "note": "G2 complete; next G3 final message to owner"}`
+- `{"t": "2026-10-12T22:27:30Z", "event": "resume", "session": 42}`
+- `{"t": "2026-10-12T22:27:37Z", "event": "start", "id": "G3", "attempt": 1}`
+- `{"t": "2026-10-12T22:27:52Z", "event": "done", "id": "G3", "evidence": "final message prepared with verdict, owner blockers, residual risks, and Appendix G questions"}`
+- `{"t": "2026-10-12T22:28:17Z", "event": "checkpoint", "note": "v8 complete"}`
+- `{"t": "2026-10-12T22:28:23Z", "event": "resume", "session": 43}`
 
 ---
 

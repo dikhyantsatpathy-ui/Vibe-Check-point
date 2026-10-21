@@ -54,13 +54,9 @@ jobs:
         run: |
           pytest tests/test_yolo_roi.py -k "test_yolo_roi_dual_implementation_drift"
 
-      - name: Run Test Suite
+      - name: Run Test Suite with Coverage Ratchet Gate
         run: |
-          pytest -v -m "not slow"
-
-      - name: Code Coverage Ratchet Gate
-        run: |
-          pytest --cov=app --cov=ml_service --cov-report=json
+          pytest -v -m "not slow" --cov=app --cov=ml_service --cov-report=json
           python scripts/check_coverage.py
 
       - name: Model Card Validation

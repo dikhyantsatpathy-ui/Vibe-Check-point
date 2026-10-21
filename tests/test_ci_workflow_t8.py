@@ -9,11 +9,12 @@ Validates:
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import pytest
 
 
-def test_t8_ci_workflow_structure_and_coverage():
+def test_t8_ci_workflow_structure_and_coverage(tmp_path):
     """Audit .github/workflows/ci.yml for mandatory quality gates."""
     wf_path = Path(".github/workflows/ci.yml")
     assert wf_path.exists(), "CI workflow file .github/workflows/ci.yml must exist"
@@ -41,7 +42,7 @@ def test_t8_ci_workflow_structure_and_coverage():
         results[gate_name] = present
 
     # Write evaluation artifact
-    out_dir = Path("eval/runs/20261011_reverify_v1")
+    out_dir = Path("eval/runs/20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "ci_audit_t8.json"
 

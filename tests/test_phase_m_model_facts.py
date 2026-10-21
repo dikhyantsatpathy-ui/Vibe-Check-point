@@ -7,6 +7,7 @@ training/test split integrity, and latency budgets per Work Order v7 Section 10.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import pytest
 
@@ -172,9 +173,9 @@ def test_m6_latency_budget_reconciliation():
         assert p50 <= 1200.0, f"Pipeline {name} p50 {p50}ms must be <= 1200ms"
 
 
-def test_m7_generate_model_facts_artifact():
+def test_m7_generate_model_facts_artifact(tmp_path):
     """M7: Generates Phase M model facts artifact recording empirical truths."""
-    artifact_dir = REPO_ROOT / "eval" / "runs" / "20261011_reverify_v1"
+    artifact_dir = (REPO_ROOT / "eval" / "runs" / "20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
     artifact_dir.mkdir(parents=True, exist_ok=True)
     artifact_path = artifact_dir / "model_facts_m.json"
 

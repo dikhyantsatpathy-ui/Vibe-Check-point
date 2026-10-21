@@ -29,6 +29,8 @@ import app.main as main
 from app.main import app, Base, SignerIdentity, make_session_token, now_utc
 from app.screening import run_screening
 
+pytestmark = pytest.mark.slow
+
 OFFICER = "officer@ssb.gov.in"
 
 
@@ -113,7 +115,7 @@ def test_t6_endpoint_concurrency(auth_client):
 
 
 
-def test_t6_screening_soak_and_memory(monkeypatch):
+def test_t6_screening_soak_and_memory(monkeypatch, tmp_path):
     """Execute soak iterations against the core screening engine and verify memory stability."""
     monkeypatch.setenv("ML_SERVICE_URL", "")
     monkeypatch.setenv("OCR_FAST_FALLBACK", "1")
@@ -170,7 +172,7 @@ def test_t6_screening_soak_and_memory(monkeypatch):
     assert mem_growth_mb < 50.0, f"Memory growth excessive: {mem_growth_mb:.2f}MB"
 
     # Write soak report
-    out_dir = Path("eval/runs/20261011_reverify_v1")
+    out_dir = Path("eval/runs/20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "soak_t6.json"
 

@@ -9,6 +9,7 @@ Property tests:
 from __future__ import annotations
 
 import json
+import os
 import random
 import string
 from pathlib import Path
@@ -148,7 +149,7 @@ def test_t3_fuzz_date_parser_never_raises(random_10k_strings):
             pytest.fail(f"_parse_date raised on input {s!r}: {exc}")
 
 
-def test_t3_record_fuzz_metrics(random_10k_strings):
+def test_t3_record_fuzz_metrics(random_10k_strings, tmp_path):
     """Record false-accept measurements on 10,000 random strings into JSON artifact."""
     verhoeff_hits = sum(1 for s in random_10k_strings if validate_verhoeff(s))
     pan_hits = sum(1 for s in random_10k_strings if any(c.get("label") == "structure" and c.get("ok") is True for c in verify_pan(s)))
@@ -170,7 +171,8 @@ def test_t3_record_fuzz_metrics(random_10k_strings):
         "all_parsers_survived_zero_crashes": True,
     }
 
-    out_path = Path("eval/runs/20261011_reverify_v1/parser_fuzz_t3.json")
+    out_dir = Path("eval/runs/20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
+    out_path = out_dir / "parser_fuzz_t3.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     assert report["all_parsers_survived_zero_crashes"] is True

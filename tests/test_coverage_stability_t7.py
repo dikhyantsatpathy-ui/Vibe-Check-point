@@ -15,6 +15,7 @@ Validates:
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import pytest
 import coverage
@@ -53,7 +54,7 @@ def test_t7_zero_flakiness_stability_loop():
         assert mrz_checkdigit("L898902C<") == 3
 
 
-def test_t7_coverage_profiling_and_artifact():
+def test_t7_coverage_profiling_and_artifact(tmp_path):
     """Profile coverage using coverage.py and generate evaluation artifact."""
     cov = coverage.Coverage(source=["app"])
     cov.start()
@@ -118,7 +119,7 @@ def test_t7_coverage_profiling_and_artifact():
 
 
     # Write evaluation artifact
-    out_dir = Path("eval/runs/20261011_reverify_v1")
+    out_dir = Path("eval/runs/20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "coverage_t7.json"
 

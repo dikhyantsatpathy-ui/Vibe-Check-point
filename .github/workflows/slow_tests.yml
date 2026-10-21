@@ -1,0 +1,29 @@
+name: Slow & Soak Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'  # 02:00 UTC nightly
+
+jobs:
+  slow-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest pytest-asyncio coverage pytest-cov
+          pip install -r requirements.txt
+          pip install -r ml_service/requirements.txt
+
+      - name: Run Slow and Soak Test Suite
+        run: |
+          pytest -v -m "slow"

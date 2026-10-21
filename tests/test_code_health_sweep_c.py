@@ -16,6 +16,7 @@ Validates:
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
@@ -163,9 +164,9 @@ def test_c3_blueprint_canonical_routes(auth_client):
     assert res_anchor.status_code in (200, 400)
 
 
-def test_c5_generate_remediation_artifact():
+def test_c5_generate_remediation_artifact(tmp_path):
     """Outputs Phase C Code-Health Sweep audit resolution artifact."""
-    out_dir = Path("eval/runs/20261011_reverify_v1")
+    out_dir = Path("eval/runs/20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "code_health_c.json"
 

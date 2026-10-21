@@ -11,6 +11,7 @@ Asserts:
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -177,15 +178,14 @@ def test_fake_secrets_in_reverify_logs_unmistakably_fake():
     assert "sk-proj-FAKESECRETINPASSPORT123456" not in script_text
 
 
-def test_fake_secrets_redaction_behavior_verified():
+def test_fake_secrets_redaction_behavior_verified(tmp_path):
     """P10: Redaction test in scripts/reverify_logs_v4.py executes and passes."""
     from scripts import reverify_logs_v4 as rlog
 
-    # Run test
-    rlog.test_log_redaction()
+    # Run test into tmp_path (or golden dir if UPDATE_GOLDEN=1)
+    target_dir = (REPO_ROOT / "eval" / "runs" / "20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
+    report_file = rlog.test_log_redaction(out_dir=target_dir)
 
-    # Verify report JSON
-    report_file = REPO_ROOT / "eval" / "runs" / "20261011_reverify_v1" / "log_redaction_test.json"
     assert report_file.exists()
     with open(report_file, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -207,8 +207,8 @@ def test_coverage_ci_workflow_has_coverage_commands():
     assert ci_path.exists(), "CI workflow file .github/workflows/ci.yml must exist"
     content = ci_path.read_text(encoding="utf-8")
 
-    assert "pytest --cov=app --cov=ml_service --cov-report=json" in content, (
-        "CI workflow must run pytest --cov=app --cov=ml_service --cov-report=json"
+    assert "--cov=app --cov=ml_service --cov-report=json" in content, (
+        "CI workflow must run coverage reporting (--cov=app --cov=ml_service --cov-report=json)"
     )
     assert "python scripts/check_coverage.py" in content, (
         "CI workflow must run python scripts/check_coverage.py"

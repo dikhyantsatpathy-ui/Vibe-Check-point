@@ -8,6 +8,7 @@ failing toward REVIEW.
 from __future__ import annotations
 
 import json
+import os
 import random
 import re
 import string
@@ -307,9 +308,9 @@ def test_p3_cross_field_checks_fail_toward_review():
     assert doc_res5["verdict"] == "PASS"
 
 
-def test_p4_generate_parser_hardening_artifact():
+def test_p4_generate_parser_hardening_artifact(tmp_path):
     """P4: Generates Phase P parser hardening evaluation artifact."""
-    artifact_dir = REPO_ROOT / "eval" / "runs" / "20261011_reverify_v1"
+    artifact_dir = (REPO_ROOT / "eval" / "runs" / "20261011_reverify_v1") if os.getenv("UPDATE_GOLDEN") == "1" else tmp_path
     artifact_dir.mkdir(parents=True, exist_ok=True)
     artifact_path = artifact_dir / "parser_hardening_p.json"
 
