@@ -284,9 +284,21 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
     if ml_url:
         try:
             try:
-                from app.remote_ml import get_auth_headers, is_remote_available, mark_remote_failed, mark_remote_success
+                from app.remote_ml import (
+                    get_auth_headers,
+                    get_timeout,
+                    is_remote_available,
+                    mark_remote_failed,
+                    mark_remote_success,
+                )
             except ImportError:
-                from remote_ml import get_auth_headers, is_remote_available, mark_remote_failed, mark_remote_success
+                from remote_ml import (
+                    get_auth_headers,
+                    get_timeout,
+                    is_remote_available,
+                    mark_remote_failed,
+                    mark_remote_success,
+                )
 
             if not is_remote_available():
                 logger.warning("Remote ML circuit breaker is active; failing closed for face_match.")
@@ -305,7 +317,7 @@ def compare_faces(document_photo, selfie, doc_age_years: float | None = None, em
                     },
                 }
 
-            timeout_sec = float(os.getenv("ML_SERVICE_TIMEOUT", "6.0"))
+            timeout_sec = get_timeout()
             payload = {}
             if isinstance(document_photo, bytes):
                 import base64

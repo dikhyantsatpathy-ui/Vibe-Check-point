@@ -125,17 +125,17 @@ def mark_remote_success(latency_sec: float = 0.0) -> None:
 
 
 def get_timeout() -> float:
-    """Max network budget per call (default 2.0s for total request budget)."""
+    """Max network budget per call (default 2.0s). Accepts legacy ML_TIMEOUT as fallback."""
     try:
-        return float(os.getenv("ML_SERVICE_TIMEOUT", "2.0"))
+        return float(os.getenv("ML_SERVICE_TIMEOUT", os.getenv("ML_TIMEOUT", "2.0")))
     except Exception:
         return 2.0
 
 
 def get_connect_timeout() -> float:
-    """Max connection handshake budget before assuming cold-start or offline (default 1.0s)."""
+    """Max connection handshake budget before assuming cold-start or offline (default 1.0s). Accepts legacy ML_CONNECT_TIMEOUT as fallback."""
     try:
-        return float(os.getenv("ML_SERVICE_CONNECT_TIMEOUT", "1.0"))
+        return float(os.getenv("ML_SERVICE_CONNECT_TIMEOUT", os.getenv("ML_CONNECT_TIMEOUT", "1.0")))
     except Exception:
         return 1.0
 

@@ -1418,6 +1418,25 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         can_clear = False
         risk = max(risk, 30)
 
+    # Fix 15: FAIL_CLOSED_ON_DEGRADED — force manual review when remote ML stages report degraded
+    degraded_signals = []
+    if (tamper_res or {}).get("degraded") or crop_meta.get("degraded"):
+        degraded_signals.append("tampering/card detector")
+    if (face_res or {}).get("degraded") or (face_res.get("face_match") or {}).get("degraded"):
+        degraded_signals.append("face verification")
+    if (val_res or {}).get("degraded"):
+        degraded_signals.append("validation")
+    if isinstance(ai_det, dict) and ai_det.get("degraded"):
+        degraded_signals.append("ai content detector")
+
+    if degraded_signals:
+        reasons.append(
+            f"DEGRADED SERVICE ADVISORY: Detector stages reported degraded status ({', '.join(degraded_signals)}). "
+            "Manual desk review required before clearing."
+        )
+        can_clear = False
+        risk = max(risk, 30)
+
     face_mode = face_res.get("mode") or (face_res.get("face_match") or {}).get("mode")
     if live_frame is not None:
         if face_mode and face_mode != "arcface":

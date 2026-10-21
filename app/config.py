@@ -262,8 +262,8 @@ def guided_steps(mode: str = "land", doc_type: str = "passport",
 
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024          # multipart hard cap (matches route)
 MAX_PAGE_SIZE = 200                          # list endpoints
-REMOTE_ML_TIMEOUT = float(os.getenv("ML_TIMEOUT", "6.0"))   # s; fail fast offline
-REMOTE_ML_CONNECT = float(os.getenv("ML_CONNECT_TIMEOUT", "2.0"))
+REMOTE_ML_TIMEOUT = float(os.getenv("ML_SERVICE_TIMEOUT", os.getenv("ML_TIMEOUT", "2.0")))   # s; fail fast offline
+REMOTE_ML_CONNECT = float(os.getenv("ML_SERVICE_CONNECT_TIMEOUT", os.getenv("ML_CONNECT_TIMEOUT", "1.0")))
 SCREEN_DEFAULT_DOC_TYPE = "other"
 
 # --------------------------------------------------------------------------- #
@@ -299,6 +299,6 @@ SCREENING_THRESHOLDS = {
     "RISK_MIN_REJECT": int(os.getenv("SCREENING_RISK_MIN_REJECT", "55")),
     # Forensics / tampering risk threshold
     "TAMPER_RISK_FLAG": float(os.getenv("TAMPER_RISK_FLAG", "50.0")),
-    # Face match similarity threshold for biometric verification
-    "FACE_SIMILARITY_MIN": float(os.getenv("FACE_SIMILARITY_MIN", "0.60")),
+    # Face match similarity threshold for biometric verification (canonical in app.face_policy)
+    "FACE_SIMILARITY_MIN": float(os.getenv("FACE_EMBED_SAME", os.getenv("FACE_SIMILARITY_MIN", "0.60"))),
 }
