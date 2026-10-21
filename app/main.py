@@ -1295,12 +1295,50 @@ def is_super_admin(email: str) -> bool:
     return clean in set(get_super_admins())
 
 def is_demo_pass_enabled() -> bool:
-    """True only when DEMO_PASS_ENABLED is set to truthy value (1, true, yes). Default False."""
-    return os.getenv("DEMO_PASS_ENABLED", "").strip().lower() in ("1", "true", "yes")
+    """True only when DEMO_PASS_ENABLED is set to truthy value (1, true, yes). Default False.
+
+    Blocked in production (ENVIRONMENT == "production" or ENV == "production") unless
+    DEMO_PASS_ALLOW_PRODUCTION=1 is also explicitly set.
+    Blocked if DEMO_PASS_EXPIRES_AT (ISO 8601 UTC timestamp) is configured and expired.
+    """
+    raw_enabled = os.getenv("DEMO_PASS_ENABLED", "").strip().lower() in ("1", "true", "yes")
+    if not raw_enabled:
+        return False
+
+    env = (os.getenv("ENVIRONMENT") or os.getenv("ENV") or "").strip().lower()
+    if env == "production":
+        allow_prod = os.getenv("DEMO_PASS_ALLOW_PRODUCTION", "").strip().lower() in ("1", "true", "yes")
+        if not allow_prod:
+            return False
+
+    expires_at_str = os.getenv("DEMO_PASS_EXPIRES_AT", "").strip()
+    if expires_at_str:
+        try:
+            dt_str = expires_at_str.replace("Z", "+00:00")
+            expiry = datetime.fromisoformat(dt_str)
+            if expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > expiry:
+                return False
+        except Exception as exc:
+            logger.warning("[demo_pass] Failed to parse DEMO_PASS_EXPIRES_AT ('%s'): %s", expires_at_str, exc)
+            return False
+
+    return True
+
 
 def is_demo_officer(email: str) -> bool:
     """Check if the officer account is the SIH demo evaluator identity."""
     return (email or "").strip().lower() == "evaluator@ssb.gov.in"
+
+
+if is_demo_pass_enabled():
+    logger.warning(
+        "[SECURITY WARNING] Demo pass is ENABLED on this deployment (%s). "
+        "Any caller can authenticate as evaluator@ssb.gov.in.",
+        os.getenv("ENVIRONMENT", "development"),
+    )
+
 
 # ==============================================================================
 # [ COLUMN 2: DATABASE MODELS ]
