@@ -327,7 +327,17 @@ If any unexpected behavior occurs in production with new models:
    MRZ_DETECTOR_BACKEND=bottom20
    DOCTYPE_BACKEND=v1
    ```
-2. Restart the application service. The entire pipeline instantly runs on baseline YOLOv8 + geometric heuristics with 100% test compatibility.
+---
+
+## 11. Patch-v8 Fixes
+
+### Fix 1: Motion-photo parser HEIC/MP4 empty still image fix
+- **Reason:** `extract_motion_photo_streams` searched for `b"ftyp"` anywhere. In plain HEIC/MP4/MOV files where `ftyp` is at byte 4, `box_start = 0`, causing `still_bytes = media_bytes[:0] = b""`, stripping the image completely from iPhone uploads.
+- **Files touched:** `ml_service/media_processor.py`, `tests/test_media_processor.py`.
+- **Behavior change:** Only JPEG images (`\xff\xd8`) with an embedded MP4 `ftyp` box and verified JPEG EOI (`\xff\xd9`) marker are split into still and video. HEIC/MP4/MOV and plain JPEGs are returned untouched with `video=None`.
+- **New env vars:** None.
+- **Rollback:** `git revert` of this commit restores previous heuristic parser.
+
 
 
 

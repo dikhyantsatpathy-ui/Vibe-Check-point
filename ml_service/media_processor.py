@@ -264,25 +264,29 @@ def process_pdf_document(pdf_bytes: bytes, max_pages: int = 5) -> Dict[str, Any]
 # ---------------------------------------------------------------------------
 
 def extract_motion_photo_streams(media_bytes: bytes) -> Tuple[bytes, Optional[bytes]]:
-    """Separates a Google/Samsung/Apple Motion Photo into primary still image and embedded MP4 video burst.
-    Returns (primary_still_bytes, mp4_video_bytes).
-    """
+    """Split a Google/Samsung Motion Photo (JPEG still + appended MP4) into (still, mp4).
+    Only a JPEG that has an MP4 'ftyp' box AFTER its image data is a motion photo.
+    HEIC / MP4 / MOV files (ftyp at byte 4) are returned unchanged with no video."""
     if not media_bytes:
         return media_bytes, None
-
-    # Search for standard MP4 file-type box: 'ftyp'
-    # In Google Motion Photos, JPEG is followed by embedded MP4 containing 'ftypmp42' or 'ftypisom'
-    ftyp_idx = media_bytes.find(b"ftyp")
-    if ftyp_idx >= 4:
+    # Only JPEG containers can carry an appended MP4 stream.
+    if not media_bytes.startswith(b"\xff\xd8"):
+        return media_bytes, None
+    search_from = 12
+    while True:
+        ftyp_idx = media_bytes.find(b"ftyp", search_from)
+        if ftyp_idx < 0:
+            return media_bytes, None
         box_start = ftyp_idx - 4
-        # Validate that box length header is non-zero
-        box_len = int.from_bytes(media_bytes[box_start:ftyp_idx], byteorder="big")
-        if 8 <= box_len <= 1048576:
-            still_bytes = media_bytes[:box_start]
-            video_bytes = media_bytes[box_start:]
-            return still_bytes, video_bytes
+        if box_start > 2:
+            box_len = int.from_bytes(media_bytes[box_start:ftyp_idx], "big")
+            brand = media_bytes[ftyp_idx + 4: ftyp_idx + 8]
+            if 8 <= box_len <= 1_048_576 and brand in (b"mp42", b"isom", b"mp41", b"avc1", b"qt  ", b"M4V "):
+                # The still must contain a JPEG end-of-image marker before the MP4.
+                if b"\xff\xd9" in media_bytes[max(0, box_start - 4096):box_start]:
+                    return media_bytes[:box_start], media_bytes[box_start:]
+        search_from = ftyp_idx + 4
 
-    return media_bytes, None
 
 
 def analyze_motion_liveness_frames(video_bytes: bytes, max_frames: int = 15) -> Dict[str, Any]:
