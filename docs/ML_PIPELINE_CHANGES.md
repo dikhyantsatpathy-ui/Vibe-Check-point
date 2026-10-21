@@ -360,6 +360,17 @@ If any unexpected behavior occurs in production with new models:
 - **New env vars:** None.
 - **Rollback:** Revert commit to restore previous local-only extraction behavior.
 
+### Fix 4: Eliminate blank white page fallback and qualify structural PDF signature checks
+- **Reason:** In `ml_service/media_processor.py`, when a PDF page had no embedded images, the pypdf fallback generated a synthetic blank 800x1100 white PNG and returned it with `renderer: "pypdf"`, causing vector-only pages to appear successfully rendered. In addition, `is_digitally_signed` was based only on a `/ByteRange` regex match without cryptographic certificate verification.
+- **Files touched:** `ml_service/requirements.txt`, `ml_service/media_processor.py`, `tests/test_media_processor.py`.
+- **Behavior change:**
+  - Added `pypdfium2==4.30.1` to `ml_service/requirements.txt`.
+  - In `render_pdf_pages_in_memory`: pages without an embedded image in the pypdf fallback return `rendered_png: None` and `render_failed: True`. Added `"render_failed": False` to pypdfium2 and PyMuPDF pages.
+  - In `process_pdf_document`: added top-level `render_failed` boolean flag, `renderer` identification, `signature_verified: False`, and `signature_note` stating that digital signature detection represents structural presence only with no cryptographic certificate chain validation performed.
+- **New env vars:** None.
+- **Rollback:** Revert commit to restore previous synthetic blank page fallback.
+
+
 
 
 

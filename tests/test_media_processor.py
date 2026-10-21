@@ -210,4 +210,32 @@ def test_pdf_text_or_image_ml_rasterization_failure(monkeypatch):
     assert img_out is None
 
 
+def test_render_pdf_pages_in_memory_pypdf_no_blank_white(monkeypatch):
+    """When pypdfium2 and fitz are unavailable and PDF has no images, returns render_failed: True and None rendered_png."""
+    import sys
+    from pypdf import PdfWriter
+    import ml_service.media_processor as mp
+
+    monkeypatch.setitem(sys.modules, "pypdfium2", None)
+    monkeypatch.setitem(sys.modules, "fitz", None)
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=100, height=100)
+    buf = io.BytesIO()
+    writer.write(buf)
+    blank_pdf = buf.getvalue()
+
+    pages = mp.render_pdf_pages_in_memory(blank_pdf)
+    assert len(pages) == 1
+    assert pages[0]["render_failed"] is True
+    assert pages[0]["rendered_png"] is None
+    assert pages[0]["renderer"] == "pypdf"
+
+    doc_res = mp.process_pdf_document(blank_pdf)
+    assert doc_res["render_failed"] is True
+    assert doc_res["signature_verified"] is False
+    assert "No cryptographic validation" in doc_res["signature_note"]
+
+
+
 

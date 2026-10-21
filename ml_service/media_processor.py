@@ -172,6 +172,7 @@ def render_pdf_pages_in_memory(
                 "text": text.strip(),
                 "rendered_png": out_buf.getvalue(),
                 "renderer": "pypdfium2",
+                "render_failed": False,
             })
         return rendered_pages
     except ImportError:
@@ -199,6 +200,7 @@ def render_pdf_pages_in_memory(
                 "text": text.strip(),
                 "rendered_png": png_bytes,
                 "renderer": "pymupdf",
+                "render_failed": False,
             })
         return rendered_pages
     except ImportError:
@@ -231,10 +233,17 @@ def render_pdf_pages_in_memory(
                     png_bytes = best_img.data
 
             if png_bytes is None:
-                blank_img = Image.new("RGB", (width, height), color=(255, 255, 255))
-                buf = io.BytesIO()
-                blank_img.save(buf, format="PNG")
-                png_bytes = buf.getvalue()
+                rendered_pages.append({
+                    "page_number": i + 1,
+                    "width": 0,
+                    "height": 0,
+                    "has_text_layer": bool(text.strip()),
+                    "text": text.strip(),
+                    "rendered_png": None,
+                    "renderer": "pypdf",
+                    "render_failed": True,
+                })
+                continue
 
             rendered_pages.append({
                 "page_number": i + 1,
@@ -244,6 +253,7 @@ def render_pdf_pages_in_memory(
                 "text": text.strip(),
                 "rendered_png": png_bytes,
                 "renderer": "pypdf",
+                "render_failed": False,
             })
         return rendered_pages
     except Exception as exc:
@@ -263,13 +273,20 @@ def process_pdf_document(pdf_bytes: bytes, max_pages: int = 5) -> Dict[str, Any]
     total_pages = len(pages)
     combined_text = "\n\n".join(p.get("text", "") for p in pages if p.get("text"))
 
+    # NOTE: is_digitally_signed indicates structural /ByteRange or Form presence only.
+    # No cryptographic X.509 certificate validation is performed.
+    # signature_verified is always False; nothing in the app may reduce risk or skip forensics.
     return {
         "is_pdf": True,
         "page_count": total_pages,
         "is_digitally_signed": len(signatures) > 0,
+        "signature_verified": False,
+        "signature_note": "Structural presence only. No cryptographic validation was performed.",
         "signatures_count": len(signatures),
         "signatures": signatures,
         "pages": pages,
+        "render_failed": (len(pages) == 0) or any(p.get("render_failed") for p in pages),
+        "renderer": pages[0].get("renderer") if pages else None,
         "combined_text": combined_text,
     }
 
