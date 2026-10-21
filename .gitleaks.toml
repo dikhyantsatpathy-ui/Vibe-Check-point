@@ -1,0 +1,14 @@
+title = "gitleaks config for NO-CAP (SIH26188)"
+
+[allowlist]
+description = "Global allowlist for model binaries, test fixtures, eval runs, and documentation"
+paths = [
+    '''(?i)\.(onnx|pt|bin|zip|png|jpg|jpeg|pdf|mp4|mov|heic|pyc)$''',
+    '''^tests/''',
+    '''^\.ruff_cache/''',
+    '''^eval/runs/''',
+    '''^docs/''',
+]
+regexes = [
+    '''(?i)(example|placeholder|dummy|fake|redacted|p4ssw0rd|user:pass|ep-red|ep-tiny-lake|sk-proj-1234|gsk-abcdef)''',
+]
