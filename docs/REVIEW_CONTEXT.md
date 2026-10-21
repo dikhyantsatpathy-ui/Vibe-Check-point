@@ -8,27 +8,20 @@ All secrets, tokens, personal data, and credential strings have been strictly om
 ## 1. Repo Snapshot
 
 - **Current Branch:** `ml/patch-v8`
-- **Current HEAD Commit:** `606165d13e56e7885692e3c8fa740b64afc8a4a1`
-- **Working Tree Status (`git status --short`):**
+- **Current HEAD Commit:** `61c8d1a73139fe5c73e638b46ceeabcced038f96` (local commit `61c8d1a` ahead of `origin/ml/patch-v8` by 1 commit)
+- **Local vs Remote Alignment:** Local HEAD is at `61c8d1a` (`docs: add REVIEW_CONTEXT.md`). `origin/ml/patch-v8` is at `606165d` (`[v8] final release checkpoint`).
+- **Working Tree Status Explanation:** When full test suites run (`pytest -q -m "not slow" -rs`), 11 tracked test-artifact files (`eval/runs/20261011_reverify_v1/*.json` and `docs/CLAUDE_HANDOFF.md`) are modified in-place by verification scripts (`test_golden_set_t4`, `test_phase_m_model_facts`, `test_load_soak_t6`, `test_parser_fuzz_t3`, `render_handoff.py`). Fix 16 will redirect test outputs to `tmp_path` so running tests leaves the tree clean.
+- **Current Working Tree Status (`git status --short`):**
 ```text
-M docs/CLAUDE_HANDOFF.md
- M eval/runs/20261011_reverify_v1/ci_audit_t8.json
- M eval/runs/20261011_reverify_v1/code_health_c.json
- M eval/runs/20261011_reverify_v1/coverage_t7.json
- M eval/runs/20261011_reverify_v1/golden_set_t4.json
- M eval/runs/20261011_reverify_v1/model_facts_m.json
- M eval/runs/20261011_reverify_v1/model_io_t5.json
- M eval/runs/20261011_reverify_v1/parser_fuzz_t3.json
- M eval/runs/20261011_reverify_v1/parser_hardening_p.json
- M eval/runs/20261011_reverify_v1/pics_smoke_x.json
- M eval/runs/20261011_reverify_v1/soak_t6.json
+(clean working tree)
 ```
-- **Co-Author & AI Attribution Check (`git log -n 30 --format=%B | grep -iE "co-authored-by|generated with"`):**
+- **Co-Author & AI Attribution Check (`git log -n 30 --format=%B | Select-String -Pattern "co-authored-by|generated with"`):**
 ```text
 0 matches (CLEAN - no AI attribution or co-author trailers found)
 ```
 - **Last 40 Commit Subjects (`git log -n 40 --format='%h %an %s'`):**
 ```text
+61c8d1a Dikhyant Satapathy docs: add REVIEW_CONTEXT.md
 606165d Dikhyant Satapathy [v8] final release checkpoint
 61efe8a Dikhyant Satapathy [G3] final queue completion checkpoint
 a7a5f43 Dikhyant Satapathy [G2] commit and push branch ml/patch-v8
@@ -68,13 +61,12 @@ dfdf45c Dikhyant Satapathy fix(screening): add robust cv2/Pillow barcode decode 
 9ca2f64 Dikhyant Satapathy docs: reconcile SIH26188_ENGINEERING_BLUEPRINT.md to v7.0.0 production release
 5f7d8df Dikhyant Satapathy feat(phase-r): execute release gate assessment and complete Work Order v7 (R1-R3)
 0da68d1 Dikhyant Satapathy feat(phase-k): rewrite engineering blueprint and reconcile verified claims (K1-K4)
-2056631 Dikhyant Satapathy feat(phase-l): complete convergence loop and route classification hardening (L1)
 ```
 
 ## 2. File Tree & Line Counts
 
 ### Tracked Files Summary (First 400 Files by Top-Level Directory)
-Total tracked files in repository: 367.
+Total tracked files in repository: 368.
 
 ### `(root)/` (17 files shown of first 400 tracked)
 - `.env.example`
@@ -131,7 +123,7 @@ Total tracked files in repository: 367.
 - `app/transliterate.py`
 - `app/validation.py`
 - `app/yolo_roi.py`
-### `docs/` (47 files shown of first 400 tracked)
+### `docs/` (48 files shown of first 400 tracked)
 - `docs/AGENT_STATE.json`
 - `docs/AUDIT_V4.md`
 - `docs/AUDIT_V5.md`
@@ -154,6 +146,7 @@ Total tracked files in repository: 367.
 - `docs/QUEUE.json`
 - `docs/QUEUE_v7.json`
 - `docs/RESUME_AFTER_SPECIMENS.md`
+- `docs/REVIEW_CONTEXT.md`
 - `docs/SWITCH_READINESS.md`
 - `docs/TRAINING_PROGRESS.md`
 - `docs/WORK_ORDER_V8.md`
@@ -639,9 +632,10 @@ Total `.py` files counted: 173 (Total lines of Python: 44948).
 ### Deployment Targets & Branches
 - **Vercel Production Project:** Deploys branch `main` to `https://vibe-check-point.vercel.app` (FastAPI backend serverless functions via `api/index.py`, pure static frontend assets served via `/app/static`).
 - **Vercel Test/Staging Project:** `vibe-check-point-test` project deploys preview/test branches (`stage_test`, `ml/patch-v8`) to `https://vibe-check-point-test.vercel.app`.
-- **Hugging Face Space (`ml_service`):** Space repository `koropanda/no-cap-detectors` (Docker container on port 7860).
+- **Hugging Face Model Repository:** `koropanda/no-cap-detectors` (Private Hugging Face Model Repository storing binary ONNX weights, INT8 quantized models, and sidecar JSON metadata manifests).
+- **Hugging Face Space (`ml_service`):** Space `koropanda/no-cap-ml` (URL: `https://koropanda-ml-service.hf.space` or `https://koropanda-no-cap-ml.hf.space`, running Docker container on port 7860).
   - **Hardware Tier:** CPU Basic (2 vCPU, 16 GB RAM, free tier).
-  - **Sleep Policy:** Standard free HF Spaces sleep after 48 hours of inactivity (cold-start spin-up takes 45–90s when waking from sleep).
+  - **Sleep Policy:** Free HF Spaces sleep after 48 hours of inactivity (cold-start spin-up takes 45–90s when waking from sleep).
 
 ### Runtime Python Versions Across Environments
 - Local development (`.python-version`): `3.12`
@@ -886,12 +880,10 @@ huggingface-hub==1.28.0
 | Package / Import | Where Handled | Runtime Degradation Behavior if Missing |
 |:---|:---|:---|
 | `onnxruntime` | `app/yolo_roi.py, ml_service/yolo_roi.py` | Neural card & Aadhaar field detection degrades to classical CV heuristic bounding boxes (tagged source: heuristic, forcing REVIEW). |
-| `fitz (PyMuPDF)` | `app/extraction.py, ml_service/media_processor.py` | Fast PDF page rendering falls back to pypdf / pypdfium2 in-memory rasterization. |
+| `fitz (PyMuPDF)` | `ml_service/media_processor.py` | Fast PDF page rendering falls back to pypdfium2 / pypdf in-memory rasterization. |
 | `pypdfium2` | `ml_service/media_processor.py` | PDF rendering falls back to pypdf embedded image extraction; vector-only pages without text layer return render_failed. |
-| `pillow_heif` | `app/heif_support.py, ml_service/media_processor.py` | Apple iPhone HEIC/HEIF photo decoding is disabled; returns HTTP 415. |
-| `av (PyAV)` | `ml_service/media_processor.py` | In-memory burst video decoding for Apple Live Photo motion liveness is skipped (experimental: true). |
-| `insightface / cv2` | `ml_service/face_engine.py, app/face_match.py` | 1:1 biometric facial comparison degrades to color/histogram heuristic; forces REVIEW verdict. |
-| `psycopg2 / asyncpg` | `app/database.py` | PostgreSQL database client; if missing, app cannot connect to Neon PostgreSQL. |
+| `pillow_heif` | `app/heif_support.py` | Currently registered only via app/heif_support.py (fails silently if missing); ml_service/media_processor.py does NOT yet register the opener (addressed in Fix 2). |
+| `av (PyAV)` | `ml_service/media_processor.py` | In-memory burst video decoding for Apple Live Photo motion liveness is currently missing; video is written to tempfile (addressed in Fix 5). |
 
 ### Active Environment `pip freeze` (Local Machine Snapshot)
 ```text
@@ -1318,28 +1310,31 @@ zxing-cpp==3.1.1
 | GET | `/health` | Ml Health Check | no |
 | GET | `/ml/health` | Ml Health Check | no |
 
-## 7. Models Table & Verified Metrics
+## 7. Models Table & Reconciled Status
 
-All facts gathered from `ml_service/models/MODEL_MANIFEST.json`, `docs/ML_PIPELINE_CHANGES.md`, and `eval/runs/`.
+Facts reconciled against `ml_service/models/MODEL_MANIFEST.json`, `docs/ML_PIPELINE_CHANGES.md`, and `eval/runs/`.
 
-| Model File | Location | Size | SHA256 (first 16) | Task | Input Size | Dataset & Samples | Eval Metrics | Status |
-|:---|:---|:---:|:---:|:---|:---:|:---|:---|:---:|
-| `card.onnx` | app/models & ml_service/models | 5.94 MB | `8ebbbd4ebf04b281...` | Document Card Boundary Detection | 640x640x3 | Roboflow IDcard (58 images) + Synthetic (1557 images) | mAP50: 0.992 (Card v7 frozen eval on 300 MIDV-2020: precision 1.0, recall 0.99) | Production Default |
-| `rfdetr_card_int8.onnx` | ml_service/models | 37.16 MB | `ccab01630e533893...` | Document Card Boundary Detection | 640x640x3 | MIDV-2020 (500 train, 200 val, 300 test photos) | mAP50: 0.992, mAP50-95: 0.884, Latency p50: 332ms (2 threads) | Production Default when DETECTOR_BACKEND=rf_detr |
-| `aadhaar_fields.onnx` | app/models & ml_service/models | 5.96 MB | `4b68407eeefae95a...` | Semantic Aadhaar Zone Segmentation | 640x640x3 | Roboflow AADHAR (2,645 images: 2,381 train, 185 val, 79 test) | mAP50: 0.923 (Aadhaar_No: 0.94, DOB: 0.93, Gender: 0.92, Name: 0.91, Photo: 0.89) | Production Default |
-| `rfdetr_aadhaar_int8.onnx` | ml_service/models | 37.28 MB | `c4900ff2fcff0b50...` | Semantic Aadhaar Zone Segmentation | 640x640x3 | Roboflow AADHAR + Mendeley Synthetic (2,645 images) | mAP50: 0.938, mAP50-95: 0.812, Latency p50: 503ms | Production Default when FIELD_DETECTOR_BACKEND=rf_detr |
-| `doctype_v2.onnx` | app/models & ml_service/models | 5.83 MB | `548faa0fd6cf98ca...` | Document Type Classifier | 224x224x3 | Internal balanced specimen corpus (1,629 images) | Top-1 Accuracy: 98.4%, Macro F1: 0.981 | Production Default |
-| `rfdetr_mrz_int8.onnx` | ml_service/models | 37.23 MB | `a208402229d99023...` | MRZ Zone Detection (TD1, TD2, TD3) | 640x640x3 | MIDV-2020 + Synthetic Travel Documents (1,503 images) | mAP50: 0.991, Latency p50: 657ms (pipeline total) | Production Default |
-| `rfdetr_id_fields_int8.onnx` | ml_service/models | 37.26 MB | `85c342e33f2b116d...` | Generic ID Card Field Segmentation | 640x640x3 | MIDV-500 / MIDV-2020 ID specimens (1,924 images) | mAP50: 0.918, Latency p50: 321ms | Production Default |
-| `w600k_r50.onnx` | Hugging Face Space (`koropanda/no-cap-detectors`) | 166.31 MB | `4c06341c33c2a6f3...` | 1:1 Biometric Face Embedding / Verification | 112x112x3 | Glint360K / WebFace600K | LFW Accuracy: 99.82%, Verification threshold: cosine 0.38 | Production Default on HF Space |
+| Model File | Location | Size | SHA256 (first 16) | Task | Code Default | Status | Reason / Justification |
+|:---|:---|:---:|:---:|:---|:---:|:---:|:---|
+| `card.onnx` | app/models & ml_service/models | 5.94 MB | `8ebbbd4ebf04b281...` | Document Card Boundary Detection | Loaded by default (DETECTOR_BACKEND=yolov8) | **Production Default** | Active baseline model on Vercel and HF Space; fast latency (~191ms) and high precision. |
+| `rfdetr_card_int8.onnx` | ml_service/models | 37.16 MB | `ccab01630e533893...` | Document Card Boundary Detection | Loaded when DETECTOR_BACKEND=rf_detr or CARD_DETECTOR_BACKEND=rf_detr | **Production Alternative** | Passed all INT8 accuracy and latency gates; ready for activation when DETECTOR_BACKEND=rf_detr. |
+| `aadhaar_fields.onnx` | app/models & ml_service/models | 5.96 MB | `4b68407eeefae95a...` | Semantic Aadhaar Zone Segmentation | Loaded by default (FIELD_DETECTOR_BACKEND=yolov8) | **Production Default** | Active production field segmentation model; fast inference and reliable on clear Aadhaar scans. |
+| `rfdetr_aadhaar_int8.onnx` | ml_service/models | 37.28 MB | `c4900ff2fcff0b50...` | Semantic Aadhaar Zone Segmentation | Not loaded by default | **Rejected (per docs/ML_PIPELINE_CHANGES.md)** | Rejected for production deployment due to 503ms latency overhead without significant precision gain over YOLOv8; retained for research/eval. |
+| `doctype_v2.onnx` | app/models & ml_service/models | 5.83 MB | `548faa0fd6cf98ca...` | Document Type Classifier | Loaded when DOCTYPE_BACKEND=v2 (or via app/doctype_cls.py) | **Production Default** | High accuracy doc-type classifier; low CPU footprint (<25ms inference). |
+| `rfdetr_mrz_int8.onnx` | ml_service/models | 37.23 MB | `a208402229d99023...` | MRZ Zone Detection (TD1, TD2, TD3) | Loaded when MRZ_DETECTOR_BACKEND=rf_detr | **Production Alternative** | Fully functional INT8 detector for skewed/perspective MRZ bounding; activated via MRZ_DETECTOR_BACKEND=rf_detr. |
+| `rfdetr_id_fields_int8.onnx` | ml_service/models | 37.26 MB | `85c342e33f2b116d...` | Generic ID Card Field Segmentation | Not loaded by default | **Rejected (per docs/ML_PIPELINE_CHANGES.md)** | Rejected for production deployment due to domain shift on non-Latin document scripts; retained for research/eval. |
+| `w600k_r50.onnx` | Hugging Face Model Repo (`koropanda/no-cap-detectors`) | 166.31 MB | `4c06341c33c2a6f3...` | 1:1 Biometric Face Embedding / Verification | Downloaded at startup on HF Space if missing | **Production Default on HF Space** | Standard high-accuracy deep metric facial feature extractor. |
 
 ## 8. Thresholds Actually in Effect
+
+### Current Operational Thresholds & Loader Status
+> **CRITICAL FACT:** `ml_service/models/thresholds.json` exists on disk with `{"Card": 0.4, ...}`, but is **NOT loaded by any Python code** in the repository today. Consequently, the card detection threshold actually in effect today is the code default of **`0.35`** (not `0.40`). Fix 7 introduces the dynamic JSON threshold loader.
 
 ### Detector Confidence & NMS Thresholds
 | Parameter / Class | Code Default | Env Override Variable | Source / Origin of Threshold |
 |:---|:---:|:---|:---|
 | `document` | `0.35` | `CONF_THRES_DOCUMENT` | Untuned default (heuristic baseline) |
-| `card` | `0.35` | `CONF_THRES_DOCUMENT` (Fix 7 adds `CONF_THRES_CARD`) | Precision-Recall sweep on 200 validation images (`ml_service/models/thresholds.json` calibrated to 0.40 for F1 max) |
+| `card` | `0.35` | `CONF_THRES_DOCUMENT` (Fix 7 adds `CONF_THRES_CARD` + `thresholds.json` loader) | Code default is 0.35 today. `thresholds.json` has provisional 0.40 from 200 synthetic/specimen images (untuned on real photos). |
 | `Aadhaar_No` | `0.35` | `CONF_THRES_AADHAAR_NO` | Untuned default from YOLO training export |
 | `DOB` | `0.35` | `CONF_THRES_DOB` | Untuned default from YOLO training export |
 | `Gender` | `0.35` | `CONF_THRES_GENDER` | Untuned default from YOLO training export |
@@ -1446,22 +1441,23 @@ Every format was tested with a synthetic fixture against the live codebase:
 
 | Input Format / Media Type | Accepted by `validate_upload_bytes`? | Decoded Where? | Handling Function (file:line) | Failure / Error Behavior |
 |:---|:---:|:---:|:---|:---|
-| JPEG (`image/jpeg`) | YES (`jpg`) | Vercel & ML | `app/main.py:1080` / `app/screening.py:1260` | HTTP 400 on malformed SOI/EOI, decompression bomb check (>50MP) |
-| PNG (`image/png`) | YES (`png`) | Vercel & ML | `app/main.py:1080` / `app/screening.py:1260` | HTTP 400 on bad chunk CRC, decompression bomb check |
-| WEBP (`image/webp`) | YES (`webp`) | Vercel & ML | `app/main.py:1080` / `app/screening.py:1260` | HTTP 400 on header truncation |
-| BMP (`image/bmp`) | YES (`bmp`) | Vercel & ML | `app/main.py:1080` / `app/screening.py:1260` | HTTP 400 on invalid DIB header |
-| TIFF (`image/tiff`) | YES (`bmp`) | Vercel & ML | `app/main.py:1080` / `app/screening.py:1260` | HTTP 400 on malformed IFD directory |
-| HEIC/HEIF (`image/heic`) | NO (HTTP 415) | Blocked at gate | `app/main.py:1088` (`validate_upload_bytes`) | HTTP 415: 'Unsupported type — send a PDF or a jpg/png/webp/bmp image.' (Fix 2/3 target) |
-| PDF (with text layer) | YES (`pdf`) | Vercel (`pypdf`) | `app/extraction.py:340` (`extract_pdf_pages_in_memory`) | HTTP 400 on corrupt trailer/xref; extracted text layer parsed for identifiers |
-| PDF scan (embedded image) | YES (`pdf`) | Vercel (`pypdf`) | `app/extraction.py:318` (`_pdf_text_or_image`) | If no images and no text, returns ('', None) -> sets pdf_no_text=True -> forces REVIEW |
-| PDF vector-only (no text) | YES (`pdf`) | Vercel (currently) | `app/extraction.py:318` (`_pdf_text_or_image`) | Returns ('', None) as ML media endpoint is uncalled -> sets pdf_no_text=True -> forces REVIEW |
-| Motion Photo (JPEG+MP4) | YES (`jpg`) | Vercel & ML | `app/main.py:1080` / `ml_service/media_processor.py:160` | Pillow parses JPEG still; ML parser currently treats files with ftyp as empty still (Fix 1 target) |
-| Apple Live Photo (HEIC+MOV) | NO (HTTP 415) | Blocked at gate | `app/main.py:1088` (`validate_upload_bytes`) | HTTP 415 because HEIC is rejected at entry gate; ML burst video wrote to tempfile (Fix 5 target) |
-| Live camera frame | YES (`jpg`/`png`) | Vercel | `app/main.py:1080` (`validate_upload_bytes`) | HTTP 400 on truncated stream; processed in RAM for 1:1 face matching against document |
+| JPEG (`image/jpeg`) | YES (`jpg`) | Vercel & ML | `app/main.py:111` / `app/screening.py:839` | HTTP 400 on malformed SOI/EOI, decompression bomb check (>50MP) |
+| PNG (`image/png`) | YES (`png`) | Vercel & ML | `app/main.py:111` / `app/screening.py:839` | HTTP 400 on bad chunk CRC, decompression bomb check |
+| WEBP (`image/webp`) | YES (`webp`) | Vercel & ML | `app/main.py:111` / `app/screening.py:839` | HTTP 400 on header truncation |
+| BMP (`image/bmp`) | YES (`bmp`) | Vercel & ML | `app/main.py:111` / `app/screening.py:839` | HTTP 400 on invalid DIB header |
+| TIFF (`image/tiff`) | YES (`bmp`) | Vercel & ML | `app/main.py:111` / `app/screening.py:839` | HTTP 400 on malformed IFD directory |
+| HEIC/HEIF (`image/heic`) | NO (HTTP 415) | Blocked at gate | `app/main.py:133` (`validate_upload_bytes`) | HTTP 415: 'Unsupported type — send a PDF or a jpg/png/webp/bmp image.' (Fix 2/3 target) |
+| PDF (with text layer) | YES (`pdf`) | Vercel (`pypdf`) | `app/main.py:126` / `app/extraction.py:158` (`_pdf_text_or_image`) | HTTP 400 on corrupt trailer/xref; extracted text layer parsed for identifiers |
+| PDF scan (embedded image) | YES (`pdf`) | Vercel (`pypdf`) | `app/main.py:126` / `app/extraction.py:158` (`_pdf_text_or_image`) | If no images and no text, returns ('', None) -> sets pdf_no_text=True -> forces REVIEW |
+| PDF vector-only (no text) | YES (`pdf`) | Vercel (currently) | `app/main.py:126` / `app/extraction.py:158` (`_pdf_text_or_image`) | Returns ('', None) as ML media endpoint is uncalled -> sets pdf_no_text=True -> forces REVIEW |
+| Motion Photo (JPEG+MP4) | YES (`jpg`) | Vercel & ML | `app/main.py:111` / `ml_service/media_processor.py:160` | Pillow parses JPEG still; ML parser currently treats files with ftyp as empty still (Fix 1 target) |
+| Apple Live Photo (HEIC+MOV) | NO (HTTP 415) | Blocked at gate | `app/main.py:133` (`validate_upload_bytes`) | HTTP 415 because HEIC is rejected at entry gate; ML burst video wrote to tempfile (Fix 5 target) |
+| Live camera frame | YES (`jpg`/`png`) | Vercel | `app/main.py:111` (`validate_upload_bytes`) | HTTP 400 on truncated stream; processed in RAM for 1:1 face matching against document |
 
 ## 11. Latency Measurements
 
-All latencies measured on CPU (2 vCPU threads allocated per screening budget). Data extracted from `eval/runs/20261006_190335_pipeline_latency/report.json` and `eval/runs/20261006_170704_task3_deployment_latency/report.json`:
+> **NOTE:** The latency tables below represent **model-chain latency on a local 2-thread CPU benchmark, excluding network, Neon DB queries, cold start, face embedding, and forensics**. They are NOT end-to-end screening latencies.
+Data extracted from `eval/runs/20261006_190335_pipeline_latency/report.json` and `eval/runs/20261006_170704_task3_deployment_latency/report.json`:
 
 ### Full Document Screening Chains (30 Iterations per Chain, 2 Threads)
 | Screening Pipeline Chain | Samples | p50 Latency | p95 Latency | Mean Latency | Gate Budget | Gate Verdict |
@@ -1510,11 +1506,11 @@ Audit grepped for `tempfile`, `NamedTemporaryFile`, `open(`, `.write(`, `to_file
   - **1 Finding:** False positive in `app/main.py:1026` inside docstring / sanitization regex `(postgres(?:ql)?://[^\s:]+:)([^@\s]+)(@[^\s"'`]+)`.
   - **Verdict on Working Tree:** **100% FALSE POSITIVES (CLEAN)**. No active secret keys or credentials exist in working tree.
 - **Git History Findings (19 total across ~9 commits):**
-  - **Historical Commit `3724e9e3`:** Hardcoded Neon connection string embedded in old commit. Flagged as **S1-01** in `docs/AUDIT_V7.md` and **Item 8** in `docs/OWNER_TODO.md`. Requires human owner rotation of Neon database password via web console (cannot be done by agent).
+  - **Historical Commit `3724e9e3`:** Contains a real hardcoded Neon connection string embedded in an old commit. Flagged as **S1-01** in `docs/AUDIT_V7.md` and **Item 8** in `docs/OWNER_TODO.md`. Because the repository is public, this Neon database password must be treated as **COMPROMISED**. It requires human owner rotation of the Neon database password via the Neon web console (cannot be done autonomously by agent).
   - **Other 18 History Findings:** Short dummy placeholders (`sk-...`, test URIs in unit test commits).
 
 ### Active Items in `docs/OWNER_TODO.md` Requiring Human Owner Action
-1. **Item 8 (S1-01):** Rotate Neon database password in Neon console.
+1. **Item 8 (S1-01):** Rotate compromised Neon database password in Neon console.
 2. **Item 1:** Roboflow API key returned 401 Unauthorized (owner to refresh key in Roboflow dashboard).
 3. **Item 6:** Vercel environment variable audit (`vercel env ls`) to confirm production vs preview isolation.
 4. **Item 2:** Physical specimen field capture (Phase 9: 150 camera photos across smartphones).
@@ -1568,7 +1564,7 @@ All raw datasets reside exclusively on local disk under `data/` and are strictly
 
 | Dataset Name | Image Count | Classes & Label Counts | Real vs Synthetic | Local Path | Git-Ignored? |
 |:---|:---:|:---|:---:|:---|:---:|
-| `AADHAR` | 2,645 | `['Aadhaar_No': 2344, 'DOB': 2282, 'Gender': 2297, 'Name': 2274, 'Photo': 79]` | Real specimen photos (Roboflow Universe) | `data/AADHAR` | YES |
+| `AADHAR` | 2,645 | `['Aadhaar_No': 2344, 'DOB': 2282, 'Gender': 2297, 'Name': 2274, 'Photo': 79]` (Note: Class 4 `Photo` label count is genuinely 79 in train, 4 in val, 4 in test; verified by direct annotation parsing; severely under-annotated in Roboflow set) | Real specimen photos (Roboflow Universe) | `data/AADHAR` | YES |
 | `IDcard` | 58 | `['Card': 96 total labels]` | Real generic ID photos (Roboflow Universe) | `data/IDcard` | YES |
 | `card_synth` | 1,557 | `['Card': 1,596 labels]` | Synthetic card composites | `data/card_synth` | YES |
 | `coco_card_v2` | 3,542 | `['Card']` | Augmented & composite card photos | `data/coco_card_v2` | YES |
@@ -1581,10 +1577,10 @@ All raw datasets reside exclusively on local disk under `data/` and are strictly
 ## 16. Open Questions for Owner Review
 
 1. **Python Runtime Alignment (Fix 6):**
-   `.python-version` specifies `3.12`, while `ml_service/Dockerfile` and `.github/workflows/ci.yml` specify Python `3.11`. Should we standardize all environments on Python `3.11` (recommended for onnxruntime/PyAV stability) or `3.12`?
+   Standardizing on Python `3.11` for `ml_service/Dockerfile` and primary CI. `.python-version` left at `3.12`. Adding a parallel secondary CI job on `3.12` with `pytest -m "not slow"` to verify 3.12 safety.
 2. **Vercel Free Tier maxDuration (Fix 11):**
-   The modernized `vercel.json` configures `"maxDuration": 30`. On the Vercel Hobby (free) tier, serverless function maxDuration is capped at 10 seconds (or up to 60s depending on project creation date/Fluid Compute). Can you confirm if your Vercel project plan supports 30s?
-3. **MIDV-2020 Licence Text (OWNER_TODO Item 3):**
-   Please paste the final licence text from the L3I registration form into `data/DATASET_MANIFEST.md` when convenient.
+   `maxDuration: 30` will be tested exclusively on the `vibe-check-point-test` staging project first. Production will remain untouched until deployment logs confirm plan limits.
+3. **Threshold Tuning Target (Fix 7):**
+   Targeting 0.95 minimum recall for `Aadhaar_No`, `DOB`, `Photo` and 0.90 for `Name`, `Gender`. Thresholds will only be calibrated on real photographed specimen cards (Fix 17) rather than synthetic sets.
 4. **Historical Neon Credential Rotation (OWNER_TODO Item 8 / S1-01):**
-   Please confirm once the Neon database password for the historical connection string in commit `3724e9e3` has been rotated via the Neon web console.
+   Acknowledged that commit `3724e9e3` credentials are treated as compromised and require human owner rotation via the Neon web console.
