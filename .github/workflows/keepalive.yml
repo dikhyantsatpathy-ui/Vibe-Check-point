@@ -1,0 +1,11 @@
+name: ML keepalive
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping ML service health
+        run: curl -fsS --max-time 30 "${{ secrets.ML_SERVICE_URL }}/health" || echo "ml service not reachable"

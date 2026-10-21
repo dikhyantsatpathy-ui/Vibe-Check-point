@@ -415,6 +415,20 @@ If any unexpected behavior occurs in production with new models:
 - **New env vars:** None.
 - **Rollback:** Revert commit to restore previous silent pass.
 
+### Fix 9: Add keepalive workflow for Hugging Face Space and document timeout tuning
+- **Reason:** A sleeping Hugging Face Space requires more than 1.0s connect timeout to wake up, causing initial incoming requests to trip timeouts and fall back to heuristics (which safely trigger `REVIEW` but harm user experience).
+- **Files touched:** `.github/workflows/keepalive.yml`, `docs/ML_PIPELINE_CHANGES.md`.
+- **Behavior change:**
+  - Added `.github/workflows/keepalive.yml` running every 15 minutes (`*/15 * * * *`) via GitHub Actions, curling `${{ secrets.ML_SERVICE_URL }}/health` with a 30s timeout to reduce cold starts.
+  - Required repository secret: `ML_SERVICE_URL` (repository owner should configure in GitHub Actions Secrets without hardcoding the URL in git).
+  - Preserved code defaults unchanged (`ML_SERVICE_CONNECT_TIMEOUT=1.0`, `ML_SERVICE_TIMEOUT=2.0`).
+  - Recommended Vercel environment values for testing:
+    - `ML_SERVICE_CONNECT_TIMEOUT=2.5`
+    - `ML_SERVICE_TIMEOUT=3.0`
+  - Latency SLA trade-off: A cold-starting HF Space exceeds the 1,200ms screening budget regardless; setting higher connect timeouts allows cold-start requests to wait for the wake-up rather than falling back to heuristics, while warmed containers easily satisfy the <1,200ms target.
+- **New env vars:** None added in code (optional tuning via `ML_SERVICE_CONNECT_TIMEOUT` and `ML_SERVICE_TIMEOUT`).
+- **Rollback:** Delete `.github/workflows/keepalive.yml`.
+
 
 
 
