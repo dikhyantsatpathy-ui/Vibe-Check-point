@@ -134,6 +134,12 @@ def validate_upload_bytes(data: bytes, filename: str = "", max_pdf_pages: int = 
         return "pdf"
 
     # 2. Magic-byte verification for image formats
+    is_heif = len(data) > 12 and data[4:8] == b"ftyp" and data[8:12] in (
+        b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis", b"mif1", b"msf1"
+    )
+    if is_heif:
+        return "heic"
+
     is_jpeg = data.startswith(b"\xff\xd8\xff")
     is_png = data.startswith(b"\x89PNG\r\n\x1a\n")
     is_webp = data.startswith(b"RIFF") and len(data) > 12 and data[8:12] == b"WEBP"

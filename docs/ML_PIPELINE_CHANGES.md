@@ -338,6 +338,19 @@ If any unexpected behavior occurs in production with new models:
 - **New env vars:** None.
 - **Rollback:** `git revert` of this commit restores previous heuristic parser.
 
+### Fix 2: Allow HEIC at upload gate with pillow-heif decoding in ML service
+- **Reason:** `app/main.py::validate_upload_bytes` strictly checked JPEG/PNG/WEBP/BMP/TIFF magic bytes, rejecting iPhone HEIC captures with HTTP 415 before extraction. `pillow-heif` was missing from `ml_service/requirements.txt` and unhandled in `media_processor.py`.
+- **Files touched:** `ml_service/requirements.txt`, `ml_service/media_processor.py`, `ml_service/main.py`, `app/main.py`, `tests/test_media_processor.py`.
+- **Behavior change:**
+  - `app/main.py::validate_upload_bytes` detects HEIF `ftyp` brands (`heic`, `heix`, `hevc`, `hevx`, `heim`, `heis`, `mif1`, `msf1`) and returns `"heic"`, allowing upload without failing PIL decode verification prior to normalization.
+  - Added `pillow-heif==1.8.0` to `ml_service/requirements.txt`.
+  - In `ml_service/media_processor.py`, registered `pillow_heif` opener if installed. If HEIC is uploaded and `HEIF_SUPPORTED` is False, returns `{"error": "heic_decoder_unavailable", ...}`.
+  - In `ml_service/main.py::api_process_live_photo`, raises HTTP 415 when `heic_decoder_unavailable`.
+  - In `process_live_photo`, normalization failure on primary image returns `{"error": "primary_image_decode_failed", ...}` rather than raw bytes.
+- **New env vars:** None.
+- **Rollback:** Revert commit to restore previous upload gate constraints.
+
+
 
 
 

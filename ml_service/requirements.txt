@@ -11,3 +11,4 @@ requests==2.34.2
 gradio==6.28.0
 pypdf==6.16.2
 huggingface-hub==1.28.0
+pillow-heif==1.8.0

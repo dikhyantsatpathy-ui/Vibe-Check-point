@@ -513,6 +513,8 @@ async def api_process_live_photo(file: UploadFile = File(...)):
     data = await read_stream_capped(file)
     filename = file.filename or ""
     res = process_live_photo(data, filename=filename)
+    if res.get("error") == "heic_decoder_unavailable":
+        raise HTTPException(status_code=415, detail="HEIC decoding unavailable on ML service")
     raw_primary = res.pop("primary_image_png", None)
     if raw_primary:
         res["primary_image_b64"] = base64.b64encode(raw_primary).decode("ascii")

@@ -18,6 +18,21 @@ from PIL import Image, ImageOps
 
 logger = logging.getLogger("ml_service.media_processor")
 
+HEIF_SUPPORTED = False
+try:
+    import pillow_heif  # type: ignore
+
+    pillow_heif.register_heif_opener()
+    HEIF_SUPPORTED = True
+except ImportError:
+    logger.warning("pillow-heif not installed: HEIC/HEIF decoding is DISABLED in the ML service.")
+
+_HEIF_BRANDS = (b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis", b"mif1", b"msf1")
+
+
+def is_heif(data: bytes) -> bool:
+    return len(data) > 12 and data[4:8] == b"ftyp" and data[8:12] in _HEIF_BRANDS
+
 
 # ---------------------------------------------------------------------------
 # PDF In-Memory Inspection & Rendering
@@ -395,6 +410,18 @@ def process_live_photo(media_bytes: bytes, filename: str = "") -> Dict[str, Any]
     if not media_bytes:
         return {"error": "Empty media payload"}
 
+    if is_heif(media_bytes) and not HEIF_SUPPORTED:
+        return {
+            "error": "heic_decoder_unavailable",
+            "is_live_photo": False,
+            "liveness": {
+                "has_video": False,
+                "liveness_detected": False,
+                "experimental": True,
+                "explanation": "HEIC decoder unavailable on this server.",
+            },
+        }
+
     still_bytes, video_bytes = extract_motion_photo_streams(media_bytes)
     is_motion_photo = video_bytes is not None
 
@@ -410,8 +437,17 @@ def process_live_photo(media_bytes: bytes, filename: str = "") -> Dict[str, Any]
         img_w, img_h = pil_img.size
     except Exception as exc:
         logger.warning(f"Primary image normalization failed: {exc}")
-        primary_png_bytes = still_bytes
-        img_w, img_h = 0, 0
+        return {
+            "error": "primary_image_decode_failed",
+            "detail": f"Primary image decode failed: {exc}",
+            "is_live_photo": False,
+            "liveness": {
+                "has_video": False,
+                "liveness_detected": False,
+                "experimental": True,
+                "explanation": "Primary image decode failed.",
+            },
+        }
 
     liveness_res = analyze_motion_liveness_frames(video_bytes) if is_motion_photo else {
         "has_video": False,
