@@ -1,6 +1,4 @@
 .venv
-new
-_backup
 scripts
 tests
 data
@@ -12,12 +10,10 @@ __pycache__
 .vercel
 .git
 *.md
-HOW_TO_HOST.md
-SIH_PRESENTATION.md
+!SIH26188_ENGINEERING_BLUEPRINT.md
+!README.md
 LICENSE
 ml_service
-runs
-weights
 pics
 frontend
 node_modules

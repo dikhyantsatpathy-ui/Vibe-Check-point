@@ -115,8 +115,8 @@ def _iter_source_files():
         for fn in filenames:
             if fn in SKIP_FILE_NAMES or fn.startswith(SKIP_FILE_PREFIXES):
                 continue
-            # Never index a dotfile-adjacent secret or the explicitly blocked set.
-            if fn.startswith(".env"):
+            # Never index dotfiles (secrets, configs, .gitleaks, .env) or blocked set
+            if fn.startswith("."):
                 continue
             ext = os.path.splitext(fn)[1].lower()
             if ext in SKIP_FILE_EXTS or ext not in INCLUDE_EXTS:
