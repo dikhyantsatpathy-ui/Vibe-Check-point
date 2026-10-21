@@ -8,8 +8,8 @@ The staging/test site (`vibe-check-point-test.vercel.app`) must maintain strict 
 | Credential / Resource | Production (`vibe-check-point`) | Test (`vibe-check-point-test`) | Isolation Status |
 |---|---|---|---|
 | **Database** | Neon Production Primary Branch | Neon Dedicated `test-staging` Branch | **ISOLATED** (Separate DB) |
-| **Master Vault Key** | `MASTER_VAULT_KEY_PROD` | `MASTER_VAULT_KEY_TEST` (distinct random 32-byte key) | **ISOLATED** (Independent encryption) |
-| **Session Secret** | `SESSION_SECRET_PROD` | `SESSION_SECRET_TEST` | **ISOLATED** |
+| **Master Vault Key** | `MASTER_VAULT_KEY_PROD` | `MASTER_VAULT_KEY_TEST` (distinct random 32-byte key) | **ISOLATED** (Derives `SESSION_KEY` and `SEAL_KEY` via `app/keys.py`) |
+| **Session Secret** | `SESSION_SECRET` (unread legacy on Vercel) | `SESSION_SECRET` (unread legacy on Vercel) | **NOT USED IN CODE** (`MASTER_VAULT_KEY` is the canonical signer) |
 | **OAuth Client** | Google Client ID / Secret (prod redirect) | Dedicated Test OAuth Client (or test redirect URIs) | **ISOLATED** |
 | **ML Microservice Secret** | `ML_SERVICE_SECRET_PROD` | `ML_SERVICE_SECRET_TEST` | **ISOLATED** |
 | **Hugging Face Token** | Not needed on Vercel | Not needed on Vercel (Remove) | **REMOVED FROM VERCEL** |
