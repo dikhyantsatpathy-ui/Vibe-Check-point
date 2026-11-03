@@ -39,10 +39,13 @@ __all__ = [
     "MASTER_VAULT_KEY",
     "SESSION_KEY",
     "SEAL_KEY",
+    "WATCHLIST_KEY",
     "session_key",
     "seal_key",
+    "watchlist_key",
     "session_keys_to_try",
     "seal_keys_to_try",
+    "watchlist_keys_to_try",
     "sign",
     "verify",
     "rotate_note",
@@ -54,6 +57,7 @@ MIN_KEY_BYTES = 32
 # existing token/seal signed under the old label, so treat them as frozen.
 _SESSION_LABEL = b"SSB-SIH26188/session-token/v1"
 _SEAL_LABEL = b"SSB-SIH26188/evidence-seal/v1"
+_WATCHLIST_LABEL = b"SSB-SIH26188/watchlist-blind-index/v1"
 
 _TESTING = os.getenv("TESTING") == "1"
 
@@ -114,14 +118,17 @@ def _derive(master: bytes, label: bytes) -> bytes:
 
 SESSION_KEY = _derive(MASTER_VAULT_KEY, _SESSION_LABEL)
 SEAL_KEY = _derive(MASTER_VAULT_KEY, _SEAL_LABEL)
+WATCHLIST_KEY = _derive(MASTER_VAULT_KEY, _WATCHLIST_LABEL)
 
 # Verification-only key rings: [current, previous-if-configured].
 _SESSION_KEYS = [SESSION_KEY]
 _SEAL_KEYS = [SEAL_KEY]
+_WATCHLIST_KEYS = [WATCHLIST_KEY]
 _prev = _load_prev_key()
 if _prev is not None:
     _SESSION_KEYS.append(_derive(_prev, _SESSION_LABEL))
     _SEAL_KEYS.append(_derive(_prev, _SEAL_LABEL))
+    _WATCHLIST_KEYS.append(_derive(_prev, _WATCHLIST_LABEL))
 
 
 def session_key() -> bytes:
@@ -143,6 +150,22 @@ def session_keys_to_try() -> list[bytes]:
 def seal_keys_to_try() -> list[bytes]:
     """[current, previous] -- for verifying a seal of unknown vintage."""
     return list(_SEAL_KEYS)
+
+
+def watchlist_key() -> bytes:
+    """Active watchlist blind-index key.
+
+    Watchlist identifiers are low-entropy (PAN, phone, DOB), so a plain
+    SHA-256 of the value can be brute-forced offline and links the same person
+    across databases. HMAC under a vault-derived key makes the stored digest
+    useless without the key.
+    """
+    return WATCHLIST_KEY
+
+
+def watchlist_keys_to_try() -> list[bytes]:
+    """[current, previous] -- for matching rows indexed before a key rotation."""
+    return list(_WATCHLIST_KEYS)
 
 
 def sign(key: bytes, message: str | bytes) -> str:

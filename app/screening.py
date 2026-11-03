@@ -16,6 +16,7 @@ reviewer, and stays open to every downstream model later swapped in.
 """
 
 import hashlib
+import hmac
 import json
 import os
 import re
@@ -57,6 +58,89 @@ def sha256(value: str) -> str:
 def sha256_bytes(data: bytes) -> str:
     """SHA-256 digest of raw bytes — used for file-hash fingerprinting."""
     return hashlib.sha256(data).hexdigest()
+
+
+# Watchlist identifiers (PAN, phone, DOB, ...) are low-entropy, so a plain
+# SHA-256 is brute-forceable offline and links the same person across database
+# leaks. Store an HMAC under a vault-derived key instead (salted blind index).
+WATCHLIST_HMAC_ALGO = "hmac-sha256-v1"
+_WATCHLIST_FIELDS = ("pan", "driving_licence", "passport", "voter_id", "phone", "dob")
+
+
+def watchlist_hmacs(value: str) -> list[str]:
+    """Blind-index digests for `value`: current key first, then rotation key."""
+    try:
+        from app.keys import watchlist_keys_to_try
+    except ImportError:  # bare-module invocation (tests / direct run)
+        from keys import watchlist_keys_to_try
+    payload = norm(value).encode("utf-8")
+    return [hmac.new(k, payload, hashlib.sha256).hexdigest()
+            for k in watchlist_keys_to_try()]
+
+
+def watchlist_matches(db, fields: dict) -> list[dict]:
+    """Return watchlist hits for extracted `fields` and upgrade legacy rows.
+
+    Rows written before the blind-index change still carry a plain SHA-256 in
+    `identifier_hash`; matching them once lets us replace that digest with the
+    HMAC in place. `db` must be a dedicated read/write session for this check
+    (the rollback on a unique-index conflict would otherwise discard caller
+    writes).
+    """
+    try:
+        from main import WatchlistEntry
+    except ImportError:  # package import (app.main)
+        from app.main import WatchlistEntry
+
+    hmac_map: dict[str, tuple[str, str]] = {}
+    plain_map: dict[str, tuple[str, str, list[str]]] = {}
+    for key in _WATCHLIST_FIELDS:
+        val = fields.get(key)
+        if not val:
+            continue
+        plain = sha256(val)
+        digests = watchlist_hmacs(val)
+        for digest in digests:
+            hmac_map[digest] = (key, val)
+        plain_map[plain] = (key, val, digests)
+    if not hmac_map:
+        return []
+
+    candidates = (
+        db.query(WatchlistEntry)
+        .filter(WatchlistEntry.identifier_hash.in_(list(hmac_map) + list(plain_map)))
+        .all()
+    )
+    hits = []
+    seen = set()
+    upgraded = False
+    for row in candidates:
+        algo = getattr(row, "hash_algo", None)
+        if algo == WATCHLIST_HMAC_ALGO:
+            info = hmac_map.get(row.identifier_hash)
+        else:
+            info = plain_map.get(row.identifier_hash)
+            if info:
+                key, val, digests = info
+                try:
+                    row.identifier_hash = digests[0]
+                    row.hash_algo = WATCHLIST_HMAC_ALGO
+                    db.flush()
+                    upgraded = True
+                except Exception:
+                    # A concurrent add already wrote the HMAC form; the hit is
+                    # still valid, we just cannot rewrite this legacy row.
+                    db.rollback()
+                info = (key, val)
+        if info and info[0] not in seen:
+            seen.add(info[0])
+            hits.append({"field": info[0], "mask": mask(info[1])})
+    if upgraded:
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+    return hits
 
 
 # --------------------------------------------------------------------------- #
@@ -930,27 +1014,18 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
             document_aware = None
 
     # ---- Module 2: Validate (deterministic checks + watchlist) -------------
-    # Watchlist query (hash-based, privacy-preserving) runs here — the whole
-    # table is never pulled into Python, only the ≤7 identifier hashes we need.
-    needed = {}
-    for key in ("pan", "driving_licence", "passport", "voter_id", "phone", "dob"):
-        val = fields.get(key)
-        if val:
-            needed[sha256(val)] = (key, val)
-    watched = set()
-    if needed:
+    # Watchlist query (blind-indexed, privacy-preserving) runs here — the whole
+    # table is never pulled into Python, only the ≤7 identifier digests we need.
+    hits = []
+    try:
         try:
-            try:
-                from app.main import WatchlistEntry, _get_db_for_session
-            except ImportError:
-                from main import WatchlistEntry, _get_db_for_session
-            with _get_db_for_session(session_id) as temp_db:
-                watched = {h for (h,) in temp_db.query(WatchlistEntry.identifier_hash)
-                           .filter(WatchlistEntry.identifier_hash.in_(list(needed))).all()}
-        except Exception:
-            pass
-    hits = [{"field": key, "mask": mask(val)} for key, val in
-            (needed[h] for h in needed if h in watched)]
+            from app.main import _get_db_for_session
+        except ImportError:
+            from main import _get_db_for_session
+        with _get_db_for_session(session_id) as temp_db:
+            hits = watchlist_matches(temp_db, fields)
+    except Exception:
+        pass
 
     val_res = validate_document(
         doc_type or "", fields, declared or {},

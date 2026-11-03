@@ -65,7 +65,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 # AI-content-detection orchestrator (imported once at startup; heavy backends
 # like onnxruntime / the cloud SDK are loaded lazily inside the package, so this
 # never slows down cold starts for the default heuristic path).
-from screening import run_screening
+from screening import WATCHLIST_HMAC_ALGO, run_screening, watchlist_hmacs
 # Border SESSION orchestration: cross-document comparison + signed session
 # ledger blocks (SIH26188). Pure hash-based; imports screening's norm/mask.
 try:
@@ -1409,6 +1409,9 @@ class WatchlistEntry(Base):
     __tablename__ = "watchlist_entries"
     id = Column(Integer, primary_key=True, autoincrement=True)
     identifier_hash = Column(String, index=True, unique=True, nullable=False)
+    # "hmac-sha256-v1" for blind-indexed rows; NULL/"sha256" for legacy rows
+    # written before the HMAC migration (upgraded lazily on first match).
+    hash_algo = Column(String, nullable=True)
     category = Column(String, nullable=True)         # pan | passport | visa | driving_licence | voter_id | phone | ...
     mask = Column(String, nullable=True)             # e.g. ****1234
     reason = Column(String, nullable=True)
@@ -1486,6 +1489,9 @@ _MIGRATIONS = [
     # Watchlist dedup guard: same identifier must not appear twice even under
     # concurrent adds. Skipped automatically if legacy duplicate rows exist.
     "CREATE UNIQUE INDEX IF NOT EXISTS uq_watchlist_identifier ON watchlist_entries(identifier_hash);",
+    # Blind-index migration: legacy rows hold a plain SHA-256; new rows hold
+    # HMAC-SHA256 under the vault-derived watchlist key.
+    "ALTER TABLE watchlist_entries ADD COLUMN IF NOT EXISTS hash_algo VARCHAR;",
     # Module 1-4 verdicts (OCR/validation/tampering/face) as one JSON row.
     "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS modules TEXT;",
     # Watchlist matches surfaced on the doc (field + mask only — never raw).
@@ -4588,12 +4594,27 @@ def screening_watchlist_add(
     if not value.strip():
         raise HTTPException(status_code=400, detail="An identifier value is required.")
     v = norm(value)
+    legacy_digest = sha256(v)
+    blind_digests = watchlist_hmacs(v)
     with get_db() as db:
-        existing = db.query(WatchlistEntry).filter_by(identifier_hash=sha256(v)).first()
+        existing = (
+            db.query(WatchlistEntry)
+            .filter(WatchlistEntry.identifier_hash.in_(blind_digests + [legacy_digest]))
+            .first()
+        )
         if existing:
+            if (getattr(existing, "hash_algo", None) != WATCHLIST_HMAC_ALGO
+                    and existing.identifier_hash == legacy_digest):
+                existing.identifier_hash = blind_digests[0]
+                existing.hash_algo = WATCHLIST_HMAC_ALGO
+                try:
+                    db.commit()
+                except IntegrityError:
+                    db.rollback()
             return {"ok": True, "already": True, "id": existing.id, "mask": existing.mask}
         entry = WatchlistEntry(
-            identifier_hash=sha256(v),
+            identifier_hash=blind_digests[0],
+            hash_algo=WATCHLIST_HMAC_ALGO,
             category=(category or "").strip() or None,
             mask=mask(v),
             reason=(reason or "").strip() or None,
@@ -4607,7 +4628,11 @@ def screening_watchlist_add(
             # Lost the concurrent-add race (or a legacy duplicate): the unique
             # index now guards this, so return the surviving row as "already".
             db.rollback()
-            existing = db.query(WatchlistEntry).filter_by(identifier_hash=sha256(v)).first()
+            existing = (
+                db.query(WatchlistEntry)
+                .filter(WatchlistEntry.identifier_hash.in_(blind_digests + [legacy_digest]))
+                .first()
+            )
             return {"ok": True, "already": True,
                     "id": existing.id if existing else None,
                     "mask": existing.mask if existing else mask(v)}

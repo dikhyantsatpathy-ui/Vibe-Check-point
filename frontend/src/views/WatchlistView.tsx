@@ -1,6 +1,6 @@
 // ============================================================================
 // WatchlistView.tsx — screened watchlist (supervisory access).
-// Entries store ONLY a SHA-256 digest of the identifier plus a masked display
+// Entries store ONLY an HMAC-SHA256 blind index of the identifier plus a masked display
 // form. Matching during screening is always by digest; the raw identifier is
 // never persisted.
 //
@@ -144,7 +144,7 @@ export function WatchlistView() {
           <div>
             <h2 className="panel__title">Known-fraud list (watchlist)</h2>
             <p className="panel__body">
-              Names and numbers are kept only as fingerprints (SHA-256) with a masked view for the
+              Names and numbers are kept only as keyed blind-index fingerprints (HMAC-SHA256) with a masked view for the
               officer. Screening matches by fingerprint — the real value is never stored.
             </p>
           </div>
