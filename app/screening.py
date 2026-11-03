@@ -130,7 +130,10 @@ def watchlist_matches(db, fields: dict) -> list[dict]:
                 except Exception:
                     # A concurrent add already wrote the HMAC form; the hit is
                     # still valid, we just cannot rewrite this legacy row.
+                    # rollback() also drops any upgrades flushed earlier in this
+                    # loop, so do not attempt a commit afterwards.
                     db.rollback()
+                    upgraded = False
                 info = (key, val)
         if info and info[0] not in seen:
             seen.add(info[0])

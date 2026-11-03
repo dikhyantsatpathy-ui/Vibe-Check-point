@@ -9,6 +9,8 @@ database leaks. These tests pin the replacement behaviour:
   * duplicate adds (in any normalisation) collapse to one row.
 """
 
+import hashlib
+import hmac
 import os
 import sys
 
@@ -20,6 +22,7 @@ from sqlalchemy.pool import StaticPool
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "app"))
 
+import app.keys as app_keys
 import main
 import screening
 from main import Base, SignerIdentity, WatchlistEntry, app, make_session_token, now_utc
@@ -153,3 +156,43 @@ def test_unlisted_identifier_does_not_match(db_session):
 
     assert screening.watchlist_matches(db_session, {"pan": "ZZZZZ9999Z"}) == []
     assert screening.watchlist_matches(db_session, {"passport": "QQQQQ1111Q"}) == []
+
+
+def _seed_under_key(db_session, key: bytes) -> str:
+    digest = hmac.new(key, screening.norm(PAN).encode("utf-8"), hashlib.sha256).hexdigest()
+    db_session.add(
+        WatchlistEntry(
+            identifier_hash=digest,
+            hash_algo=screening.WATCHLIST_HMAC_ALGO,
+            category="pan",
+            mask=screening.mask(PAN),
+            added_by="legacy@example.com",
+            created_at=now_utc(),
+        )
+    )
+    db_session.commit()
+    return digest
+
+
+def test_previous_key_rows_still_match(db_session, monkeypatch):
+    """Rows indexed before a key rotation must keep matching via the key ring."""
+    old_key = hashlib.sha256(b"outgoing-watchlist-key").digest()
+    monkeypatch.setattr(app_keys, "_WATCHLIST_KEYS", [app_keys.WATCHLIST_KEY, old_key])
+    _seed_under_key(db_session, old_key)
+
+    assert screening.watchlist_matches(db_session, {"pan": PAN}) == [
+        {"field": "pan", "mask": screening.mask(PAN)}
+    ]
+
+
+def test_add_finds_row_indexed_under_previous_key(super_client, db_session, monkeypatch):
+    old_key = hashlib.sha256(b"outgoing-watchlist-key").digest()
+    monkeypatch.setattr(app_keys, "_WATCHLIST_KEYS", [app_keys.WATCHLIST_KEY, old_key])
+    _seed_under_key(db_session, old_key)
+
+    resp = super_client.post(
+        "/api/screen/watchlist/add", data={"category": "pan", "value": PAN}
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json().get("already") is True
+    assert db_session.query(WatchlistEntry).count() == 1
