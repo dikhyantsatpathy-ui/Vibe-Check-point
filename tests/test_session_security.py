@@ -1,0 +1,138 @@
+"""Regression tests for session/document authorization boundaries.
+
+The session soft-remove flow used to drop the report's `session_id` without
+recording where it came from, so the restore endpoint could re-link any report
+it was given into any open session the caller owned.  These tests pin the
+ownership/provenance checks that make restore safe.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import sys
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "app"))
+
+import main
+from main import (
+    Base,
+    ScreeningReport,
+    ScreeningSession,
+    SignerIdentity,
+    app,
+    make_session_token,
+    now_utc,
+)
+
+OFFICER = "officer@ssb.gov.in"
+
+
+@pytest.fixture
+def client(monkeypatch):
+    test_engine = create_engine(
+        "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    Base.metadata.create_all(bind=test_engine)
+    TestSession = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+    monkeypatch.setattr(main, "SessionLocal", TestSession)
+    db = TestSession()
+    try:
+        db.add(
+            SignerIdentity(
+                email=OFFICER,
+                name="Officer One",
+                institution="SSB",
+                designation="Assistant Commandant",
+                registered_at=now_utc(),
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+    return TestClient(app, cookies={"nischay_session": make_session_token(OFFICER)})
+
+
+def _seed_session(db, session_id: str) -> None:
+    db.add(
+        ScreeningSession(
+            id=session_id,
+            status="open",
+            verdict="PENDING",
+            risk_score=0,
+            checkpoint="Sunauli",
+            screener=OFFICER,
+            comparison="{}",
+            note="",
+            created_at=now_utc(),
+            updated_at=now_utc(),
+        )
+    )
+
+
+def _seed_report(db, report_id: str, session_id: str) -> None:
+    value = f"{session_id}:{report_id}"
+    db.add(
+        ScreeningReport(
+            id=report_id,
+            file_hash=hashlib.sha256(value.encode()).hexdigest(),
+            filename="passport.jpg",
+            doc_type="passport",
+            checkpoint="Sunauli",
+            verdict="CLEAR",
+            risk_score=10,
+            confidence=0.9,
+            extracted_fields="{}",
+            signals="[]",
+            ai_detection="{}",
+            modules=json.dumps({"validation": "PASS"}),
+            screener=OFFICER,
+            created_at=now_utc(),
+            session_id=session_id,
+            field_hashes="{}",
+        )
+    )
+
+
+def test_restore_cannot_hijack_a_live_document_from_another_session(client):
+    """A non-removed report must never be moved into another session."""
+    with main.SessionLocal() as db:
+        _seed_session(db, "sess-a")
+        _seed_session(db, "sess-b")
+        _seed_report(db, "doc-a", "sess-a")
+        db.commit()
+
+    resp = client.post("/api/sessions/sess-b/documents/doc-a/restore")
+    assert resp.status_code == 400, resp.text
+
+    with main.SessionLocal() as db:
+        row = db.query(ScreeningReport).filter_by(id="doc-a").first()
+        assert row.session_id == "sess-a"
+        assert row.removed_at is None
+
+
+def test_restore_rejects_a_document_removed_from_a_different_session(client):
+    """Soft-remove provenance must stop cross-session restore."""
+    with main.SessionLocal() as db:
+        _seed_session(db, "sess-a")
+        _seed_session(db, "sess-b")
+        _seed_report(db, "doc-a", "sess-a")
+        db.commit()
+
+    removed = client.post("/api/sessions/sess-a/documents/doc-a/remove")
+    assert removed.status_code == 200, removed.text
+
+    resp = client.post("/api/sessions/sess-b/documents/doc-a/restore")
+    assert resp.status_code in (400, 403), resp.text
+
+    with main.SessionLocal() as db:
+        row = db.query(ScreeningReport).filter_by(id="doc-a").first()
+        assert row.removed_at is not None
+        assert row.session_id is None

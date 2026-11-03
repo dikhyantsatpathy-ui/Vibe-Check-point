@@ -1394,6 +1394,11 @@ class ScreeningReport(Base):
     ephemeral_raw_fields = Column(Text, nullable=True)
     removed_at = Column(String, nullable=True)               # soft-remove from a session (audit trail kept)
     removed_by = Column(String, nullable=True)               # officer who removed the document from the session
+    # Provenance for a soft-removed document. `session_id` is cleared on remove
+    # so the report stops participating in the session, but restore must still
+    # be able to prove which session it came from. Without this column restore
+    # could re-link any report id into any open session the caller owned.
+    removed_from_session_id = Column(String, index=True, nullable=True)
     nationality = Column(String, nullable=True)              # traveller nationality at capture time (guide context)
     purpose = Column(String, nullable=True)                  # declared purpose of travel at capture time
 
@@ -1501,6 +1506,8 @@ _MIGRATIONS = [
     # chain + ledger stay intact), only the session linkage is dropped.
     "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS removed_at VARCHAR;",
     "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS removed_by VARCHAR;",
+    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS removed_from_session_id VARCHAR;",
+    "CREATE INDEX IF NOT EXISTS ix_reports_removed_from_session ON screening_reports(removed_from_session_id);",
     # Traveller context for the international guided flow (nationality-driven
     # document expectations at every checkpoint).
     "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS nationality VARCHAR;",
@@ -3613,6 +3620,7 @@ def remove_session_document(session_id: str, report_id: str, request: Request,
             return {"ok": True, "already_removed": True, "report_id": report_id}
         r.removed_at = now_utc()
         r.removed_by = admin
+        r.removed_from_session_id = session_id  # provenance for a safe restore
         r.session_id = None            # drop session linkage (ledger chain per-row stays)
         # The document is leaving the session, so it will no longer take part in
         # cross-document comparison. Wipe its unmasked fields now rather than
@@ -3637,8 +3645,28 @@ def restore_session_document(session_id: str, report_id: str, request: Request,
         r = db.query(ScreeningReport).filter_by(id=report_id).first()
         if not r:
             raise HTTPException(status_code=404, detail="Screening report not found.")
+        # Restore is only valid for a report this endpoint itself soft-removed
+        # from *this* session. Without these checks any report id could be
+        # re-linked into any open session the caller owns (cross-session data
+        # exposure and ledger-association corruption).
+        if not getattr(r, "removed_at", None):
+            raise HTTPException(
+                status_code=400,
+                detail="Document is not soft-removed; restore is only for removed documents.",
+            )
+        if getattr(r, "removed_from_session_id", None) != session_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Document was not removed from this session.",
+            )
+        if not is_super_admin(admin) and getattr(r, "removed_by", None) != admin:
+            raise HTTPException(
+                status_code=403,
+                detail="Only the officer who removed this document can restore it.",
+            )
         r.removed_at = None
         r.removed_by = None
+        r.removed_from_session_id = None
         r.session_id = session_id
         s.updated_at = now_utc()
         db.commit()
