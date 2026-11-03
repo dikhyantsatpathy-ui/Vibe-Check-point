@@ -2848,8 +2848,45 @@ _SCREEN_IDEMPOTENCY_TTL_SEC = 60.0
 _SCREEN_IDEMPOTENCY_MAX_ENTRIES = 500
 
 
-def _idempotency_key(session_id: str | None, file_hash: str) -> str:
-    return f"{session_id or 'no-session'}:{file_hash}"
+def _idempotency_key(
+    *,
+    session_id: str | None,
+    admin: str,
+    file_hash: str,
+    back_hash: str,
+    live_hash: str,
+    doc_type: str,
+    checkpoint: str,
+    declared: dict,
+    nationality: str,
+    purpose: str,
+    capture_source: str,
+    filename: str,
+    filename_back: str,
+) -> str:
+    """Fingerprint the complete screening request, not just the file.
+
+    The cache exists to absorb a client timeout/retry of the same submission.
+    Two submissions that differ in any field that feeds `run_screening` must
+    not collide, or the officer receives a stale verdict for different evidence.
+    """
+    payload = {
+        "session": session_id or "no-session",
+        "admin": admin,
+        "file": file_hash,
+        "back": back_hash,
+        "live": live_hash,
+        "doc_type": doc_type,
+        "checkpoint": checkpoint,
+        "declared": declared,
+        "nationality": nationality,
+        "purpose": purpose,
+        "capture_source": capture_source,
+        "filename": filename,
+        "filename_back": filename_back,
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _idempotency_get(key: str):
@@ -2916,13 +2953,6 @@ async def screen_document(
                     if sess_chk.status != "open":
                         raise HTTPException(status_code=409, detail=f"Session is not open (status={sess_chk.status}).")
 
-        from screening import sha256_bytes
-        _idem_key = _idempotency_key(session_owner, sha256_bytes(data))
-        _cached_report = _idempotency_get(_idem_key)
-        if _cached_report is not None:
-            logger.info(f"[screen_document] Idempotent replay for {file.filename} — returning cached result, no re-screening.")
-            return _cached_report
-        
         data_back = None
         filename_back = None
         if file_back is not None:
@@ -2998,7 +3028,33 @@ async def screen_document(
             # (queue polling, health checks, other desks) stay responsive.
             effective_nat = nat or (sess.nationality if sess else None)
             effective_purpose = purpose_txt or (sess.purpose if sess else None)
-            
+
+        # A replay is only idempotent when it is the *same* screening request.
+        # Keying on (session, file hash) alone returned the first report for a
+        # corrected declaration, a new live frame, or a different document type
+        # uploaded within the cache TTL. Include every input that changes the
+        # report, plus the officer, so one desk cannot receive another's result.
+        from screening import sha256_bytes
+        _idem_key = _idempotency_key(
+            session_id=session_owner,
+            admin=admin,
+            file_hash=sha256_bytes(data),
+            back_hash=sha256_bytes(data_back) if data_back else "",
+            live_hash=sha256_bytes(live_bytes) if live_bytes else "",
+            doc_type=(doc_type or "other").strip(),
+            checkpoint=(checkpoint or "").strip(),
+            declared=declared_map,
+            nationality=nat or "",
+            purpose=purpose_txt or "",
+            capture_source=(capture_source or "").strip().lower()[:16],
+            filename=file.filename or "",
+            filename_back=filename_back or "",
+        )
+        _cached_report = _idempotency_get(_idem_key)
+        if _cached_report is not None:
+            logger.info(f"[screen_document] Idempotent replay for {file.filename} - returning cached result, no re-screening.")
+            return _cached_report
+
         try:
             report = await run_in_threadpool(
                 run_screening, data, file.filename or "upload",

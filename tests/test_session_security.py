@@ -37,6 +37,13 @@ OFFICER = "officer@ssb.gov.in"
 OTHER_OFFICER = "other.officer@ssb.gov.in"
 
 
+@pytest.fixture(autouse=True)
+def _clear_screen_idempotency_cache():
+    main._SCREEN_IDEMPOTENCY_CACHE.clear()
+    yield
+    main._SCREEN_IDEMPOTENCY_CACHE.clear()
+
+
 @pytest.fixture
 def client(monkeypatch):
     test_engine = create_engine(
@@ -191,3 +198,79 @@ def test_officer_cannot_screen_into_another_officers_open_session(client, monkey
     )
     assert resp.status_code == 403, resp.text
     assert called == []
+
+
+def _fake_report(**kwargs):
+    return {
+        "id": "fake-report",
+        "doc_hash": "0" * 64,
+        "doc_type": kwargs.get("doc_type", "passport"),
+        "verdict": "REVIEW",
+        "risk_score": 30,
+        "checkpoint": "Sunauli",
+        "created_at": now_utc(),
+        "declared": kwargs.get("declared") or {},
+        "reasons": ["fake"],
+    }
+
+
+def _screen_spy(calls):
+    def fake(*args, **kwargs):
+        declared_map = kwargs.get("declared")
+        if declared_map is None and len(args) > 4:
+            declared_map = args[4]
+        doc_type = args[2] if len(args) > 2 else kwargs.get("doc_type", "passport")
+        calls.append({"declared": declared_map, "doc_type": doc_type})
+        return _fake_report(declared=declared_map, doc_type=doc_type)
+
+    return fake
+
+
+def test_identical_screen_request_is_replayed_from_cache(client, monkeypatch):
+    with main.SessionLocal() as db:
+        _seed_session(db, "sess-a")
+        db.commit()
+
+    calls = []
+    monkeypatch.setattr(main, "run_screening", _screen_spy(calls))
+
+    payload = {
+        "session_id": "sess-a",
+        "doc_type": "passport",
+        "declared": json.dumps({"passport_number": "A1234567"}),
+    }
+    for _ in range(2):
+        resp = client.post(
+            "/api/screen",
+            files={"file": ("doc.jpg", _synth_image(), "image/jpeg")},
+            data=payload,
+        )
+        assert resp.status_code == 200, resp.text
+
+    assert len(calls) == 1
+
+
+def test_changed_declared_fields_are_not_served_from_stale_cache(client, monkeypatch):
+    """A corrected declaration is a new screening, not an idempotent replay."""
+    with main.SessionLocal() as db:
+        _seed_session(db, "sess-a")
+        db.commit()
+
+    calls = []
+    monkeypatch.setattr(main, "run_screening", _screen_spy(calls))
+
+    for value in ("A1234567", "B7654321"):
+        resp = client.post(
+            "/api/screen",
+            files={"file": ("doc.jpg", _synth_image(), "image/jpeg")},
+            data={
+                "session_id": "sess-a",
+                "doc_type": "passport",
+                "declared": json.dumps({"passport_number": value}),
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["declared"]["passport_number"] == value
+
+    assert len(calls) == 2
+    assert [c["declared"]["passport_number"] for c in calls] == ["A1234567", "B7654321"]
