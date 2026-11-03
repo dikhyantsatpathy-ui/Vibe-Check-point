@@ -3081,7 +3081,7 @@ async def screen_document(
             sha = sha256_bytes(data)
             report = {
                 "id": uuid.uuid4().hex[:16],
-                "doc_hash": sha,
+                "file_hash": sha,
                 "doc_type": (doc_type or "other").strip(),
                 "verdict": "FLAGGED",
                 "risk_score": 45,
