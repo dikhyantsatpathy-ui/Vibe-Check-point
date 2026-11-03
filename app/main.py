@@ -3475,8 +3475,12 @@ def close_session(session_id: str, request: Request,
         s = _get_session_owned(db, session_id, admin, require_open=True)
         docs, rows = _session_docs(db, session_id)
         
-        # Closing an empty/unused session with 0 documents
-        if act in ("close", "cancel", "dismiss") or (not rows and act in ("approve", "flag", "close", "cancel")):
+        # An unused session (no documents) can be closed by any action: there is
+        # no evidence to settle. A session that HAS documents must be approved
+        # or flagged, so its comparison and ledger block are recorded; letting
+        # 'close' through here would drop a live case out of the review flow
+        # with status=CLOSED and no signed block.
+        if not rows:
             s.status = "closed"
             s.verdict = "CLOSED"
             s.risk_score = 0
@@ -3490,8 +3494,11 @@ def close_session(session_id: str, request: Request,
             pub["comparison"] = {"verdict": "CLEAR", "checks": []}
             return pub
 
-        if not rows:
-            raise HTTPException(status_code=400, detail="Session has no documents yet — add at least one first or close it as unused.")
+        if act in ("close", "cancel", "dismiss"):
+            raise HTTPException(
+                status_code=400,
+                detail="Session has documents — approve it or flag it for review instead of closing it as unused.",
+            )
 
         comparison = _comparison_for_rows(docs)
         agg_risk = max(0, min(100, max((d.get("risk_score") or 0) for d in docs)

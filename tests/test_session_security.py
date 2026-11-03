@@ -301,3 +301,27 @@ def test_screening_persists_traveller_context_on_an_existing_session(client, mon
     assert detail.status_code == 200, detail.text
     assert detail.json()["nationality"] == "NP"
     assert detail.json()["purpose"] == "trade"
+
+
+def test_close_cannot_discard_a_session_that_has_documents(client):
+    """'close' is for unused sessions; a session with evidence must be settled.
+
+    The close branch used to accept `verdict=close` even when the session held
+    documents, setting status=CLOSED without a comparison or ledger block. That
+    let an officer drop a live case out of the review flow instead of flagging
+    or approving it.
+    """
+    with main.SessionLocal() as db:
+        _seed_session(db, "sess-a")
+        _seed_report(db, "doc-a", "sess-a")
+        db.commit()
+
+    resp = client.post("/api/sessions/sess-a/close", data={"verdict": "close"})
+    assert resp.status_code == 400, resp.text
+
+    with main.SessionLocal() as db:
+        session = db.query(ScreeningSession).filter_by(id="sess-a").first()
+        assert session.status == "open"
+        assert session.ledger_hash is None
+        report = db.query(ScreeningReport).filter_by(id="doc-a").first()
+        assert report.session_id == "sess-a"
