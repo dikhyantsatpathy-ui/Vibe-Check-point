@@ -2908,8 +2908,13 @@ async def screen_document(
         if session_owner:
             with _get_db_for_session(session_owner) as db_chk:
                 sess_chk = db_chk.query(ScreeningSession).filter_by(id=session_owner).first()
-                if sess_chk and sess_chk.status != "open":
-                    raise HTTPException(status_code=409, detail=f"Session is not open (status={sess_chk.status}).")
+                if sess_chk:
+                    # Ownership is checked even while the session is open: an
+                    # open session is not a shared write target for the desk.
+                    if not is_super_admin(admin) and sess_chk.screener != admin:
+                        raise HTTPException(status_code=403, detail="Not your screening session.")
+                    if sess_chk.status != "open":
+                        raise HTTPException(status_code=409, detail=f"Session is not open (status={sess_chk.status}).")
 
         from screening import sha256_bytes
         _idem_key = _idempotency_key(session_owner, sha256_bytes(data))
@@ -2980,7 +2985,7 @@ async def screen_document(
                     db.add(sess)
                     db.commit()
                     db.refresh(sess)
-                elif not is_super_admin(admin) and sess.screener != admin and sess.status != "open":
+                elif not is_super_admin(admin) and sess.screener != admin:
                     raise HTTPException(status_code=403, detail="Not your screening session.")
                 elif sess.status != "open":
                     raise HTTPException(status_code=409, detail=f"Session is not open (status={sess.status}).")

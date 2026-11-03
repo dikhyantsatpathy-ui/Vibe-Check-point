@@ -9,6 +9,7 @@ ownership/provenance checks that make restore safe.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import os
 import sys
@@ -33,6 +34,7 @@ from main import (
 )
 
 OFFICER = "officer@ssb.gov.in"
+OTHER_OFFICER = "other.officer@ssb.gov.in"
 
 
 @pytest.fixture
@@ -45,15 +47,22 @@ def client(monkeypatch):
     monkeypatch.setattr(main, "SessionLocal", TestSession)
     db = TestSession()
     try:
-        db.add(
+        db.add_all([
             SignerIdentity(
                 email=OFFICER,
                 name="Officer One",
                 institution="SSB",
                 designation="Assistant Commandant",
                 registered_at=now_utc(),
-            )
-        )
+            ),
+            SignerIdentity(
+                email=OTHER_OFFICER,
+                name="Officer Two",
+                institution="SSB",
+                designation="Inspector",
+                registered_at=now_utc(),
+            ),
+        ])
         db.commit()
     finally:
         db.close()
@@ -75,6 +84,17 @@ def _seed_session(db, session_id: str) -> None:
             updated_at=now_utc(),
         )
     )
+
+
+def _synth_image(w: int = 160, h: int = 120) -> bytes:
+    from PIL import Image, ImageDraw
+
+    im = Image.new("RGB", (w, h), "white")
+    d = ImageDraw.Draw(im)
+    d.rectangle([10, 10, w - 10, h - 10], outline="black", fill="lightblue")
+    buf = io.BytesIO()
+    im.save(buf, format="JPEG")
+    return buf.getvalue()
 
 
 def _seed_report(db, report_id: str, session_id: str) -> None:
@@ -136,3 +156,38 @@ def test_restore_rejects_a_document_removed_from_a_different_session(client):
         row = db.query(ScreeningReport).filter_by(id="doc-a").first()
         assert row.removed_at is not None
         assert row.session_id is None
+
+
+def test_officer_cannot_screen_into_another_officers_open_session(client, monkeypatch):
+    """An open session is still owned by the officer who opened it."""
+    with main.SessionLocal() as db:
+        _seed_session(db, "sess-a")
+        db.commit()
+
+    called = []
+
+    def _fake_screen(*args, **kwargs):
+        called.append(kwargs)
+        return {
+            "id": "fake-report",
+            "doc_hash": "0" * 64,
+            "doc_type": "passport",
+            "verdict": "REVIEW",
+            "risk_score": 30,
+            "checkpoint": "Sunauli",
+            "created_at": now_utc(),
+            "reasons": ["fake"],
+        }
+
+    monkeypatch.setattr(main, "run_screening", _fake_screen)
+
+    other = TestClient(
+        app, cookies={"nischay_session": make_session_token(OTHER_OFFICER)}
+    )
+    resp = other.post(
+        "/api/screen",
+        files={"file": ("doc.jpg", _synth_image(), "image/jpeg")},
+        data={"session_id": "sess-a", "doc_type": "passport"},
+    )
+    assert resp.status_code == 403, resp.text
+    assert called == []
