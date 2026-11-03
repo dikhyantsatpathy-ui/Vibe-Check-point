@@ -4349,7 +4349,9 @@ def screening_bsa65b_certificate(
     for idx, d in enumerate(docs, 1):
         dt = html.escape(str(d.get("doc_type") or "ID Document").upper())
         fh = html.escape(str(d.get("file_hash") or "N/A"))
-        v = html.escape(str(d.get("verdict") or "CLEAR"))
+        # Never default a missing verdict to CLEAR: a blank row is an unknown,
+        # not an authentication. Fail-closed in statutory evidence.
+        v = html.escape(str(d.get("verdict") or "UNKNOWN"))
         mf = html.escape(json.dumps(d.get("masked_fields") or {}))
         doc_rows_html += f"""
         <tr>
@@ -4399,7 +4401,7 @@ def screening_bsa65b_certificate(
     <div class="meta-item"><strong>Originating Facility:</strong> {html.escape(cp)}</div>
     <div class="meta-item"><strong>Date & Time of Capture:</strong> {ts}</div>
     <div class="meta-item"><strong>Screening Session Reference:</strong> <span style="font-family:monospace;">{session_id}</span></div>
-    <div class="meta-item"><strong>Screening Verdict:</strong> <strong>{s.verdict or 'APPROVED'}</strong> (Risk Index: {s.risk_score}/100)</div>
+    <div class="meta-item"><strong>Screening Verdict:</strong> <strong>{s.verdict or 'PENDING'}</strong> (Risk Index: {s.risk_score}/100)</div>
     <div class="meta-item"><strong>Certified Examining Officer:</strong> {html.escape(officer_id)}</div>
     <div class="meta-item"><strong>Supervisory Adjudicator:</strong> {html.escape(adjudicator_id)}</div>
     <div class="meta-item" style="grid-column: span 2;"><strong>Chained Block Ledger Seal:</strong> <span style="font-family:monospace; font-size:11px;">{block_hash}</span></div>

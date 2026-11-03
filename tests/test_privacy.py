@@ -94,6 +94,33 @@ def _seed_session_with_docs(db, sid, *, raw, status="open", docs=1):
     db.commit()
 
 
+def test_bsa_certificate_never_defaults_missing_verdicts_to_clear(env):
+    """A court certificate must not invent a positive verdict.
+
+    The certificate template used `d.get("verdict") or "CLEAR"` and
+    `s.verdict or "APPROVED"`. A row with a blank verdict (legacy data, partial
+    write) would therefore be certified as authentic — a fail-open default in
+    statutory evidence, contrary to the invariant that no missing/failed check
+    may read as CLEAR.
+    """
+    with env() as db:
+        _seed_session_with_docs(db, "s-cert", raw=None)
+        session = db.query(ScreeningSession).filter_by(id="s-cert").first()
+        session.verdict = ""
+        for report in db.query(ScreeningReport).filter_by(session_id="s-cert").all():
+            report.verdict = ""
+        db.commit()
+
+    client = TestClient(app, cookies={"nischay_session": make_session_token(OFFICER)})
+    resp = client.get("/api/screen/bsa65b/s-cert")
+    assert resp.status_code == 200, resp.text
+    body = resp.text
+    assert ">UNKNOWN</td>" in body
+    assert "<strong>PENDING</strong>" in body
+    assert ">CLEAR</td>" not in body
+    assert "<strong>APPROVED</strong>" not in body
+
+
 # --------------------------------------------------------------------------- #
 # Wipe on settlement
 # --------------------------------------------------------------------------- #
