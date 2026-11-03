@@ -5023,8 +5023,18 @@ async def verify_aadhaar_qr_endpoint(
 ):
     """Decode and cryptographically verify Aadhaar QR code or barcode with UIDAI certificate checks."""
     from qr_decoder import extract_from_barcodes
-    data = await file.read()
-    return extract_from_barcodes(data, "aadhaar")
+    try:
+        data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
+        fmt = validate_upload_bytes(data, file.filename or "")
+        if fmt == "heic":
+            data = normalize_heic_to_png(data)
+            validate_upload_bytes(data, "converted.png")
+        return extract_from_barcodes(data, "aadhaar")
+    finally:
+        try:
+            await file.close()
+        except Exception:
+            pass
 
 
 @app.post("/api/verify")
@@ -5051,10 +5061,7 @@ async def verify_digest(
             if raw_text.strip():
                 digest = hashlib.sha256(raw_text.encode("utf-8")).hexdigest()
             elif file is not None:
-                data = await file.read()
-                if len(data) > 8 * 1024 * 1024:
-                    raise HTTPException(status_code=413,
-                                        detail="File too large (8 MB cap) — hash it client-side and send the digest.")
+                data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
                 digest = hashlib.sha256(data).hexdigest()
         if len(digest) != 64 or not set(digest) <= set("0123456789abcdef"):
             return {

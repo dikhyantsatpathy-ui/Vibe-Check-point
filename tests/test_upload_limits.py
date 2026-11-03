@@ -140,6 +140,24 @@ def test_decompression_bomb_sparse_image_rejected(auth_client, ml_client):
     assert "decompression bomb" in res_ml.json().get("detail", "").lower()
 
 
+def test_verify_endpoints_enforce_upload_cap(auth_client):
+    """Verification uploads must be streamed with the same 8 MB cap as screening.
+
+    `/api/verify` and `/api/verify/aadhaar-qr` used `await file.read()`, which
+    buffers the whole body before any size check, so a large upload could OOM
+    the worker instead of returning 413.
+    """
+    huge = b"0" * (9 * 1024 * 1024)
+
+    res = auth_client.post("/api/verify", files={"file": ("huge.jpg", huge, "image/jpeg")})
+    assert res.status_code == 413, res.text
+
+    res_qr = auth_client.post(
+        "/api/verify/aadhaar-qr", files={"file": ("huge.jpg", huge, "image/jpeg")}
+    )
+    assert res_qr.status_code == 413, res_qr.text
+
+
 def test_1x60000_png_extreme_aspect_ratio():
     """1x60000 PNG is structurally handled without crash or unbounded allocation."""
     img_1x60k = Image.new("1", (1, 60000), color=0)
