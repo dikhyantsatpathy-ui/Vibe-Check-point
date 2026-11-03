@@ -3020,10 +3020,19 @@ async def screen_document(
                 elif sess.status != "open":
                     raise HTTPException(status_code=409, detail=f"Session is not open (status={sess.status}).")
                 else:
+                    changed = False
                     if nat and not sess.nationality:
                         sess.nationality = nat
+                        changed = True
                     if purpose_txt and not sess.purpose:
                         sess.purpose = purpose_txt
+                        changed = True
+                    if changed:
+                        # The context manager only rolls back on error; it does
+                        # not commit. Without this the first screening into an
+                        # existing session updated nationality/purpose in memory
+                        # only, so the desk's guide reverted to UNKNOWN.
+                        db.commit()
             # CPU-heavy screening runs OFF the event loop so concurrent requests
             # (queue polling, health checks, other desks) stay responsive.
             effective_nat = nat or (sess.nationality if sess else None)

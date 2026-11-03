@@ -274,3 +274,30 @@ def test_changed_declared_fields_are_not_served_from_stale_cache(client, monkeyp
 
     assert len(calls) == 2
     assert [c["declared"]["passport_number"] for c in calls] == ["A1234567", "B7654321"]
+
+
+def test_screening_persists_traveller_context_on_an_existing_session(client, monkeypatch):
+    """Nationality/purpose entered at screening time must survive the request."""
+    with main.SessionLocal() as db:
+        _seed_session(db, "sess-a")
+        db.commit()
+
+    calls = []
+    monkeypatch.setattr(main, "run_screening", _screen_spy(calls))
+
+    resp = client.post(
+        "/api/screen",
+        files={"file": ("doc.jpg", _synth_image(), "image/jpeg")},
+        data={
+            "session_id": "sess-a",
+            "doc_type": "passport",
+            "nationality": "np",
+            "purpose": "trade",
+        },
+    )
+    assert resp.status_code == 200, resp.text
+
+    detail = client.get("/api/sessions/sess-a")
+    assert detail.status_code == 200, detail.text
+    assert detail.json()["nationality"] == "NP"
+    assert detail.json()["purpose"] == "trade"
