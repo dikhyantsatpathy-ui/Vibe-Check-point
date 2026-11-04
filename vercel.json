@@ -1,28 +1,5 @@
 {
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-NoCap-Probe",
-          "value": "probe-19"
-        }
-      ]
-    }
-  ],
   "rewrites": [
-    {
-      "source": "/probe-py",
-      "destination": "/api/probe_py"
-    },
-    {
-      "source": "/probe-node",
-      "destination": "/api/probe"
-    },
-    {
-      "source": "/probe-a",
-      "destination": "/api/index"
-    },
     {
       "source": "/(.*)",
       "destination": "/api/index"
