@@ -162,6 +162,24 @@ $env:DEMO_PASS_ENABLED = "1"
 - **Detail**: Several tests use the real module-level `SessionLocal`/engine when they do not monkeypatch it. Offline this makes `/health` report `degraded` (failing `test_t2_snapshot_health`) and can make auth tests depend on reachable Neon state. The new watchlist tests use an in-memory SQLite engine and set `main._db_initialized = True` to avoid this.
 - **Owner Action**: Decide whether to force `DATABASE_URL=sqlite:///:memory:` for the whole test session in `tests/conftest.py`; that would be a broad test change and was out of scope for this pass.
 
+### Item 16: Vercel Python Functions Crash on Every Invocation
+- **Status**: **BLOCKED (Vercel dashboard access required)**
+- **Detail**: `main` is deployed (`e8335c3`) and both Vercel projects build successfully, but every request to both aliases returns `500 FUNCTION_INVOCATION_FAILED` (`X-Vercel-Error: FUNCTION_INVOCATION_FAILED`).
+  Bisection performed on the live deployment:
+  - A trivial **Node** function (`api/probe.js`) returned `200`.
+  - A trivial **Python** WSGI function and a trivial ASGI function both returned `500` in ~2.3s.
+  - The Python function still failed with an **empty `requirements.txt`**, so this is not caused by the app code or its dependencies.
+  - Response headers proved the live alias was serving each new deployment, so this is not a stale alias.
+  - A clean local Python 3.12 venv with the same `requirements.txt` imports `api/index.py` successfully.
+- **Conclusion**: the Vercel **Python runtime for these two projects** is failing at function initialization, independently of this repository.
+- **Owner Action**:
+  1. Log in to Vercel and open both projects (`vibe-check-point`, `vibe-check-point-test`).
+  2. Open the latest deployment -> **Logs** / **Functions** and read the Python function's initialization error (the CLI is logged out, so this could not be read here).
+  3. Check **Settings -> Functions** for a Python-version/runtime override, and confirm the project framework preset is **Other** (not a Node/Vite preset).
+  4. Confirm the account/region is not affected by a Vercel incident for Python functions in `bom1`.
+  5. After fixing the platform setting, redeploy `main` and verify `GET /api/health` returns `200`.
+- **Note**: `api/index.py` now returns a safe JSON diagnostic (`error_class` + fixed hint, no secrets) if the app itself fails to import, so the cause will be visible once the Python runtime executes at all.
+
 ### Item 11: CSP Strict Enforce Verification
 - **Status**: **ACTION REQUIRED (Browser DevTools Audit)**
 - **Detail**: Security headers now send the baseline policy as `Content-Security-Policy` and the hash-based strict policy as `Content-Security-Policy-Report-Only`. Setting `CSP_STRICT_ENFORCE=1` switches the enforced policy to strict mode.
