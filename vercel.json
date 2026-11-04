@@ -5,12 +5,28 @@
       "headers": [
         {
           "key": "X-NoCap-Probe",
-          "value": "probe-15"
+          "value": "probe-16"
         }
       ]
     }
   ],
   "rewrites": [
+    {
+      "source": "/probe-a",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/probe-b",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/probe-c",
+      "destination": "/api"
+    },
+    {
+      "source": "/probe-static",
+      "destination": "/README.md"
+    },
     {
       "source": "/(.*)",
       "destination": "/api/index"
