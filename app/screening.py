@@ -1181,8 +1181,11 @@ def run_screening(data: bytes, filename: str, doc_type: str | None,
         risk = max(risk, 30)
         can_clear = False
 
-    # Check for explicit synthetic/fake/meme watermarks or markers on document text
-    text_raw = f"{extract_res.get('text') or ''} {fields.get('name') or ''} {filename or ''}"
+    # Check for explicit synthetic/fake/meme watermarks or markers on document text.
+    # Deliberately exclude the upload filename: it is caller-controlled metadata,
+    # not document content, so a file named "sample.jpg" must never hard-flag an
+    # otherwise genuine document as a synthetic forgery.
+    text_raw = f"{extract_res.get('text') or ''} {fields.get('name') or ''}"
     fake_match = re.search(r"\b(fake|sample|specimen|dummy|chatgpt|dall-?e|midjourney|photoshop|counterfeit|meme|parody|not a real id|not a valid id|not for official use|stay alert)\b", text_raw, re.IGNORECASE)
     if fake_match:
         reasons.append(f"CRITICAL FORGERY / SYNTHETIC WATERMARK: Document text explicitly contains '{fake_match.group(1).upper()}' marker — counterfeit or AI-generated identity document.")
