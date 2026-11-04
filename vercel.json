@@ -1,4 +1,15 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-NoCap-Probe",
+          "value": "probe-15"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
