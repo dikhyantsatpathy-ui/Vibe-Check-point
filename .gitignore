@@ -136,3 +136,6 @@ clean up for hackathon/
 Vibe-Check-point-main/
 training/indian_specimens/out/
 data/coco_card_indian/
+
+# ---- Autonomous agent workspace (local only) ----
+.agent/
