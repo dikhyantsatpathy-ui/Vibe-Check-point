@@ -8,6 +8,9 @@ python-multipart==0.0.32
 slowapi==0.1.10
 google-auth==2.57.0
 python-dotenv==1.2.3
+# IANA tz database: app/config.py resolves Asia/Kolkata at import time. Vercel's
+# Python image does not ship system zoneinfo, so the function 500s without this.
+tzdata==2026.6
 numpy==2.3.5
 Pillow==12.3.0
 openai==2.54.0
