@@ -2244,7 +2244,7 @@ async def lifespan(app: FastAPI):
         yield
 
 app = FastAPI(title="No Cap · Enterprise Provenance Engine", version="12.0",
-              max_body_size=50 * 1024 * 1024, lifespan=lifespan)
+              lifespan=lifespan)
 def get_trusted_remote_address(request: Request) -> str:
     """Resolve client IP for rate-limiting.
     Reads X-Forwarded-For ONLY when TRUST_PROXY_HEADERS is truthy ('1', 'true', 'yes').
