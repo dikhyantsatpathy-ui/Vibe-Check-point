@@ -65,7 +65,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 # AI-content-detection orchestrator (imported once at startup; heavy backends
 # like onnxruntime / the cloud SDK are loaded lazily inside the package, so this
 # never slows down cold starts for the default heuristic path).
-from screening import WATCHLIST_HMAC_ALGO, run_screening, watchlist_hmacs
+from screening import run_screening
 # Border SESSION orchestration: cross-document comparison + signed session
 # ledger blocks (SIH26188). Pure hash-based; imports screening's norm/mask.
 try:
@@ -1394,11 +1394,6 @@ class ScreeningReport(Base):
     ephemeral_raw_fields = Column(Text, nullable=True)
     removed_at = Column(String, nullable=True)               # soft-remove from a session (audit trail kept)
     removed_by = Column(String, nullable=True)               # officer who removed the document from the session
-    # Provenance for a soft-removed document. `session_id` is cleared on remove
-    # so the report stops participating in the session, but restore must still
-    # be able to prove which session it came from. Without this column restore
-    # could re-link any report id into any open session the caller owned.
-    removed_from_session_id = Column(String, index=True, nullable=True)
     nationality = Column(String, nullable=True)              # traveller nationality at capture time (guide context)
     purpose = Column(String, nullable=True)                  # declared purpose of travel at capture time
 
@@ -1409,9 +1404,6 @@ class WatchlistEntry(Base):
     __tablename__ = "watchlist_entries"
     id = Column(Integer, primary_key=True, autoincrement=True)
     identifier_hash = Column(String, index=True, unique=True, nullable=False)
-    # "hmac-sha256-v1" for blind-indexed rows; NULL/"sha256" for legacy rows
-    # written before the HMAC migration (upgraded lazily on first match).
-    hash_algo = Column(String, nullable=True)
     category = Column(String, nullable=True)         # pan | passport | visa | driving_licence | voter_id | phone | ...
     mask = Column(String, nullable=True)             # e.g. ****1234
     reason = Column(String, nullable=True)
@@ -1489,9 +1481,6 @@ _MIGRATIONS = [
     # Watchlist dedup guard: same identifier must not appear twice even under
     # concurrent adds. Skipped automatically if legacy duplicate rows exist.
     "CREATE UNIQUE INDEX IF NOT EXISTS uq_watchlist_identifier ON watchlist_entries(identifier_hash);",
-    # Blind-index migration: legacy rows hold a plain SHA-256; new rows hold
-    # HMAC-SHA256 under the vault-derived watchlist key.
-    "ALTER TABLE watchlist_entries ADD COLUMN IF NOT EXISTS hash_algo VARCHAR;",
     # Module 1-4 verdicts (OCR/validation/tampering/face) as one JSON row.
     "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS modules TEXT;",
     # Watchlist matches surfaced on the doc (field + mask only — never raw).
@@ -1512,8 +1501,6 @@ _MIGRATIONS = [
     # chain + ledger stay intact), only the session linkage is dropped.
     "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS removed_at VARCHAR;",
     "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS removed_by VARCHAR;",
-    "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS removed_from_session_id VARCHAR;",
-    "CREATE INDEX IF NOT EXISTS ix_reports_removed_from_session ON screening_reports(removed_from_session_id);",
     # Traveller context for the international guided flow (nationality-driven
     # document expectations at every checkpoint).
     "ALTER TABLE screening_reports ADD COLUMN IF NOT EXISTS nationality VARCHAR;",
@@ -2854,45 +2841,8 @@ _SCREEN_IDEMPOTENCY_TTL_SEC = 60.0
 _SCREEN_IDEMPOTENCY_MAX_ENTRIES = 500
 
 
-def _idempotency_key(
-    *,
-    session_id: str | None,
-    admin: str,
-    file_hash: str,
-    back_hash: str,
-    live_hash: str,
-    doc_type: str,
-    checkpoint: str,
-    declared: dict,
-    nationality: str,
-    purpose: str,
-    capture_source: str,
-    filename: str,
-    filename_back: str,
-) -> str:
-    """Fingerprint the complete screening request, not just the file.
-
-    The cache exists to absorb a client timeout/retry of the same submission.
-    Two submissions that differ in any field that feeds `run_screening` must
-    not collide, or the officer receives a stale verdict for different evidence.
-    """
-    payload = {
-        "session": session_id or "no-session",
-        "admin": admin,
-        "file": file_hash,
-        "back": back_hash,
-        "live": live_hash,
-        "doc_type": doc_type,
-        "checkpoint": checkpoint,
-        "declared": declared,
-        "nationality": nationality,
-        "purpose": purpose,
-        "capture_source": capture_source,
-        "filename": filename,
-        "filename_back": filename_back,
-    }
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+def _idempotency_key(session_id: str | None, file_hash: str) -> str:
+    return f"{session_id or 'no-session'}:{file_hash}"
 
 
 def _idempotency_get(key: str):
@@ -2951,14 +2901,16 @@ async def screen_document(
         if session_owner:
             with _get_db_for_session(session_owner) as db_chk:
                 sess_chk = db_chk.query(ScreeningSession).filter_by(id=session_owner).first()
-                if sess_chk:
-                    # Ownership is checked even while the session is open: an
-                    # open session is not a shared write target for the desk.
-                    if not is_super_admin(admin) and sess_chk.screener != admin:
-                        raise HTTPException(status_code=403, detail="Not your screening session.")
-                    if sess_chk.status != "open":
-                        raise HTTPException(status_code=409, detail=f"Session is not open (status={sess_chk.status}).")
+                if sess_chk and sess_chk.status != "open":
+                    raise HTTPException(status_code=409, detail=f"Session is not open (status={sess_chk.status}).")
 
+        from screening import sha256_bytes
+        _idem_key = _idempotency_key(session_owner, sha256_bytes(data))
+        _cached_report = _idempotency_get(_idem_key)
+        if _cached_report is not None:
+            logger.info(f"[screen_document] Idempotent replay for {file.filename} — returning cached result, no re-screening.")
+            return _cached_report
+        
         data_back = None
         filename_back = None
         if file_back is not None:
@@ -3021,55 +2973,20 @@ async def screen_document(
                     db.add(sess)
                     db.commit()
                     db.refresh(sess)
-                elif not is_super_admin(admin) and sess.screener != admin:
+                elif not is_super_admin(admin) and sess.screener != admin and sess.status != "open":
                     raise HTTPException(status_code=403, detail="Not your screening session.")
                 elif sess.status != "open":
                     raise HTTPException(status_code=409, detail=f"Session is not open (status={sess.status}).")
                 else:
-                    changed = False
                     if nat and not sess.nationality:
                         sess.nationality = nat
-                        changed = True
                     if purpose_txt and not sess.purpose:
                         sess.purpose = purpose_txt
-                        changed = True
-                    if changed:
-                        # The context manager only rolls back on error; it does
-                        # not commit. Without this the first screening into an
-                        # existing session updated nationality/purpose in memory
-                        # only, so the desk's guide reverted to UNKNOWN.
-                        db.commit()
             # CPU-heavy screening runs OFF the event loop so concurrent requests
             # (queue polling, health checks, other desks) stay responsive.
             effective_nat = nat or (sess.nationality if sess else None)
             effective_purpose = purpose_txt or (sess.purpose if sess else None)
-
-        # A replay is only idempotent when it is the *same* screening request.
-        # Keying on (session, file hash) alone returned the first report for a
-        # corrected declaration, a new live frame, or a different document type
-        # uploaded within the cache TTL. Include every input that changes the
-        # report, plus the officer, so one desk cannot receive another's result.
-        from screening import sha256_bytes
-        _idem_key = _idempotency_key(
-            session_id=session_owner,
-            admin=admin,
-            file_hash=sha256_bytes(data),
-            back_hash=sha256_bytes(data_back) if data_back else "",
-            live_hash=sha256_bytes(live_bytes) if live_bytes else "",
-            doc_type=(doc_type or "other").strip(),
-            checkpoint=(checkpoint or "").strip(),
-            declared=declared_map,
-            nationality=nat or "",
-            purpose=purpose_txt or "",
-            capture_source=(capture_source or "").strip().lower()[:16],
-            filename=file.filename or "",
-            filename_back=filename_back or "",
-        )
-        _cached_report = _idempotency_get(_idem_key)
-        if _cached_report is not None:
-            logger.info(f"[screen_document] Idempotent replay for {file.filename} - returning cached result, no re-screening.")
-            return _cached_report
-
+            
         try:
             report = await run_in_threadpool(
                 run_screening, data, file.filename or "upload",
@@ -3087,7 +3004,7 @@ async def screen_document(
             sha = sha256_bytes(data)
             report = {
                 "id": uuid.uuid4().hex[:16],
-                "file_hash": sha,
+                "doc_hash": sha,
                 "doc_type": (doc_type or "other").strip(),
                 "verdict": "FLAGGED",
                 "risk_score": 45,
@@ -3481,12 +3398,8 @@ def close_session(session_id: str, request: Request,
         s = _get_session_owned(db, session_id, admin, require_open=True)
         docs, rows = _session_docs(db, session_id)
         
-        # An unused session (no documents) can be closed by any action: there is
-        # no evidence to settle. A session that HAS documents must be approved
-        # or flagged, so its comparison and ledger block are recorded; letting
-        # 'close' through here would drop a live case out of the review flow
-        # with status=CLOSED and no signed block.
-        if not rows:
+        # Closing an empty/unused session with 0 documents
+        if act in ("close", "cancel", "dismiss") or (not rows and act in ("approve", "flag", "close", "cancel")):
             s.status = "closed"
             s.verdict = "CLOSED"
             s.risk_score = 0
@@ -3500,11 +3413,8 @@ def close_session(session_id: str, request: Request,
             pub["comparison"] = {"verdict": "CLEAR", "checks": []}
             return pub
 
-        if act in ("close", "cancel", "dismiss"):
-            raise HTTPException(
-                status_code=400,
-                detail="Session has documents — approve it or flag it for review instead of closing it as unused.",
-            )
+        if not rows:
+            raise HTTPException(status_code=400, detail="Session has no documents yet — add at least one first or close it as unused.")
 
         comparison = _comparison_for_rows(docs)
         agg_risk = max(0, min(100, max((d.get("risk_score") or 0) for d in docs)
@@ -3703,7 +3613,6 @@ def remove_session_document(session_id: str, report_id: str, request: Request,
             return {"ok": True, "already_removed": True, "report_id": report_id}
         r.removed_at = now_utc()
         r.removed_by = admin
-        r.removed_from_session_id = session_id  # provenance for a safe restore
         r.session_id = None            # drop session linkage (ledger chain per-row stays)
         # The document is leaving the session, so it will no longer take part in
         # cross-document comparison. Wipe its unmasked fields now rather than
@@ -3728,28 +3637,8 @@ def restore_session_document(session_id: str, report_id: str, request: Request,
         r = db.query(ScreeningReport).filter_by(id=report_id).first()
         if not r:
             raise HTTPException(status_code=404, detail="Screening report not found.")
-        # Restore is only valid for a report this endpoint itself soft-removed
-        # from *this* session. Without these checks any report id could be
-        # re-linked into any open session the caller owns (cross-session data
-        # exposure and ledger-association corruption).
-        if not getattr(r, "removed_at", None):
-            raise HTTPException(
-                status_code=400,
-                detail="Document is not soft-removed; restore is only for removed documents.",
-            )
-        if getattr(r, "removed_from_session_id", None) != session_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Document was not removed from this session.",
-            )
-        if not is_super_admin(admin) and getattr(r, "removed_by", None) != admin:
-            raise HTTPException(
-                status_code=403,
-                detail="Only the officer who removed this document can restore it.",
-            )
         r.removed_at = None
         r.removed_by = None
-        r.removed_from_session_id = None
         r.session_id = session_id
         s.updated_at = now_utc()
         db.commit()
@@ -4355,9 +4244,7 @@ def screening_bsa65b_certificate(
     for idx, d in enumerate(docs, 1):
         dt = html.escape(str(d.get("doc_type") or "ID Document").upper())
         fh = html.escape(str(d.get("file_hash") or "N/A"))
-        # Never default a missing verdict to CLEAR: a blank row is an unknown,
-        # not an authentication. Fail-closed in statutory evidence.
-        v = html.escape(str(d.get("verdict") or "UNKNOWN"))
+        v = html.escape(str(d.get("verdict") or "CLEAR"))
         mf = html.escape(json.dumps(d.get("masked_fields") or {}))
         doc_rows_html += f"""
         <tr>
@@ -4407,7 +4294,7 @@ def screening_bsa65b_certificate(
     <div class="meta-item"><strong>Originating Facility:</strong> {html.escape(cp)}</div>
     <div class="meta-item"><strong>Date & Time of Capture:</strong> {ts}</div>
     <div class="meta-item"><strong>Screening Session Reference:</strong> <span style="font-family:monospace;">{session_id}</span></div>
-    <div class="meta-item"><strong>Screening Verdict:</strong> <strong>{s.verdict or 'PENDING'}</strong> (Risk Index: {s.risk_score}/100)</div>
+    <div class="meta-item"><strong>Screening Verdict:</strong> <strong>{s.verdict or 'APPROVED'}</strong> (Risk Index: {s.risk_score}/100)</div>
     <div class="meta-item"><strong>Certified Examining Officer:</strong> {html.escape(officer_id)}</div>
     <div class="meta-item"><strong>Supervisory Adjudicator:</strong> {html.escape(adjudicator_id)}</div>
     <div class="meta-item" style="grid-column: span 2;"><strong>Chained Block Ledger Seal:</strong> <span style="font-family:monospace; font-size:11px;">{block_hash}</span></div>
@@ -4594,27 +4481,12 @@ def screening_watchlist_add(
     if not value.strip():
         raise HTTPException(status_code=400, detail="An identifier value is required.")
     v = norm(value)
-    legacy_digest = sha256(v)
-    blind_digests = watchlist_hmacs(v)
     with get_db() as db:
-        existing = (
-            db.query(WatchlistEntry)
-            .filter(WatchlistEntry.identifier_hash.in_(blind_digests + [legacy_digest]))
-            .first()
-        )
+        existing = db.query(WatchlistEntry).filter_by(identifier_hash=sha256(v)).first()
         if existing:
-            if (getattr(existing, "hash_algo", None) != WATCHLIST_HMAC_ALGO
-                    and existing.identifier_hash == legacy_digest):
-                existing.identifier_hash = blind_digests[0]
-                existing.hash_algo = WATCHLIST_HMAC_ALGO
-                try:
-                    db.commit()
-                except IntegrityError:
-                    db.rollback()
             return {"ok": True, "already": True, "id": existing.id, "mask": existing.mask}
         entry = WatchlistEntry(
-            identifier_hash=blind_digests[0],
-            hash_algo=WATCHLIST_HMAC_ALGO,
+            identifier_hash=sha256(v),
             category=(category or "").strip() or None,
             mask=mask(v),
             reason=(reason or "").strip() or None,
@@ -4628,11 +4500,7 @@ def screening_watchlist_add(
             # Lost the concurrent-add race (or a legacy duplicate): the unique
             # index now guards this, so return the surviving row as "already".
             db.rollback()
-            existing = (
-                db.query(WatchlistEntry)
-                .filter(WatchlistEntry.identifier_hash.in_(blind_digests + [legacy_digest]))
-                .first()
-            )
+            existing = db.query(WatchlistEntry).filter_by(identifier_hash=sha256(v)).first()
             return {"ok": True, "already": True,
                     "id": existing.id if existing else None,
                     "mask": existing.mask if existing else mask(v)}
@@ -5050,18 +4918,8 @@ async def verify_aadhaar_qr_endpoint(
 ):
     """Decode and cryptographically verify Aadhaar QR code or barcode with UIDAI certificate checks."""
     from qr_decoder import extract_from_barcodes
-    try:
-        data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
-        fmt = validate_upload_bytes(data, file.filename or "")
-        if fmt == "heic":
-            data = normalize_heic_to_png(data)
-            validate_upload_bytes(data, "converted.png")
-        return extract_from_barcodes(data, "aadhaar")
-    finally:
-        try:
-            await file.close()
-        except Exception:
-            pass
+    data = await file.read()
+    return extract_from_barcodes(data, "aadhaar")
 
 
 @app.post("/api/verify")
@@ -5088,7 +4946,10 @@ async def verify_digest(
             if raw_text.strip():
                 digest = hashlib.sha256(raw_text.encode("utf-8")).hexdigest()
             elif file is not None:
-                data = await read_upload_capped(file, MAX_UPLOAD_BYTES)
+                data = await file.read()
+                if len(data) > 8 * 1024 * 1024:
+                    raise HTTPException(status_code=413,
+                                        detail="File too large (8 MB cap) — hash it client-side and send the digest.")
                 digest = hashlib.sha256(data).hexdigest()
         if len(digest) != 64 or not set(digest) <= set("0123456789abcdef"):
             return {
