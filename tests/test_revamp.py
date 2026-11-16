@@ -259,6 +259,7 @@ def test_doctype_cls_direct():
     from doctype_cls import classify_document, model_available
     if not model_available():
         pytest.skip("doctype.onnx not present")
+    pytest.importorskip("onnxruntime", reason="onnxruntime not installed (local-only, not in Vercel bundle)")
     img = _synth_image()
     res = classify_document(img)
     assert res is not None

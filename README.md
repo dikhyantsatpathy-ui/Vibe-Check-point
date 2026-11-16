@@ -231,8 +231,12 @@ single-file frontend, and starts the server on http://127.0.0.1:8000.
 
 ## 9. Deploying to Vercel
 
-The repo ships `api/index.py` (serverless entrypoint) and `vercel.json`. The Vite frontend
-builds to the tracked `app/static/index.html`, served with `Cache-Control: no-store`.
+Vercel detects the FastAPI app in `app/main.py` and serves **every route** from it
+(`/`, `/health`, `/api/*`). `vercel.json` is intentionally empty (`{}`): do **not** add a catch-all
+`rewrites` entry pointing at `/api/index` — the app has no such route, so every request
+would 404. The Vite frontend builds to the tracked `app/static/index.html`, served with
+`Cache-Control: no-store`. (`api/index.py` is an optional guarded wrapper that turns a
+startup failure into a readable JSON error instead of `FUNCTION_INVOCATION_FAILED`.)
 
 1. Push to GitHub (or use the `vercel` CLI from this folder).
 2. Set the same env vars in the Vercel project dashboard as your local `.env`
@@ -242,6 +246,14 @@ builds to the tracked `app/static/index.html`, served with `Cache-Control: no-st
    heuristics when cloud providers aren't configured.
 4. Cold starts: Neon + dependency import can take a few seconds on the first hit — the engine
    retries DNS/connect and treats table bootstrap as best-effort.
+
+**Branch workflow.** `main` → production (`vibe-check-point`). `staging` → the isolated test
+project (`vibe-check-point-test`, own database and keys — see `docs/DEPLOYMENT_ISOLATION.md`).
+Try every change on `staging` first, confirm `/api/health` on the test site, then merge to `main`.
+
+**Known pitfall.** `FastAPI(...)` has no `max_body_size` option. Older code passed one; some
+FastAPI versions ignore it and Vercel's raises `TypeError` at import, killing the function.
+Request-size limiting lives in `app/body_limit.py` (`MAX_REQUEST_BODY_BYTES`, default 50 MB).
 
 ### Database Architecture (Neon Postgres Only)
 

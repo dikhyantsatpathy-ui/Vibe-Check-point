@@ -2380,6 +2380,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Expires"] = "0"
         return response
 
+try:
+    from app.body_limit import BodySizeLimitMiddleware
+except ImportError:  # pragma: no cover - flat-layout fallback
+    from body_limit import BodySizeLimitMiddleware
+# Added before SecurityHeaders so a 413 still carries the security headers.
+app.add_middleware(BodySizeLimitMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 # --- CORS -------------------------------------------------------------------

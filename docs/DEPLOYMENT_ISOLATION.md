@@ -17,3 +17,14 @@ The staging/test site (`vibe-check-point-test.vercel.app`) must maintain strict 
 ## 3. Findings & Owner Action
 - **F-003 (S2)**: `HF_TOKEN` is not read by `app/` or `frontend/` (only by `ml_service/model_fetch.py`). It should be removed from both Vercel projects to minimize attack surface.
 - **F-004 (S1)**: Verify and enforce that test Vercel project does not share `DATABASE_URL` or `MASTER_VAULT_KEY` with production. Commands documented in `docs/OWNER_TODO.md`.
+
+## 4. Branch & Deploy Workflow
+- `main` deploys **only** to production (`vibe-check-point`). Treat it as release-only.
+- `staging` deploys **only** to the test project (`vibe-check-point-test`, isolated DB and keys per section 2).
+- Flow: commit to `staging` → confirm `https://<test-deployment>/api/health` returns 200 → merge `staging` into `main`.
+- Each Vercel project uses an *Ignored Build Step* so branches do not cross-deploy:
+  - production: `[ "$VERCEL_GIT_COMMIT_REF" != "main" ]`
+  - test: `[ "$VERCEL_GIT_COMMIT_REF" != "staging" ]`
+  (exit 0 = skip the build). This also stops experimental previews from ever running against the production database.
+- `vercel.json` must stay `{}`; a catch-all rewrite to `/api/index` 404s every route (the entrypoint is `app/main.py`).
+

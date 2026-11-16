@@ -392,6 +392,8 @@ def test_claims_ledger_has_zero_false():
 
 def test_work_order_queue_block_parity():
     """T3: docs/WORK_ORDER_V8.md's queue block parses to the same task IDs as docs/QUEUE.json."""
+    if not (REPO_ROOT / "scripts" / "agent_ctl.py").exists():
+        pytest.skip("scripts/agent_ctl.py (local agent tooling) is not in this checkout")
     from scripts.agent_ctl import parse_queue_block
 
     work_order = REPO_ROOT / "docs" / "WORK_ORDER_V8.md"

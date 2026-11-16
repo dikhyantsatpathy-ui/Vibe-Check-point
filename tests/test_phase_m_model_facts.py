@@ -14,6 +14,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
+@pytest.mark.skipif(not (REPO_ROOT / "data" / "coco_card" / "test" / "_annotations.coco.json").exists(), reason="local COCO dataset (data/coco_card) not present; it is gitignored")
 def test_m1_frozen_card_manifest_and_evaluation():
     """M1: Validates frozen manifest card_v7.json and records comparative evaluation metrics."""
     manifest_path = REPO_ROOT / "eval" / "manifests" / "card_v7.json"
@@ -71,6 +72,7 @@ def test_m1_frozen_card_manifest_and_evaluation():
     assert scale_3x < 0.60, "Recorded scale 3x failed gate (9.67% < 60%)"
 
 
+@pytest.mark.skipif(not (REPO_ROOT / "data" / "coco_card" / "test" / "_annotations.coco.json").exists(), reason="local COCO dataset (data/coco_card) not present; it is gitignored")
 def test_m2_detector_truth_reconciliation_and_leakage():
     """M2: Reconciles blueprint ACCEPTED status vs failed scale gates and checks dHash leakage."""
     leakage_script = REPO_ROOT / "eval" / "audit_leakage.py"

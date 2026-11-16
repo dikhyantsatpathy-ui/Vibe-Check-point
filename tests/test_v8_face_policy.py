@@ -280,6 +280,7 @@ def test_face_model_provisioning_zero_calls_when_auto_download_off(monkeypatch, 
         network_called.append("hf_hub_download")
         raise RuntimeError("Network should not be called!")
 
+    pytest.importorskip("huggingface_hub", reason="optional ML-service dependency")
     import huggingface_hub
     monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
 
@@ -378,6 +379,7 @@ def test_face_model_provisioning_oversize_refuses(monkeypatch, tmp_path):
         out_file.write_bytes(b"x" * 1200)  # 1200 bytes > 1050 bytes
         return str(out_file)
 
+    pytest.importorskip("huggingface_hub", reason="optional ML-service dependency")
     import huggingface_hub
     monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_oversize_download)
 

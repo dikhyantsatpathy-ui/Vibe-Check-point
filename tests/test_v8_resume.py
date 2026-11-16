@@ -25,6 +25,9 @@ import pytest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
+if not (REPO_ROOT / "scripts" / "agent_ctl.py").exists():
+    pytest.skip("scripts/agent_ctl.py (local agent tooling) is not in this checkout", allow_module_level=True)
+
 
 def _run_ctl(temp_dir: pathlib.Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(

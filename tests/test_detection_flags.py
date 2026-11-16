@@ -145,6 +145,7 @@ def test_clip_to_image_and_crop():
 
 def test_model_fetch_hf_mock(tmp_path, monkeypatch):
     """Verify fetch_models_from_hf handles downloads and validation correctly."""
+    pytest.importorskip("huggingface_hub", reason="optional ML-service dependency")
     from ml_service.model_fetch import fetch_models_from_hf
 
     fake_downloaded = tmp_path / "rfdetr_card_int8.onnx"
