@@ -760,6 +760,9 @@ def _ensure_model() -> str:
     # offline desk must still screen, not hang trying to reach HuggingFace.
     os.makedirs(_model_dir(), exist_ok=True)
     url = os.getenv("AI_DETECTOR_MODEL_URL") or DEFAULT_URL
+    if not url.lower().startswith("https://"):
+        print("[detector] refusing non-https AI_DETECTOR_MODEL_URL; falling back to heuristic detector")
+        raise FileNotFoundError("AI detector model unavailable (non-https model URL refused)")
     print(f"[detector] downloading AI model -> {path}  ({url})")
     tmp = path + ".download"
     try:

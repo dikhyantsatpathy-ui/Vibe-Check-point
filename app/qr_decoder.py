@@ -128,6 +128,11 @@ def parse_aadhaar_qr(barcode_record: dict) -> dict:
 
     # 2. XML QR Code format
     if text.startswith("<?xml") or "<PrintLetterBarcodeData" in text:
+        # QR payloads come from an untrusted uploaded image. Genuine Aadhaar XML
+        # never declares a DTD or entities, so refuse those outright instead of
+        # handing them to the XML parser (entity-expansion / XXE hardening).
+        if re.search(r"<!\s*(DOCTYPE|ENTITY)", text, re.IGNORECASE):
+            return out
         try:
             root = ET.fromstring(text)
             elem = root if root.tag == "PrintLetterBarcodeData" else root.find(".//PrintLetterBarcodeData")
